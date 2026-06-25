@@ -373,20 +373,20 @@ function openPrint(){
 // ---- Dependency-free .docx generation (Word XML zipped in-browser) ----
 function xmlEsc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 const FONT="Calibri";
-function run(text,{bold=false,italic=false,color=null,sz=20}={}){
+function run(text,{bold=false,italic=false,color=null,sz=22}={}){
   let rpr=`<w:rPr><w:rFonts w:ascii="${FONT}" w:hAnsi="${FONT}"/>`;
   if(bold)rpr+="<w:b/><w:bCs/>"; if(italic)rpr+="<w:i/><w:iCs/>";
   if(color)rpr+=`<w:color w:val="${color}"/>`;
   rpr+=`<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr>`;
   return `<w:r>${rpr}<w:t xml:space="preserve">${xmlEsc(text)}</w:t></w:r>`;
 }
-function para(runs,{align=null,after=60,before=0}={}){
+function para(runs,{align=null,after=160,before=0}={}){
   let ppr=`<w:pPr><w:spacing w:after="${after}"${before?` w:before="${before}"`:""}/>`;
   if(align)ppr+=`<w:jc w:val="${align}"/>`;
   ppr+="</w:pPr>";
   return `<w:p>${ppr}${runs.join("")}</w:p>`;
 }
-function bullet(runs,{after=60,before=0}={}){
+function bullet(runs,{after=160,before=0}={}){
   const ppr=`<w:pPr><w:spacing w:after="${after}"${before?` w:before="${before}"`:""}/><w:ind w:left="360" w:hanging="180"/></w:pPr>`;
   return `<w:p>${ppr}${run("\u2022  ",{bold:true})}${runs.join("")}</w:p>`;
 }
@@ -397,6 +397,15 @@ function tcell(content,w,fill){
     `<w:bottom w:w="60" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>`+
     `<w:vAlign w:val="center"/></w:tcPr>${content}</w:tc>`;
 }
+function tcellPad(content,w,fill){
+  const shd=fill?`<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>`:"";
+  return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${shd}`+
+    `<w:tcMar><w:top w:w="90" w:type="dxa"/><w:left w:w="120" w:type="dxa"/>`+
+    `<w:bottom w:w="90" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tcMar>`+
+    `<w:vAlign w:val="center"/></w:tcPr>${content}</w:tc>`;
+}
+// tight in-cell paragraph (no spacing after, centered)
+function cpar(runs){ return `<w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="center"/></w:pPr>${runs.join("")}</w:p>`; }
 
 function buildDocx(){
   const f=FORMS[role], data=currentData();
@@ -405,24 +414,24 @@ function buildDocx(){
   const dateStr=document.getElementById('date').value;
   const comment=document.getElementById('comment').value.trim();
 
-  const COLS=[700,2900,4351,1400], TW=COLS.reduce((a,b)=>a+b,0);
+  const COLS=[760,2900,3980,1660], TW=COLS.reduce((a,b)=>a+b,0);
   let tb=`<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblBorders>`;
   ["top","left","bottom","right","insideH","insideV"].forEach(s=>{tb+=`<w:${s} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`;});
   tb+=`</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>`;
   COLS.forEach(c=>tb+=`<w:gridCol w:w="${c}"/>`); tb+="</w:tblGrid>";
   tb+="<w:tr>"+
-    tcell(para([run("No.",{bold:true})],{align:"center"}),COLS[0],"EBF8FA")+
-    tcell(para([run("Criteria",{bold:true})]),COLS[1],"EBF8FA")+
-    tcell(para([run("Description",{bold:true})]),COLS[2],"EBF8FA")+
-    tcell(para([run("Rating (1\u20135)",{bold:true})],{align:"center"}),COLS[3],"EBF8FA")+
+    tcellPad(cpar([run("No.",{bold:true})]),COLS[0],"EBF8FA")+
+    tcellPad(cpar([run("Criteria",{bold:true})]),COLS[1],"EBF8FA")+
+    tcellPad(cpar([run("Description",{bold:true})]),COLS[2],"EBF8FA")+
+    tcellPad(cpar([run("Rating (1\u20135)",{bold:true})]),COLS[3],"EBF8FA")+
     "</w:tr>";
   f.rows.forEach(([name,desc],i)=>{
     const rating=data.rows[i];
     tb+="<w:tr>"+
-      tcell(para([run(String(i+1),{bold:!f.senior})],{align:"center"}),COLS[0])+
-      tcell(para([run(name)]),COLS[1])+
-      tcell(para([run(desc)]),COLS[2])+
-      tcell(para([run(rating!==null?String(rating):"",{bold:true})],{align:"center"}),COLS[3])+
+      tcellPad(cpar([run(String(i+1),{bold:!f.senior})]),COLS[0])+
+      tcellPad(cpar([run(name)]),COLS[1])+
+      tcellPad(cpar([run(desc)]),COLS[2])+
+      tcellPad(cpar([run(rating!==null?String(rating):"",{bold:true})]),COLS[3])+
       "</w:tr>";
   });
   tb+="</w:tbl>";
@@ -442,29 +451,29 @@ function buildDocx(){
   +para([run(f.title,{bold:true,sz:22,color:"15ACE3"})],{align:"center",after:20});
   body+=para([run("Confidential \u2013 For Internal Use Only",{bold:!f.senior,italic:true})],{after:160});
   if(f.senior){
-    body+=para([run("Manager Name: ",{bold:true}),run(empName||"________________________")]);
-    body+=para([run("Department: ",{bold:true}),run(manager||"__________________________")]);
-    body+=para([run("Date: ",{bold:true}),run(dateStr||"_______________")],{after:160});
+    body+=para([run("Manager Name: ",{bold:true}),run(empName||"________________________")],{after:40});
+    body+=para([run("Department: ",{bold:true}),run(manager||"__________________________")],{after:40});
+    body+=para([run("Date: ",{bold:true}),run(dateStr||"_______________")],{after:140});
   }else{
-    body+=para([run("Employee Name: "+(empName||"________________________"),{bold:true})]);
-    body+=para([run("Position: "+f.position,{bold:true})]);
-    body+=para([run("Evaluator (Manager): "+(manager||"_______________________"),{bold:true})]);
-    body+=para([run("Date: "+(dateStr||"_______________"),{bold:true})],{after:160});
+    body+=para([run("Employee Name: "+(empName||"________________________"),{bold:true})],{after:40});
+    body+=para([run("Position: "+f.position,{bold:true})],{after:40});
+    body+=para([run("Evaluator (Manager): "+(manager||"_______________________"),{bold:true})],{after:40});
+    body+=para([run("Date: "+(dateStr||"_______________"),{bold:true})],{after:140});
   }
   body+=para([run("Rating Scale:",{bold:true})],{after:20});
-  body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:160});
+  body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:140});
   body+=tb;
-  body+=para([run("Scoring Guide:",{bold:true})],{before:200,after:60});
-  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+" / 10",{bold:true})]);
-  body+=bullet([run("Average Score: ",{bold:true}),run(String(data.avgScore||0),{bold:true})],{after:160});
+  body+=para([run("Scoring Guide:",{bold:true})],{before:140,after:40});
+  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+" / 10",{bold:true})],{after:40});
+  body+=bullet([run("Average Score: ",{bold:true}),run(String(data.avgScore||0),{bold:true})],{after:120});
   body+=para([run("Performance Interpretation:",{bold:true})],{after:20});
   const cur=interpret(data.avgScore);
   ["4.5 \u2013 5.0 = Outstanding","3.5 \u2013 4.4 = Very Good","2.5 \u2013 3.4 = Satisfactory","1.5 \u2013 2.4 = Needs Improvement","1.0 \u2013 1.4 = Poor"].forEach(t=>{
     const isCur=cur&&t.indexOf(cur)>-1;
     body+=para([run(t,{bold:!f.senior||isCur,color:isCur?"0E7FAB":null})],{after:20});
   });
-  body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:200,after:60});
-  body+=para([run(comment||" ")],{after:200});
+  body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:140,after:60});
+  body+=para([run(comment||" ")],{after:160});
   if(!f.senior){
     body+=para([run("Evaluator's Signature: "+"_______________________",{bold:true})]);
     body+=para([run("Date: "+"_______________",{bold:true})]);
@@ -565,68 +574,75 @@ function buildPDF(){
   const L=(x1,y1,x2,y2)=>ops.push(`0.6 0.78 0.86 RG 0.8 w ${x1.toFixed(2)} ${y1.toFixed(2)} m ${x2.toFixed(2)} ${y2.toFixed(2)} l S`);
   const RF=(x,y,w,h,c)=>ops.push(`${c} rg ${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`);
   // label+value helper with proper spacing
-  const KV=(x,y,k,v)=>{ T(x,y,k,9,true); T(x+twF(k,9,true)+3,y,v,9,false); };
+  const KV=(x,y,k,v)=>{ T(x,y,k,10,true); T(x+twF(k,10,true)+3,y,v,10,false); };
   // fully-bold "key value" (matches Prob/Junior where whole meta line is bold)
-  const KVB=(x,y,k,v)=>{ T(x,y,k,9,true); T(x+twF(k,9,true)+3,y,v,9,true); };
-  const BUL=(x,y,k,v)=>{ T(x,y,"\u2022",9,true); T(x+12,y,k,9,true); T(x+12+twF(k,9,true)+3,y,v,9,true); };
+  const KVB=(x,y,k,v)=>{ T(x,y,k,10,true); T(x+twF(k,10,true)+3,y,v,10,true); };
+  const BUL=(x,y,k,v)=>{ T(x,y,"\u2022",10,true); T(x+12,y,k,10,true); T(x+12+twF(k,10,true)+3,y,v,10,true); };
 
   let y=H-M;
   const LS=46;
   ops.push(`q ${LS} 0 0 ${LS} ${((W-LS)/2).toFixed(2)} ${(y-LS).toFixed(2)} cm /Im1 Do Q`);
   y-=LS+16;
   const title=f.title, ts=11;
-  T((W-twF(title,ts,true))/2,y,title,ts,true,blue); y-=16;
-  T(M,y,"Confidential - For Internal Use Only",9,true); y-=16;
+  T((W-twF(title,ts,true))/2,y,title,ts,true,blue); y-=18;
+  T(M,y,"Confidential - For Internal Use Only",10,true); y-=18;
   if(f.senior){
-    KV(M,y,"Manager Name:",empName||"________________________"); y-=13;
-    KV(M,y,"Department:",manager||"__________________________"); y-=13;
-    KV(M,y,"Date:",dateStr||"_______________"); y-=13;
+    KV(M,y,"Manager Name:",empName||"________________________"); y-=15;
+    KV(M,y,"Department:",manager||"__________________________"); y-=15;
+    KV(M,y,"Date:",dateStr||"_______________"); y-=15;
   }else{
-    KVB(M,y,"Employee Name:",empName||"________________________"); y-=13;
-    KVB(M,y,"Position:",f.position); y-=13;
-    KVB(M,y,"Evaluator (Manager):",manager||"_______________________"); y-=13;
-    KVB(M,y,"Date:",dateStr||"_______________"); y-=13;
+    KVB(M,y,"Employee Name:",empName||"________________________"); y-=15;
+    KVB(M,y,"Position:",f.position); y-=15;
+    KVB(M,y,"Evaluator (Manager):",manager||"_______________________"); y-=15;
+    KVB(M,y,"Date:",dateStr||"_______________"); y-=15;
   }
   y-=4;
-  T(M,y,"Rating Scale:",9,true); y-=12;
-  T(M,y,"5 - Excellent | 4 - Very Good | 3 - Satisfactory | 2 - Needs Improvement | 1 - Poor",9,!f.senior); y-=16;
+  T(M,y,"Rating Scale:",10,true); y-=13;
+  T(M,y,"5 - Excellent | 4 - Very Good | 3 - Satisfactory | 2 - Needs Improvement | 1 - Poor",10,!f.senior); y-=18;
 
-  const cols=[34,150,260,70], x0=M, tableW=cols.reduce((a,b)=>a+b,0);
+  // centered-text helper
+  const TC=(cx,cw,yy,s,size,bold,color)=>T(cx+cw/2-twF(s,size,bold)/2,yy,s,size,bold,color);
+  const cols=[44,150,238,82], x0=M, tableW=cols.reduce((a,b)=>a+b,0);
   const colX=[x0]; for(let i=0;i<cols.length;i++) colX.push(colX[i]+cols[i]);
-  const hh=18;
-  RF(x0,y-hh+4,tableW,hh,"0.886 0.957 0.988");
-  T(colX[0]+4,y-9,"No.",9,true); T(colX[1]+4,y-9,"Criteria",9,true); T(colX[2]+4,y-9,"Description",9,true); T(colX[3]+4,y-9,"Rating (1-5)",9,true);
-  const ytop=y+4; y-=hh;
-  const ys=9,pad=4,lh=11;
+  const hh=22, tts=10;
+  RF(x0,y-hh+5,tableW,hh,"0.886 0.957 0.988");
+  TC(colX[0],cols[0],y-11,"No.",tts,true);
+  TC(colX[1],cols[1],y-11,"Criteria",tts,true);
+  TC(colX[2],cols[2],y-11,"Description",tts,true);
+  TC(colX[3],cols[3],y-11,"Rating (1-5)",tts,true);
+  const ytop=y+5; y-=hh;
+  const pad=7,lh=12;
   f.rows.forEach(([name,desc],i)=>{
     const r=data.rows[i];
-    const nameLines=wrapF(name,ys,cols[1]-2*pad,false);
-    const descLines=wrapF(desc,ys,cols[2]-2*pad,false);
+    const nameLines=wrapF(name,tts,cols[1]-2*5,false);
+    const descLines=wrapF(desc,tts,cols[2]-2*5,false);
     const n=Math.max(nameLines.length,descLines.length,1);
     const rh=n*lh+2*pad;
     const noBold=!f.senior;
-    T(colX[0]+cols[0]/2-twF(String(i+1),ys,noBold)/2,y-pad-ys,String(i+1),ys,noBold);
-    nameLines.forEach((ln,j)=>T(colX[1]+pad,y-pad-ys-j*lh,ln,ys,false));
-    descLines.forEach((ln,j)=>T(colX[2]+pad,y-pad-ys-j*lh,ln,ys,false));
+    TC(colX[0],cols[0], y-rh/2-tts/2+2, String(i+1), tts, noBold);
+    const nameStart=y - (rh-(nameLines.length*lh))/2 - tts + 2;
+    nameLines.forEach((ln,j)=>TC(colX[1],cols[1], nameStart-j*lh, ln, tts, false));
+    const descStart=y - (rh-(descLines.length*lh))/2 - tts + 2;
+    descLines.forEach((ln,j)=>TC(colX[2],cols[2], descStart-j*lh, ln, tts, false));
     const rate=r!==null?String(r):"";
-    T(colX[3]+cols[3]/2-twF(rate,ys,true)/2,y-pad-ys,rate,ys,true);
+    TC(colX[3],cols[3], y-rh/2-tts/2+2, rate, tts, true);
     y-=rh; L(x0,y,x0+tableW,y);
   });
   const ybot=y;
   colX.forEach(cx=>L(cx,ytop,cx,ybot));
   L(x0,ytop,x0+tableW,ytop); L(x0,ytop-hh,x0+tableW,ytop-hh);
-  y-=14;
-  T(M,y,"Scoring Guide:",9,true); y-=14;
-  BUL(M,y,"Total Score:",(data.totalScore||0)+" / 10"); y-=13;
-  BUL(M,y,"Average Score:",String(data.avgScore||0)); y-=16;
-  T(M,y,"Performance Interpretation:",9,true); y-=12;
+  y-=16;
+  T(M,y,"Scoring Guide:",10,true); y-=15;
+  BUL(M,y,"Total Score:",(data.totalScore||0)+" / 10"); y-=14;
+  BUL(M,y,"Average Score:",String(data.avgScore||0)); y-=18;
+  T(M,y,"Performance Interpretation:",10,true); y-=13;
   ["4.5 - 5.0 = Outstanding","3.5 - 4.4 = Very Good","2.5 - 3.4 = Satisfactory","1.5 - 2.4 = Needs Improvement","1.0 - 1.4 = Poor"].forEach(t=>{
     const on=cur&&t.indexOf(cur)>-1;
-    T(M,y,t,9,!f.senior||on,on?deep:black); y-=11;
+    T(M,y,t,10,!f.senior||on,on?deep:black); y-=12;
   });
   y-=8;
-  T(M,y,"Evaluator's Overall Comments:",9,true); y-=13;
-  wrapF(comment||" ",9,tableW,false).forEach(ln=>{ T(M,y,ln,9,false); y-=12; });
+  T(M,y,"Evaluator's Overall Comments:",10,true); y-=14;
+  wrapF(comment||" ",10,tableW,false).forEach(ln=>{ T(M,y,ln,10,false); y-=13; });
   if(!f.senior){
     y-=6;
     KVB(M,y,"Evaluator's Signature:","_______________________"); y-=13;
