@@ -6,7 +6,7 @@
 <title>Performance Evaluation</title>
 <style>
   :root{
-    --ink:#13202b; --paper:#f4fafd; --panel:#ffffff; --line:#d8e7ef;
+    --ink:#13202b; --paper:#dcecf6; --panel:#ffffff; --line:#cfe2ee;
     --muted:#5b7080; --accent:#15ACE3; --accent-deep:#0e7fab; --accent-soft:#e2f4fc;
     --sky:#77D0F0; --gold:#0e7fab;
     --shadow:0 1px 2px rgba(13,32,43,.05),0 8px 24px rgba(13,90,130,.08);
@@ -46,7 +46,7 @@
   .crit-name{font-weight:600;color:var(--ink);margin-bottom:2px;font-size:14px}
   .crit-desc{font-weight:400;font-size:12px;color:var(--muted);line-height:1.35}
   tbody tr:last-child td{border-bottom:0}
-  .score-in{width:46px;padding:7px 4px;text-align:center;border:1px solid var(--line);border-radius:7px;font-size:13.5px;font-family:inherit;color:var(--ink)}
+  .score-in{width:46px;padding:7px 4px;text-align:center;border:1.5px solid var(--accent);border-radius:7px;font-size:13.5px;font-family:inherit;color:var(--ink)}
   .score-in:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
   .score-in.bad{border-color:#c0392b;background:#fdf0ee}
   .field input.bad{border-color:#c0392b;background:#fdf0ee}
@@ -138,6 +138,7 @@ const FORMS = {
 let role="Probationary", evaluators=6;
 const MIN_EV=1,MAX_EV=10;
 let scores={};
+let managerSaved={normal:"Aiko Yasuda", senior:"Client Relation Department"};
 
 const round1=n=>Math.round(n*10)/10;
 function ensureStore(){ if(!scores[role])scores[role]={}; FORMS[role].rows.forEach((_,i)=>{ if(!scores[role][i])scores[role][i]={}; }); }
@@ -172,16 +173,47 @@ function buildBody(){
   tb.querySelectorAll('.score-in').forEach(inp=>{
     inp.addEventListener('input',onScoreInput);
     inp.addEventListener('keydown',onScoreKey);
+    inp.addEventListener('blur',onScoreBlur);
   });
+}
+function onScoreBlur(e){
+  const inp=e.target;
+  if(cellValid(inp)) return;          // valid or empty -> allow leaving
+  // allow leaving to buttons/other controls (don't trap the user out of the grid)
+  const to=e.relatedTarget;
+  if(to && !to.classList.contains('score-in')) return;
+  inp.classList.add('bad');
+  const st=document.getElementById('status');
+  st.textContent="Enter a number from 1 to 5 before moving on.";
+  setTimeout(()=>{ if(st.textContent.startsWith("Enter a number")) st.textContent=""; },2500);
+  // pull focus back to the invalid box
+  setTimeout(()=>{ inp.focus(); inp.select(); },0);
 }
 function focusCell(ci,ev){
   const el=document.querySelector(`.score-in[data-c="${ci}"][data-e="${ev}"]`);
   if(el){ el.focus(); el.select(); }
   return !!el;
 }
+function cellValid(inp){
+  const raw=inp.value.trim();
+  if(raw==="") return true; // empty is allowed (just skipped)
+  const num=Number(raw);
+  return !(isNaN(num)||num<1||num>SCALE_MAX||!Number.isInteger(num));
+}
 function onScoreKey(e){
   const inp=e.target, ci=+inp.dataset.c, ev=+inp.dataset.e;
   const lastRow=FORMS[role].rows.length-1, lastCol=evaluators-1;
+  const navKeys=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter","Tab"];
+  // If trying to leave this box but the value is invalid, block it
+  if(navKeys.includes(e.key) && !cellValid(inp)){
+    e.preventDefault();
+    inp.classList.add('bad');
+    inp.focus(); inp.select();
+    const st=document.getElementById('status');
+    st.textContent="Enter a number from 1 to 5 before moving on.";
+    setTimeout(()=>{ if(st.textContent.startsWith("Enter a number")) st.textContent=""; },2500);
+    return;
+  }
   let handled=true;
   switch(e.key){
     case "ArrowUp":   focusCell(ci>0?ci-1:lastRow, ev); break;
@@ -257,7 +289,17 @@ function currentData(){
 function render(){
   buildRoles(); buildHead(); buildBody();
   document.getElementById('position').value=FORMS[role].position;
-  document.getElementById('managerField').querySelector('label').textContent=FORMS[role].senior?"Evaluator":"Manager / Evaluator";
+  const mField=document.getElementById('managerField');
+  const mInput=document.getElementById('manager');
+  // remember the value the user had for the previous field type
+  mField.querySelector('label').textContent=FORMS[role].senior?"Department":"Manager / Evaluator";
+  if(FORMS[role].senior){
+    if(managerSaved.senior===undefined) managerSaved.senior="CRO";
+    mInput.value=managerSaved.senior;
+  }else{
+    if(managerSaved.normal===undefined) managerSaved.normal="Aiko Yasuda";
+    mInput.value=managerSaved.normal;
+  }
   document.getElementById('evVal').textContent=evaluators;
   compute();
 }
@@ -289,11 +331,26 @@ function requireName(){
   inp.classList.remove('bad');
   return true;
 }
+function requireValidScores(){
+  const boxes=document.querySelectorAll('.score-in');
+  for(const inp of boxes){
+    if(!cellValid(inp)){
+      inp.classList.add('bad');
+      inp.focus(); inp.select();
+      const st=document.getElementById('status');
+      st.textContent="Fix the highlighted score (must be 1–5).";
+      setTimeout(()=>{ if(st.textContent.startsWith("Fix the highlighted")) st.textContent=""; },2500);
+      return false;
+    }
+  }
+  return true;
+}
+function canExport(){ return requireName() && requireValidScores(); }
 
-document.getElementById('printBtn').onclick=()=>{ if(!requireName()) return; openPrint(); };
+document.getElementById('printBtn').onclick=()=>{ if(!canExport()) return; openPrint(); };
 
 document.getElementById('pdfBtn').onclick=()=>{
-  if(!requireName()) return;
+  if(!canExport()) return;
   const btn=document.getElementById('pdfBtn'), st=document.getElementById('status');
   btn.disabled=true; st.textContent="Generating PDF…";
   try{ buildPDF(); st.textContent="PDF downloaded."; }
@@ -302,7 +359,7 @@ document.getElementById('pdfBtn').onclick=()=>{
 };
 
 document.getElementById('exportBtn').onclick=async()=>{
-  if(!requireName()) return;
+  if(!canExport()) return;
   const btn=document.getElementById('exportBtn'), st=document.getElementById('status');
   btn.disabled=true; st.textContent="Generating…";
   try{ buildDocx(); st.textContent="Word downloaded."; }
@@ -340,7 +397,7 @@ function formHTML(){
   const bands=["4.5 – 5.0 = Outstanding","3.5 – 4.4 = Very Good","2.5 – 3.4 = Satisfactory","1.5 – 2.4 = Needs Improvement","1.0 – 1.4 = Poor"]
     .map(t=>{const on=cur&&t.indexOf(cur)>-1;return `<div${on?' class="hl"':(bold?' class="b"':'')}>${bold&&!on?'<b>'+t+'</b>':t}</div>`}).join("");
   const sign=!f.senior?`<p style="margin-top:14px"><b>Evaluator's Signature: _______________________</b></p>`:"";
-  const dateEnd=!f.senior?`<p style="margin-top:2px"><b>Date: _______________</b></p>`:"";
+  const dateEnd=!f.senior?`<p style="margin-top:2px"><b>Date: ${esc(dateStr||"_______________")}</b></p>`:"";
   const confStyle=f.senior?'font-style:italic;font-weight:normal':'font-weight:bold;font-style:italic';
   const scaleLine=bold?`<b>5 – Excellent | 4 – Very Good | 3 – Satisfactory | 2 – Needs Improvement | 1 – Poor</b>`:`5 – Excellent | 4 – Very Good | 3 – Satisfactory | 2 – Needs Improvement | 1 – Poor`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(f.title)}</title>
@@ -372,7 +429,7 @@ function formHTML(){
     <div class="guide">
       <p><b>Scoring Guide:</b></p>
       <ul class="guide-list">
-        <li><b>Total Score: ${data.totalScore||0} / 10</b></li>
+        <li><b>Total Score: ${data.totalScore||0}</b></li>
         <li><b>Average Score: ${data.avgScore||0}</b></li>
       </ul>
       <p style="margin-top:8px"><b>Performance Interpretation:</b></p>
@@ -510,7 +567,7 @@ function buildDocx(){
   body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:100});
   body+=tb;
   body+=para([run("Scoring Guide:",{bold:true})],{before:60,after:30});
-  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+" / 10",{bold:true})],{after:30});
+  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+"",{bold:true})],{after:30});
   body+=bullet([run("Average Score: ",{bold:true}),run(String(data.avgScore||0),{bold:true})],{after:100});
   body+=para([run("Performance Interpretation:",{bold:true})],{after:20});
   const cur=interpret(data.avgScore);
@@ -522,7 +579,7 @@ function buildDocx(){
   body+=para([run(comment||"\u00a0")],{after:120});
   if(!f.senior){
     body+=para([run("Evaluator's Signature: "+"_______________________",{bold:true})]);
-    body+=para([run("Date: "+"_______________",{bold:true})]);
+    body+=para([run("Date: "+(dateStr||"_______________"),{bold:true})]);
   }
 
   const documentXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
@@ -679,7 +736,7 @@ function buildPDF(){
   L(x0,ytop,x0+tableW,ytop); L(x0,ytop-hh,x0+tableW,ytop-hh);
   y-=16;
   T(M,y,"Scoring Guide:",10,true); y-=15;
-  BUL(M,y,"Total Score:",(data.totalScore||0)+" / 10"); y-=14;
+  BUL(M,y,"Total Score:",(data.totalScore||0)+""); y-=14;
   BUL(M,y,"Average Score:",String(data.avgScore||0)); y-=18;
   T(M,y,"Performance Interpretation:",10,true); y-=13;
   ["4.5 - 5.0 = Outstanding","3.5 - 4.4 = Very Good","2.5 - 3.4 = Satisfactory","1.5 - 2.4 = Needs Improvement","1.0 - 1.4 = Poor"].forEach(t=>{
@@ -692,7 +749,7 @@ function buildPDF(){
   if(!f.senior){
     y-=6;
     KVB(M,y,"Evaluator's Signature:","_______________________"); y-=13;
-    KVB(M,y,"Date:","_______________"); y-=13;
+    KVB(M,y,"Date:",dateStr||"_______________"); y-=13;
   }
 
   // assemble PDF bytes
@@ -753,6 +810,12 @@ empNameEl.addEventListener('keydown',e=>{
     if(v) e.target.value=toProperCase(v);
     focusCell(0,0); // jump to the first score box
   }
+});
+
+// remember edits to the Manager/Department field per role type
+document.getElementById('manager').addEventListener('input',e=>{
+  if(FORMS[role].senior) managerSaved.senior=e.target.value;
+  else managerSaved.normal=e.target.value;
 });
 
 const d=new Date();
