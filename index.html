@@ -97,7 +97,6 @@
       <div class="val" id="evVal">6</div>
       <button id="evPlus" aria-label="Add evaluator">+</button>
     </div>
-    <span class="hint" style="margin:0">each score 1–5</span>
   </div>
 
   <div class="panel">
@@ -356,7 +355,6 @@ function formHTML(){
     th.rate,td.rate{white-space:nowrap}
     col.cNo{width:8%} col.cCrit{width:28%} col.cDesc{width:46%} col.cRate{width:18%}
     .hl{color:#0e7fab;font-weight:bold}
-    .comment-line{border-bottom:1px solid #808080;padding-bottom:4px;min-height:1.6em;margin:0 0 6px}
     ul.guide-list{margin:4px 0 12px 0;padding-left:20px}
     ul.guide-list li{margin:2px 0}
   </style></head><body>
@@ -376,8 +374,7 @@ function formHTML(){
       <p style="margin-top:8px"><b>Performance Interpretation:</b></p>
       ${bands}
       <p style="margin-top:10px"><b>Evaluator's Overall Comments:</b></p>
-      <p class="comment-line">${esc(comment||"&nbsp;")}</p>
-      <p class="comment-line">&nbsp;</p>
+      <p>${comment?esc(comment):"&nbsp;"}</p>
       ${sign}
     </div>
   </body></html>`;
@@ -517,20 +514,7 @@ function buildDocx(){
     body+=para([run(t,{bold:!f.senior||isCur,color:isCur?"0E7FAB":null})],{after:0});
   });
   body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:50,after:40});
-  // comment area as a borderless table with a bottom rule on each row (renders reliably)
-  const cmtRow=(content)=>`<w:tr><w:trPr><w:trHeight w:val="260"/></w:trPr>`+
-    `<w:tc><w:tcPr><w:tcW w:w="9300" w:type="dxa"/>`+
-    `<w:tcBorders><w:bottom w:val="single" w:sz="6" w:space="0" w:color="808080"/></w:tcBorders>`+
-    `<w:tcMar><w:top w:w="20" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="20" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tcMar>`+
-    `<w:vAlign w:val="bottom"/></w:tcPr>`+
-    `<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>${content}</w:p></w:tc></w:tr>`;
-  body+=`<w:tbl><w:tblPr><w:tblW w:w="9300" w:type="dxa"/><w:tblBorders>`+
-    `<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>`+
-    `<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>`+
-    `</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid><w:gridCol w:w="9300"/></w:tblGrid>`+
-    cmtRow(run(comment||"\u00a0"))+cmtRow(run("\u00a0"))+
-    `</w:tbl>`;
-  body+=`<w:p><w:pPr><w:spacing w:after="80"/></w:pPr></w:p>`;
+  body+=para([run(comment||"\u00a0")],{after:120});
   if(!f.senior){
     body+=para([run("Evaluator's Signature: "+"_______________________",{bold:true})]);
     body+=para([run("Date: "+"_______________",{bold:true})]);
@@ -699,15 +683,7 @@ function buildPDF(){
   });
   y-=8;
   T(M,y,"Evaluator's Overall Comments:",10,true); y-=14;
-  const COMMENT_MIN_LINES=2;
-  const textLines=wrapF((comment||"").trim(), 10, tableW, false).filter(s=>s!=="");
-  const totalLines=Math.max(COMMENT_MIN_LINES, textLines.length);
-  for(let i=0;i<totalLines;i++){
-    if(i<textLines.length) T(M,y,textLines[i],10,false);
-    // ruled line spanning full table width (text sits on it, or blank line)
-    ops.push(`0.5 0.5 0.5 RG 0.7 w ${M.toFixed(2)} ${(y-3).toFixed(2)} m ${(M+tableW).toFixed(2)} ${(y-3).toFixed(2)} l S`);
-    y-=18;
-  }
+  wrapF(comment||" ",10,tableW,false).forEach(ln=>{ T(M,y,ln,10,false); y-=13; });
   if(!f.senior){
     y-=6;
     KVB(M,y,"Evaluator's Signature:","_______________________"); y-=13;
@@ -765,6 +741,14 @@ function toProperCase(s){
 const empNameEl=document.getElementById('empName');
 empNameEl.addEventListener('input',e=>{ if(e.target.value.trim()) e.target.classList.remove('bad'); });
 empNameEl.addEventListener('blur',e=>{ const v=e.target.value.trim(); if(v) e.target.value=toProperCase(v); });
+empNameEl.addEventListener('keydown',e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    const v=e.target.value.trim();
+    if(v) e.target.value=toProperCase(v);
+    focusCell(0,0); // jump to the first score box
+  }
+});
 
 const d=new Date();
 document.getElementById('date').value=d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
