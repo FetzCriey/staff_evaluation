@@ -232,14 +232,15 @@ document.getElementById('resetBtn').onclick=()=>{scores[role]={};ensureStore();b
 
 function requireName(){
   const inp=document.getElementById('empName');
-  const name=inp.value.trim();
+  let name=inp.value.trim();
   if(!name){
-    document.getElementById('status').textContent="Please enter the employee name first.";
     inp.classList.add('bad');
     inp.focus();
-    setTimeout(()=>document.getElementById('status').textContent="",4000);
+    alert("Please enter the employee name first.");
     return false;
   }
+  name=toProperCase(name);
+  inp.value=name;
   inp.classList.remove('bad');
   return true;
 }
@@ -669,7 +670,18 @@ function buildPDF(){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
 }
 
-document.getElementById('empName').addEventListener('input',e=>{ if(e.target.value.trim()) e.target.classList.remove('bad'); });
+function toProperCase(s){
+  return s.toLowerCase()
+    .replace(/\s+/g,' ').trim()
+    .replace(/\b([a-z])/g, (m,c)=>c.toUpperCase())
+    // keep common name particles lowercase (de, dela, van, etc.) unless first word
+    .replace(/\b(De|Dela|Del|Della|Van|Von|Da|Di|La|Le)\b/g, (m,p,off)=> off===0? m : p.toLowerCase())
+    // fix Mc/Mac and apostrophes/hyphens: O'brien -> O'Brien, mary-jane -> Mary-Jane
+    .replace(/([A-Za-z])([''-])([a-z])/g,(m,a,sep,b)=>a+sep+b.toUpperCase());
+}
+const empNameEl=document.getElementById('empName');
+empNameEl.addEventListener('input',e=>{ if(e.target.value.trim()) e.target.classList.remove('bad'); });
+empNameEl.addEventListener('blur',e=>{ const v=e.target.value.trim(); if(v) e.target.value=toProperCase(v); });
 
 const d=new Date();
 document.getElementById('date').value=d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
