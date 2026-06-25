@@ -39,10 +39,12 @@
   .scroll{overflow-x:auto}
   table{border-collapse:collapse;width:100%;min-width:720px}
   thead th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:center;padding:14px 8px;border-bottom:1px solid var(--line);background:#faf9f4}
-  thead th.crit{text-align:left;min-width:210px;padding-left:20px}
+  thead th.crit{text-align:left;min-width:260px;padding-left:20px}
   thead th.tot{color:var(--accent)}
-  tbody td{padding:8px;border-bottom:1px solid var(--line);text-align:center}
-  tbody td.crit{text-align:left;font-size:13.5px;font-weight:500;padding-left:20px;color:var(--ink)}
+  tbody td{padding:8px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+  tbody td.crit{text-align:left;font-size:13.5px;font-weight:500;padding-left:20px;color:var(--ink);max-width:340px;vertical-align:top}
+  .crit-name{font-weight:600;color:var(--ink);margin-bottom:2px}
+  .crit-desc{font-weight:400;font-size:12px;color:var(--muted);line-height:1.35}
   tbody tr:last-child td{border-bottom:0}
   .score-in{width:46px;padding:7px 4px;text-align:center;border:1px solid var(--line);border-radius:7px;font-size:13.5px;font-family:inherit;color:var(--ink)}
   .score-in:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
@@ -150,7 +152,7 @@ function buildRoles(){
   });
 }
 function buildHead(){
-  let h='<th class="crit">Criterion</th>';
+  let h='<th class="crit">Criteria &amp; Description</th>';
   for(let e=0;e<evaluators;e++) h+=`<th>Eval ${e+1}</th>`;
   h+='<th class="tot">Score</th><th class="tot">Average</th>';
   document.getElementById('headRow').innerHTML=h;
@@ -158,9 +160,9 @@ function buildHead(){
 function buildBody(){
   ensureStore();
   const tb=document.getElementById('body'); tb.innerHTML='';
-  FORMS[role].rows.forEach(([name],ci)=>{
+  FORMS[role].rows.forEach(([name,desc],ci)=>{
     const tr=document.createElement('tr');
-    let cells=`<td class="crit">${name}</td>`;
+    let cells=`<td class="crit"><div class="crit-name">${ci+1}. ${name}</div><div class="crit-desc">${desc}</div></td>`;
     for(let e=0;e<evaluators;e++){
       const v=scores[role][ci][e]??'';
       cells+=`<td><input class="score-in" inputmode="numeric" data-c="${ci}" data-e="${e}" value="${v}"></td>`;
