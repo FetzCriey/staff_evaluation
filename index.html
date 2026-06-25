@@ -319,12 +319,35 @@ function formHTML(){
   </body></html>`;
 }
 function openPrint(){
-  const w=window.open("","_blank");
-  if(!w){ document.getElementById('status').textContent="Pop-up blocked — allow pop-ups to print."; return; }
-  w.document.open(); w.document.write(formHTML()); w.document.close();
-  w.onload=()=>{ w.focus(); w.print(); };
-  // fallback if onload already fired
-  setTimeout(()=>{ try{w.focus();w.print();}catch(e){} },600);
+  // Remove any previous print frame so it only ever prints once
+  const old=document.getElementById('__printFrame');
+  if(old) old.remove();
+  const frame=document.createElement('iframe');
+  frame.id='__printFrame';
+  frame.style.position='fixed';
+  frame.style.right='0';
+  frame.style.bottom='0';
+  frame.style.width='0';
+  frame.style.height='0';
+  frame.style.border='0';
+  frame.setAttribute('aria-hidden','true');
+  document.body.appendChild(frame);
+  let printed=false;
+  const doPrint=()=>{
+    if(printed) return; printed=true;
+    try{
+      const win=frame.contentWindow;
+      win.focus();
+      win.print();
+    }catch(e){ console.error(e); document.getElementById('status').textContent="Couldn't open print. Try again."; }
+    // clean up shortly after the dialog is dismissed
+    setTimeout(()=>{ const f=document.getElementById('__printFrame'); if(f) f.remove(); }, 1500);
+  };
+  frame.onload=doPrint;
+  const doc=frame.contentWindow.document;
+  doc.open(); doc.write(formHTML()); doc.close();
+  // fallback in case onload already fired before handler attached
+  setTimeout(doPrint, 700);
 }
 
 // ---- Dependency-free .docx generation (Word XML zipped in-browser) ----
