@@ -43,7 +43,7 @@
   thead th.tot{color:var(--accent)}
   tbody td{padding:8px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
   tbody td.crit{text-align:left;font-size:13.5px;font-weight:500;padding-left:20px;color:var(--ink);max-width:340px;vertical-align:top}
-  .crit-name{font-weight:600;color:var(--ink);margin-bottom:2px}
+  .crit-name{font-weight:600;color:var(--ink);margin-bottom:2px;font-size:14px}
   .crit-desc{font-weight:400;font-size:12px;color:var(--muted);line-height:1.35}
   tbody tr:last-child td{border-bottom:0}
   .score-in{width:46px;padding:7px 4px;text-align:center;border:1px solid var(--line);border-radius:7px;font-size:13.5px;font-family:inherit;color:var(--ink)}
@@ -356,6 +356,7 @@ function formHTML(){
     th.rate,td.rate{white-space:nowrap}
     col.cNo{width:8%} col.cCrit{width:28%} col.cDesc{width:46%} col.cRate{width:18%}
     .hl{color:#0e7fab;font-weight:bold}
+    .comment-line{border-bottom:1px solid #808080;padding-bottom:3px;min-height:1.2em}
     ul.guide-list{margin:4px 0 12px 0;padding-left:20px}
     ul.guide-list li{margin:2px 0}
   </style></head><body>
@@ -375,7 +376,7 @@ function formHTML(){
       <p style="margin-top:8px"><b>Performance Interpretation:</b></p>
       ${bands}
       <p style="margin-top:10px"><b>Evaluator's Overall Comments:</b></p>
-      <p>${esc(comment||" ")}</p>
+      <p class="comment-line">${esc(comment||"&nbsp;")}</p>
       ${sign}
     </div>
   </body></html>`;
@@ -515,7 +516,10 @@ function buildDocx(){
     body+=para([run(t,{bold:!f.senior||isCur,color:isCur?"0E7FAB":null})],{after:0});
   });
   body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:100,after:60});
-  body+=para([run(comment||" ")],{after:120});
+  // comment text sitting on a full-width ruled line (bottom border spans the line)
+  body+=`<w:p><w:pPr><w:spacing w:after="120" w:line="278" w:lineRule="auto"/>`+
+    `<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="2" w:color="808080"/></w:pBdr></w:pPr>`+
+    `${run(comment||"\u00a0")}</w:p>`;
   if(!f.senior){
     body+=para([run("Evaluator's Signature: "+"_______________________",{bold:true})]);
     body+=para([run("Date: "+"_______________",{bold:true})]);
@@ -684,7 +688,13 @@ function buildPDF(){
   });
   y-=8;
   T(M,y,"Evaluator's Overall Comments:",10,true); y-=14;
-  wrapF(comment||" ",10,tableW,false).forEach(ln=>{ T(M,y,ln,10,false); y-=13; });
+  const commentLines=wrapF(comment||" ",10,tableW,false);
+  commentLines.forEach((ln,i)=>{
+    T(M,y,ln,10,false);
+    // draw a ruled line under each comment line, spanning full table width
+    ops.push(`0.5 0.5 0.5 RG 0.7 w ${M.toFixed(2)} ${(y-3).toFixed(2)} m ${(M+tableW).toFixed(2)} ${(y-3).toFixed(2)} l S`);
+    y-=15;
+  });
   if(!f.senior){
     y-=6;
     KVB(M,y,"Evaluator's Signature:","_______________________"); y-=13;
