@@ -47,6 +47,7 @@
   .score-in{width:46px;padding:7px 4px;text-align:center;border:1px solid var(--line);border-radius:7px;font-size:13.5px;font-family:inherit;color:var(--ink)}
   .score-in:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
   .score-in.bad{border-color:#c0392b;background:#fdf0ee}
+  .field input.bad{border-color:#c0392b;background:#fdf0ee}
   td.calc{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent);font-size:14px}
   td.calc.dim{color:var(--muted);font-weight:500}
   .totals{display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap;padding:18px 20px;background:#faf9f4;border-top:1px solid var(--line)}
@@ -229,9 +230,24 @@ document.getElementById('evPlus').onclick=()=>{if(evaluators<MAX_EV){evaluators+
 document.getElementById('evMinus').onclick=()=>{if(evaluators>MIN_EV){evaluators--;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('resetBtn').onclick=()=>{scores[role]={};ensureStore();buildBody();compute();};
 
-document.getElementById('printBtn').onclick=()=>{ openPrint(); };
+function requireName(){
+  const inp=document.getElementById('empName');
+  const name=inp.value.trim();
+  if(!name){
+    document.getElementById('status').textContent="Please enter the employee name first.";
+    inp.classList.add('bad');
+    inp.focus();
+    setTimeout(()=>document.getElementById('status').textContent="",4000);
+    return false;
+  }
+  inp.classList.remove('bad');
+  return true;
+}
+
+document.getElementById('printBtn').onclick=()=>{ if(!requireName()) return; openPrint(); };
 
 document.getElementById('pdfBtn').onclick=()=>{
+  if(!requireName()) return;
   const btn=document.getElementById('pdfBtn'), st=document.getElementById('status');
   btn.disabled=true; st.textContent="Generating PDF…";
   try{ buildPDF(); st.textContent="PDF downloaded."; }
@@ -240,6 +256,7 @@ document.getElementById('pdfBtn').onclick=()=>{
 };
 
 document.getElementById('exportBtn').onclick=async()=>{
+  if(!requireName()) return;
   const btn=document.getElementById('exportBtn'), st=document.getElementById('status');
   btn.disabled=true; st.textContent="Generating…";
   try{ buildDocx(); st.textContent="Word downloaded."; }
@@ -281,7 +298,7 @@ function formHTML(){
   const scaleLine=bold?`<b>5 – Excellent | 4 – Very Good | 3 – Satisfactory | 2 – Needs Improvement | 1 – Poor</b>`:`5 – Excellent | 4 – Very Good | 3 – Satisfactory | 2 – Needs Improvement | 1 – Poor`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(f.title)}</title>
   <style>
-    @page{size:8.5in 14in;margin:0.6in}
+    @page{size:8.5in 13in;margin:0.6in}
     *{box-sizing:border-box}
     body{font-family:Arial,Helvetica,sans-serif;color:#13202b;font-size:10pt;margin:0}
     .logo{display:block;margin:0 auto 8px;width:52px;height:52px}
@@ -307,7 +324,7 @@ function formHTML(){
     <div class="guide">
       <p><b>Scoring Guide:</b></p>
       <ul class="guide-list">
-        <li><b>Total Score: ${data.totalScore||0} / ${data.maxPossible}</b></li>
+        <li><b>Total Score: ${data.totalScore||0} / 10</b></li>
         <li><b>Average Score: ${data.avgScore||0}</b></li>
       </ul>
       <p style="margin-top:8px"><b>Performance Interpretation:</b></p>
@@ -435,7 +452,7 @@ function buildDocx(){
   body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:160});
   body+=tb;
   body+=para([run("Scoring Guide:",{bold:true})],{before:200,after:60});
-  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+" / "+data.maxPossible,{bold:true})]);
+  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+" / 10",{bold:true})]);
   body+=bullet([run("Average Score: ",{bold:true}),run(String(data.avgScore||0),{bold:true})],{after:160});
   body+=para([run("Performance Interpretation:",{bold:true})],{after:20});
   const cur=interpret(data.avgScore);
@@ -453,7 +470,7 @@ function buildDocx(){
   const documentXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'+
     '<w:body>'+body+
-    '<w:sectPr><w:pgSz w:w="12240" w:h="20160"/>'+
+    '<w:sectPr><w:pgSz w:w="12240" w:h="18720" w:code="128"/>'+
     '<w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/>'+
     '</w:sectPr></w:body></w:document>';
   const contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
@@ -481,10 +498,10 @@ function buildDocx(){
     {name:"word/media/logo.png",data:logoBytes},
     {name:"word/document.xml",data:documentXml}
   ]);
-  const safe=(empName||f.position).replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"_")||"Evaluation";
+  const safe=(empName.replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"_"))||"Form";
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
-  a.download=`${f.position.replace(/\s+/g,"_")}_Evaluation_${safe}.docx`;
+  a.download=`${safe}_Evaluation.docx`;
   document.body.appendChild(a); a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
 }
@@ -538,7 +555,7 @@ function buildPDF(){
   const comment=document.getElementById('comment').value.trim();
   const cur=interpret(data.avgScore);
 
-  const W=612,H=1008,M=54;
+  const W=612,H=936,M=54;
   const blue="0.082 0.675 0.890", black="0 0 0", deep="0.055 0.498 0.671";
   const ops=[];
   const T=(x,y,s,size,bold,color)=>ops.push(`BT /${bold?'FB':'F1'} ${size} Tf ${color||black} rg 1 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm (${pdfEsc(s)}) Tj ET`);
@@ -597,7 +614,7 @@ function buildPDF(){
   L(x0,ytop,x0+tableW,ytop); L(x0,ytop-hh,x0+tableW,ytop-hh);
   y-=14;
   T(M,y,"Scoring Guide:",9,true); y-=14;
-  BUL(M,y,"Total Score:",(data.totalScore||0)+" / "+data.maxPossible); y-=13;
+  BUL(M,y,"Total Score:",(data.totalScore||0)+" / 10"); y-=13;
   BUL(M,y,"Average Score:",String(data.avgScore||0)); y-=16;
   T(M,y,"Performance Interpretation:",9,true); y-=12;
   ["4.5 - 5.0 = Outstanding","3.5 - 4.4 = Very Good","2.5 - 3.4 = Satisfactory","1.5 - 2.4 = Needs Improvement","1.0 - 1.4 = Poor"].forEach(t=>{
@@ -644,13 +661,15 @@ function buildPDF(){
   pushStr(`trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
 
   const blob=new Blob(parts,{type:"application/pdf"});
-  const safe=(empName||f.position).replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"_")||"Evaluation";
+  const safe=(empName.replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"_"))||"Form";
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
-  a.download=`${f.position.replace(/\s+/g,"_")}_Evaluation_${safe}.pdf`;
+  a.download=`${safe}_Evaluation.pdf`;
   document.body.appendChild(a); a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
 }
+
+document.getElementById('empName').addEventListener('input',e=>{ if(e.target.value.trim()) e.target.classList.remove('bad'); });
 
 const d=new Date();
 document.getElementById('date').value=d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
