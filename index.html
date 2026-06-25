@@ -169,7 +169,42 @@ function buildBody(){
     cells+=`<td class="calc" id="sc-${ci}">0</td><td class="calc dim" id="av-${ci}">0</td>`;
     tr.innerHTML=cells; tb.appendChild(tr);
   });
-  tb.querySelectorAll('.score-in').forEach(inp=>inp.addEventListener('input',onScoreInput));
+  tb.querySelectorAll('.score-in').forEach(inp=>{
+    inp.addEventListener('input',onScoreInput);
+    inp.addEventListener('keydown',onScoreKey);
+  });
+}
+function focusCell(ci,ev){
+  const el=document.querySelector(`.score-in[data-c="${ci}"][data-e="${ev}"]`);
+  if(el){ el.focus(); el.select(); }
+  return !!el;
+}
+function onScoreKey(e){
+  const inp=e.target, ci=+inp.dataset.c, ev=+inp.dataset.e;
+  const lastRow=FORMS[role].rows.length-1, lastCol=evaluators-1;
+  let handled=true;
+  switch(e.key){
+    case "ArrowUp":   focusCell(ci>0?ci-1:lastRow, ev); break;
+    case "ArrowDown":
+    case "Enter":     focusCell(ci<lastRow?ci+1:0, ev); break;
+    case "ArrowRight":
+      // jump to next column only when cursor is at end of the text
+      if(inp.selectionStart===inp.value.length){
+        if(ev<lastCol) focusCell(ci, ev+1);
+        else if(ci<lastRow) focusCell(ci+1, 0); // wrap to next row start
+        else handled=false;
+      } else handled=false;
+      break;
+    case "ArrowLeft":
+      if(inp.selectionStart===0){
+        if(ev>0) focusCell(ci, ev-1);
+        else if(ci>0) focusCell(ci-1, lastCol); // wrap to prev row end
+        else handled=false;
+      } else handled=false;
+      break;
+    default: handled=false;
+  }
+  if(handled) e.preventDefault();
 }
 function onScoreInput(e){
   const inp=e.target, ci=+inp.dataset.c, ev=+inp.dataset.e, raw=inp.value.trim();
@@ -229,7 +264,13 @@ function render(){
 
 document.getElementById('evPlus').onclick=()=>{if(evaluators<MAX_EV){evaluators++;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('evMinus').onclick=()=>{if(evaluators>MIN_EV){evaluators--;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
-document.getElementById('resetBtn').onclick=()=>{scores[role]={};ensureStore();buildBody();compute();};
+document.getElementById('resetBtn').onclick=()=>{
+  if(!confirm("Clear all scores for this form? This cannot be undone.")) return;
+  scores[role]={};ensureStore();buildBody();compute();
+  const st=document.getElementById('status');
+  st.textContent="Scores cleared.";
+  setTimeout(()=>st.textContent="",3000);
+};
 
 function requireName(){
   const inp=document.getElementById('empName');
