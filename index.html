@@ -356,7 +356,7 @@ function formHTML(){
     th.rate,td.rate{white-space:nowrap}
     col.cNo{width:8%} col.cCrit{width:28%} col.cDesc{width:46%} col.cRate{width:18%}
     .hl{color:#0e7fab;font-weight:bold}
-    .comment-line{border-bottom:1px solid #808080;padding-bottom:3px;min-height:1.2em}
+    .comment-line{border-bottom:1px solid #808080;padding-bottom:4px;min-height:1.6em;margin:0 0 6px}
     ul.guide-list{margin:4px 0 12px 0;padding-left:20px}
     ul.guide-list li{margin:2px 0}
   </style></head><body>
@@ -377,6 +377,7 @@ function formHTML(){
       ${bands}
       <p style="margin-top:10px"><b>Evaluator's Overall Comments:</b></p>
       <p class="comment-line">${esc(comment||"&nbsp;")}</p>
+      <p class="comment-line">&nbsp;</p>
       ${sign}
     </div>
   </body></html>`;
@@ -504,9 +505,9 @@ function buildDocx(){
     body+=para([run("Date: "+(dateStr||"_______________"),{bold:true})],{after:140});
   }
   body+=para([run("Rating Scale:",{bold:true})],{after:20});
-  body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:120});
+  body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:100});
   body+=tb;
-  body+=para([run("Scoring Guide:",{bold:true})],{before:100,after:30});
+  body+=para([run("Scoring Guide:",{bold:true})],{before:60,after:30});
   body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+" / 10",{bold:true})],{after:30});
   body+=bullet([run("Average Score: ",{bold:true}),run(String(data.avgScore||0),{bold:true})],{after:100});
   body+=para([run("Performance Interpretation:",{bold:true})],{after:20});
@@ -515,11 +516,21 @@ function buildDocx(){
     const isCur=cur&&t.indexOf(cur)>-1;
     body+=para([run(t,{bold:!f.senior||isCur,color:isCur?"0E7FAB":null})],{after:0});
   });
-  body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:100,after:60});
-  // comment text sitting on a full-width ruled line (bottom border spans the line)
-  body+=`<w:p><w:pPr><w:spacing w:after="120" w:line="278" w:lineRule="auto"/>`+
-    `<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="2" w:color="808080"/></w:pBdr></w:pPr>`+
-    `${run(comment||"\u00a0")}</w:p>`;
+  body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:50,after:40});
+  // comment area as a borderless table with a bottom rule on each row (renders reliably)
+  const cmtRow=(content)=>`<w:tr><w:trPr><w:trHeight w:val="260"/></w:trPr>`+
+    `<w:tc><w:tcPr><w:tcW w:w="9300" w:type="dxa"/>`+
+    `<w:tcBorders><w:bottom w:val="single" w:sz="6" w:space="0" w:color="808080"/></w:tcBorders>`+
+    `<w:tcMar><w:top w:w="20" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="20" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tcMar>`+
+    `<w:vAlign w:val="bottom"/></w:tcPr>`+
+    `<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>${content}</w:p></w:tc></w:tr>`;
+  body+=`<w:tbl><w:tblPr><w:tblW w:w="9300" w:type="dxa"/><w:tblBorders>`+
+    `<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>`+
+    `<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>`+
+    `</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid><w:gridCol w:w="9300"/></w:tblGrid>`+
+    cmtRow(run(comment||"\u00a0"))+cmtRow(run("\u00a0"))+
+    `</w:tbl>`;
+  body+=`<w:p><w:pPr><w:spacing w:after="80"/></w:pPr></w:p>`;
   if(!f.senior){
     body+=para([run("Evaluator's Signature: "+"_______________________",{bold:true})]);
     body+=para([run("Date: "+"_______________",{bold:true})]);
@@ -529,7 +540,7 @@ function buildDocx(){
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'+
     '<w:body>'+body+
     '<w:sectPr><w:pgSz w:w="12240" w:h="18720" w:code="128"/>'+
-    '<w:pgMar w:top="900" w:right="1080" w:bottom="850" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/>'+
+    '<w:pgMar w:top="800" w:right="1080" w:bottom="650" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/>'+
     '</w:sectPr></w:body></w:document>';
   const contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
@@ -688,13 +699,15 @@ function buildPDF(){
   });
   y-=8;
   T(M,y,"Evaluator's Overall Comments:",10,true); y-=14;
-  const commentLines=wrapF(comment||" ",10,tableW,false);
-  commentLines.forEach((ln,i)=>{
-    T(M,y,ln,10,false);
-    // draw a ruled line under each comment line, spanning full table width
+  const COMMENT_MIN_LINES=2;
+  const textLines=wrapF((comment||"").trim(), 10, tableW, false).filter(s=>s!=="");
+  const totalLines=Math.max(COMMENT_MIN_LINES, textLines.length);
+  for(let i=0;i<totalLines;i++){
+    if(i<textLines.length) T(M,y,textLines[i],10,false);
+    // ruled line spanning full table width (text sits on it, or blank line)
     ops.push(`0.5 0.5 0.5 RG 0.7 w ${M.toFixed(2)} ${(y-3).toFixed(2)} m ${(M+tableW).toFixed(2)} ${(y-3).toFixed(2)} l S`);
-    y-=15;
-  });
+    y-=18;
+  }
   if(!f.senior){
     y-=6;
     KVB(M,y,"Evaluator's Signature:","_______________________"); y-=13;
