@@ -381,13 +381,13 @@ function run(text,{bold=false,italic=false,color=null,sz=22}={}){
   return `<w:r>${rpr}<w:t xml:space="preserve">${xmlEsc(text)}</w:t></w:r>`;
 }
 function para(runs,{align=null,after=160,before=0}={}){
-  let ppr=`<w:pPr><w:spacing w:after="${after}"${before?` w:before="${before}"`:""}/>`;
+  let ppr=`<w:pPr><w:spacing w:after="${after}"${before?` w:before="${before}"`:""} w:line="278" w:lineRule="auto"/>`;
   if(align)ppr+=`<w:jc w:val="${align}"/>`;
   ppr+="</w:pPr>";
   return `<w:p>${ppr}${runs.join("")}</w:p>`;
 }
 function bullet(runs,{after=160,before=0}={}){
-  const ppr=`<w:pPr><w:spacing w:after="${after}"${before?` w:before="${before}"`:""}/><w:ind w:left="360" w:hanging="180"/></w:pPr>`;
+  const ppr=`<w:pPr><w:spacing w:after="${after}"${before?` w:before="${before}"`:""} w:line="278" w:lineRule="auto"/><w:ind w:left="360" w:hanging="180"/></w:pPr>`;
   return `<w:p>${ppr}${run("\u2022  ",{bold:true})}${runs.join("")}</w:p>`;
 }
 function tcell(content,w,fill){
@@ -400,12 +400,12 @@ function tcell(content,w,fill){
 function tcellPad(content,w,fill){
   const shd=fill?`<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>`:"";
   return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${shd}`+
-    `<w:tcMar><w:top w:w="90" w:type="dxa"/><w:left w:w="120" w:type="dxa"/>`+
-    `<w:bottom w:w="90" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tcMar>`+
+    `<w:tcMar><w:top w:w="60" w:type="dxa"/><w:left w:w="120" w:type="dxa"/>`+
+    `<w:bottom w:w="60" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tcMar>`+
     `<w:vAlign w:val="center"/></w:tcPr>${content}</w:tc>`;
 }
-// tight in-cell paragraph (no spacing after, centered)
-function cpar(runs){ return `<w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="center"/></w:pPr>${runs.join("")}</w:p>`; }
+// in-cell paragraph: no space after, centered, 1.16 line spacing
+function cpar(runs){ return `<w:p><w:pPr><w:spacing w:after="0" w:line="278" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>${runs.join("")}</w:p>`; }
 
 function buildDocx(){
   const f=FORMS[role], data=currentData();
@@ -461,19 +461,19 @@ function buildDocx(){
     body+=para([run("Date: "+(dateStr||"_______________"),{bold:true})],{after:140});
   }
   body+=para([run("Rating Scale:",{bold:true})],{after:20});
-  body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:140});
+  body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:120});
   body+=tb;
-  body+=para([run("Scoring Guide:",{bold:true})],{before:140,after:40});
-  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+" / 10",{bold:true})],{after:40});
-  body+=bullet([run("Average Score: ",{bold:true}),run(String(data.avgScore||0),{bold:true})],{after:120});
+  body+=para([run("Scoring Guide:",{bold:true})],{before:100,after:30});
+  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+" / 10",{bold:true})],{after:30});
+  body+=bullet([run("Average Score: ",{bold:true}),run(String(data.avgScore||0),{bold:true})],{after:100});
   body+=para([run("Performance Interpretation:",{bold:true})],{after:20});
   const cur=interpret(data.avgScore);
   ["4.5 \u2013 5.0 = Outstanding","3.5 \u2013 4.4 = Very Good","2.5 \u2013 3.4 = Satisfactory","1.5 \u2013 2.4 = Needs Improvement","1.0 \u2013 1.4 = Poor"].forEach(t=>{
     const isCur=cur&&t.indexOf(cur)>-1;
-    body+=para([run(t,{bold:!f.senior||isCur,color:isCur?"0E7FAB":null})],{after:20});
+    body+=para([run(t,{bold:!f.senior||isCur,color:isCur?"0E7FAB":null})],{after:0});
   });
-  body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:140,after:60});
-  body+=para([run(comment||" ")],{after:160});
+  body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:100,after:60});
+  body+=para([run(comment||" ")],{after:120});
   if(!f.senior){
     body+=para([run("Evaluator's Signature: "+"_______________________",{bold:true})]);
     body+=para([run("Date: "+"_______________",{bold:true})]);
@@ -483,7 +483,7 @@ function buildDocx(){
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'+
     '<w:body>'+body+
     '<w:sectPr><w:pgSz w:w="12240" w:h="18720" w:code="128"/>'+
-    '<w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/>'+
+    '<w:pgMar w:top="900" w:right="1080" w:bottom="850" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/>'+
     '</w:sectPr></w:body></w:document>';
   const contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
