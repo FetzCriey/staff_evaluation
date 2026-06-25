@@ -265,10 +265,13 @@ function render(){
 document.getElementById('evPlus').onclick=()=>{if(evaluators<MAX_EV){evaluators++;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('evMinus').onclick=()=>{if(evaluators>MIN_EV){evaluators--;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('resetBtn').onclick=()=>{
-  if(!confirm("Clear all scores for this form? This cannot be undone.")) return;
+  if(!confirm("Clear everything on this form (scores, name, and comments)? This cannot be undone.")) return;
   scores[role]={};ensureStore();buildBody();compute();
+  const empN=document.getElementById('empName');
+  empN.value=""; empN.classList.remove('bad');
+  document.getElementById('comment').value="";
   const st=document.getElementById('status');
-  st.textContent="Scores cleared.";
+  st.textContent="Form cleared.";
   setTimeout(()=>st.textContent="",3000);
 };
 
@@ -336,7 +339,8 @@ function formHTML(){
   });
   const bands=["4.5 – 5.0 = Outstanding","3.5 – 4.4 = Very Good","2.5 – 3.4 = Satisfactory","1.5 – 2.4 = Needs Improvement","1.0 – 1.4 = Poor"]
     .map(t=>{const on=cur&&t.indexOf(cur)>-1;return `<div${on?' class="hl"':(bold?' class="b"':'')}>${bold&&!on?'<b>'+t+'</b>':t}</div>`}).join("");
-  const sign=!f.senior?`<p style="margin-top:14px"><b>Evaluator's Signature: _______________________</b></p><p><b>Date: _______________</b></p>`:"";
+  const sign=!f.senior?`<p style="margin-top:14px"><b>Evaluator's Signature: _______________________</b></p>`:"";
+  const dateEnd=!f.senior?`<p style="margin-top:2px"><b>Date: _______________</b></p>`:"";
   const confStyle=f.senior?'font-style:italic;font-weight:normal':'font-weight:bold;font-style:italic';
   const scaleLine=bold?`<b>5 – Excellent | 4 – Very Good | 3 – Satisfactory | 2 – Needs Improvement | 1 – Poor</b>`:`5 – Excellent | 4 – Very Good | 3 – Satisfactory | 2 – Needs Improvement | 1 – Poor`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(f.title)}</title>
@@ -376,6 +380,7 @@ function formHTML(){
       <p style="margin-top:10px"><b>Evaluator's Overall Comments:</b></p>
       <p>${comment?esc(comment):"&nbsp;"}</p>
       ${sign}
+      ${dateEnd}
     </div>
   </body></html>`;
 }
