@@ -146,7 +146,7 @@
     <div class="totals">
       <div class="interp" id="interp"></div>
       <div class="tcard"><div class="k">Total Score</div><div class="v" id="totalScore">0</div></div>
-      <div class="tcard"><div class="k">Average Score</div><div class="v" id="totalAvg">0</div></div>
+      <div class="tcard manager-only average-only"><div class="k">Average Score</div><div class="v" id="totalAvg">0</div></div>
     </div>
   </div>
 
@@ -206,7 +206,12 @@ async function submitEvaluation(){
   const btn=document.getElementById('submitBtn');btn.disabled=true;document.getElementById('status').textContent='Submitting…';
   const {error}=await supabaseClient.from('evaluations').insert({employee_id:employeeId,evaluator_id:currentUser.id,scores:scoreMap,average:data.avgScore,comments:document.getElementById('comment').value.trim(),form_role:role});
   btn.disabled=false;
-  if(error){console.error(error);document.getElementById('status').textContent='Could not submit. '+error.message;return;}
+  if(error){
+    console.error('Evaluation submission failed:', error);
+    document.getElementById('status').textContent='Could not submit: '+(error.message||'Unknown error');
+    btn.disabled=false;
+    return;
+  }
   document.getElementById('status').textContent='Evaluation submitted successfully.';
   scores[role]={};ensureStore();evaluators=1;document.getElementById('empName').value='';document.getElementById('comment').value='';buildBody();buildHead();compute();
   setTimeout(()=>document.getElementById('status').textContent='You can select another employee to evaluate.',1500);
@@ -263,7 +268,17 @@ async function enterApp(user){
     evaluators=1;document.getElementById('evVal').textContent='1';
   }
   render();
-  if(!isManager){setupEmployeeSelector();evaluators=1;document.getElementById('evVal').textContent='1';buildHead();buildBody();compute();}
+  if(!isManager){
+    setupEmployeeSelector();
+    evaluators=1;
+    document.getElementById('evVal').textContent='1';
+    buildHead();
+    buildBody();
+    compute();
+    document.querySelectorAll('.average-only').forEach(x=>x.style.display='none');
+  }else{
+    document.querySelectorAll('.average-only').forEach(x=>x.style.display='');
+  }
 }
 document.getElementById('loginBtn').onclick=async()=>{
   const email=document.getElementById('loginEmail').value.trim(),password=document.getElementById('loginPassword').value;
@@ -315,7 +330,7 @@ function buildHead(){
     h+= nm ? `<th title="${nm}">${nm}<span class="ev-sub">Eval ${e+1}</span></th>`
            : `<th>Eval ${e+1}</th>`;
   }
-  h+='<th class="tot">Score</th><th class="tot">Average</th>';
+  h+='<th class="tot">Score</th><th class="tot manager-only average-only">Average</th>';
   document.getElementById('headRow').innerHTML=h;
 }
 function buildBody(){
@@ -328,7 +343,7 @@ function buildBody(){
       const v=scores[role][ci][e]??'';
       cells+=`<td><input class="score-in" inputmode="decimal" data-c="${ci}" data-e="${e}" value="${v}"></td>`;
     }
-    cells+=`<td class="calc" id="sc-${ci}">0</td><td class="calc dim" id="av-${ci}">0</td>`;
+    cells+=`<td class="calc" id="sc-${ci}">0</td><td class="calc dim manager-only average-only" id="av-${ci}">0</td>`;
     tr.innerHTML=cells; tb.appendChild(tr);
   });
   tb.querySelectorAll('.score-in').forEach(inp=>{
@@ -474,6 +489,9 @@ function render(){
   }
   document.getElementById('evVal').textContent=evaluators;
   compute();
+  document.querySelectorAll('.average-only').forEach(x=>{
+    x.style.display = isManager ? '' : 'none';
+  });
   syncEvaluators(true);
 }
 
