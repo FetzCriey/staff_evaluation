@@ -1,10 +1,4 @@
-from pathlib import Path
-import base64
-
-logo_path = Path("/mnt/data/123.png")
-logo_b64 = base64.b64encode(logo_path.read_bytes()).decode("ascii")
-
-html = f"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -12,50 +6,71 @@ html = f"""<!DOCTYPE html>
 <title>Staff Evaluation — Login</title>
 
 <style>
-:root{{
+:root{
   --ink:#13202b;
   --muted:#5b7080;
   --accent:#15ACE3;
   --accent-dark:#0e7fab;
   --paper:#dcecf6;
-  --panel:#fff;
+  --panel:#ffffff;
   --line:#cfe2ee;
-}}
+  --shadow:0 12px 40px rgba(13,32,43,.12);
+}
 
-*{{box-sizing:border-box}}
+*{
+  box-sizing:border-box;
+}
 
-body{{
+html,
+body{
   margin:0;
-  min-height:100vh;
-  font-family:Inter,"Segoe UI",system-ui,sans-serif;
+  min-height:100%;
+}
+
+body{
+  font-family:"Inter","Segoe UI",system-ui,sans-serif;
   background:var(--paper);
   color:var(--ink);
+  min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
   padding:24px;
-}}
+  -webkit-font-smoothing:antialiased;
+}
 
-.card{{
+/* =========================================================
+   LOGIN CARD
+   ========================================================= */
+
+.card{
   width:100%;
   max-width:430px;
   background:var(--panel);
   border:1px solid var(--line);
   border-radius:18px;
-  box-shadow:0 12px 40px rgba(13,32,43,.12);
+  box-shadow:var(--shadow);
   padding:36px;
-}}
+}
 
-.logo{{
+/* =========================================================
+   COMPANY LOGO
+   ========================================================= */
+
+.logo{
   width:90px;
   height:90px;
   display:block;
   margin:0 auto 22px;
   object-fit:cover;
   border-radius:24px;
-}}
+}
 
-.eyebrow{{
+/* =========================================================
+   TEXT
+   ========================================================= */
+
+.eyebrow{
   text-align:center;
   font-size:11px;
   letter-spacing:.18em;
@@ -63,23 +78,29 @@ body{{
   color:#0e7fab;
   font-weight:700;
   margin-bottom:8px;
-}}
+}
 
-h1{{
+h1{
   text-align:center;
   font-family:Georgia,serif;
+  font-weight:600;
   font-size:30px;
+  line-height:1.1;
   margin:0;
-}}
+}
 
-.sub{{
+.sub{
   text-align:center;
   color:var(--muted);
   font-size:14px;
   margin:10px 0 28px;
-}}
+}
 
-label{{
+/* =========================================================
+   FORM
+   ========================================================= */
+
+label{
   display:block;
   font-size:12px;
   font-weight:700;
@@ -87,39 +108,57 @@ label{{
   letter-spacing:.06em;
   color:var(--muted);
   margin:0 0 6px;
-}}
+}
 
-input{{
+input{
   width:100%;
   padding:12px 13px;
   border:1px solid var(--line);
   border-radius:9px;
   font-size:15px;
+  font-family:inherit;
+  background:#ffffff;
+  color:var(--ink);
   margin-bottom:17px;
   outline:none;
-}}
+}
 
-input:focus{{
+input:focus{
   border-color:var(--accent);
   box-shadow:0 0 0 3px rgba(21,172,227,.12);
-}}
+}
 
-button{{
+/* =========================================================
+   LOGIN BUTTON
+   ========================================================= */
+
+button{
   width:100%;
   border:0;
   border-radius:9px;
   background:var(--accent);
-  color:#fff;
+  color:#ffffff;
   font-weight:700;
   font-size:15px;
   padding:13px;
   cursor:pointer;
-}}
+  transition:background .15s ease;
+}
 
-button:hover{{background:var(--accent-dark)}}
-button:disabled{{opacity:.65;cursor:not-allowed}}
+button:hover{
+  background:var(--accent-dark);
+}
 
-#error{{
+button:disabled{
+  opacity:.65;
+  cursor:not-allowed;
+}
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+#error{
   display:none;
   margin-bottom:16px;
   padding:11px 13px;
@@ -128,15 +167,19 @@ button:disabled{{opacity:.65;cursor:not-allowed}}
   color:#a62a2a;
   border:1px solid #f1caca;
   font-size:13px;
-}}
+}
 
-#status{{
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+#status{
   display:none;
   text-align:center;
   margin-top:16px;
   color:var(--muted);
   font-size:13px;
-}}
+}
 </style>
 </head>
 
@@ -144,16 +187,23 @@ button:disabled{{opacity:.65;cursor:not-allowed}}
 
 <div class="card">
 
-  <!-- Company logo embedded directly in this HTML -->
+  <!--
+    Company logo.
+    Keep logo.png in the same GitHub folder as this login.html.
+  -->
   <img
     class="logo"
-    src="data:image/png;base64,{logo_b64}"
+    src="logo.png"
     alt="Company logo"
   >
 
-  <div class="eyebrow">Employee Assessment</div>
+  <div class="eyebrow">
+    Employee Assessment
+  </div>
 
-  <h1>Performance Evaluation</h1>
+  <h1>
+    Performance Evaluation
+  </h1>
 
   <div class="sub">
     Sign in with your staff account to continue.
@@ -163,7 +213,10 @@ button:disabled{{opacity:.65;cursor:not-allowed}}
 
   <form id="loginForm">
 
-    <label for="email">Email</label>
+    <label for="email">
+      Email
+    </label>
+
     <input
       id="email"
       type="email"
@@ -172,7 +225,10 @@ button:disabled{{opacity:.65;cursor:not-allowed}}
       required
     >
 
-    <label for="password">Password</label>
+    <label for="password">
+      Password
+    </label>
+
     <input
       id="password"
       type="password"
@@ -181,24 +237,39 @@ button:disabled{{opacity:.65;cursor:not-allowed}}
       required
     >
 
-    <button id="loginBtn" type="submit">Log in</button>
+    <button
+      id="loginBtn"
+      type="submit"
+    >
+      Log in
+    </button>
 
   </form>
 
-  <div id="status">Signing in...</div>
+  <div id="status">
+    Signing in...
+  </div>
 
 </div>
 
+
 <script type="module">
 
-import {{ createClient }}
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+/* =========================================================
+   SUPABASE
+   ========================================================= */
+
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
 
 const SUPABASE_URL =
-  'https://giosjwjhalhmwcuyzfos.supabase.co';
+  "https://giosjwjhalhmwcuyzfos.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
-  'sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_';
+  "sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_";
+
 
 const supabase =
   createClient(
@@ -206,85 +277,230 @@ const supabase =
     SUPABASE_PUBLISHABLE_KEY
   );
 
-const form = document.getElementById('loginForm');
-const email = document.getElementById('email');
-const password = document.getElementById('password');
-const button = document.getElementById('loginBtn');
-const error = document.getElementById('error');
-const status = document.getElementById('status');
 
-function showError(message){{
-  error.textContent = message;
-  error.style.display = 'block';
-  status.style.display = 'none';
-}}
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
 
-form.addEventListener('submit', async (event) => {{
-  event.preventDefault();
+const form =
+  document.getElementById("loginForm");
 
-  error.style.display = 'none';
-  button.disabled = true;
-  status.style.display = 'block';
+const email =
+  document.getElementById("email");
 
-  const {{
-    data,
-    error: loginError
-  }} = await supabase.auth.signInWithPassword({{
-    email: email.value.trim(),
-    password: password.value
-  }});
+const password =
+  document.getElementById("password");
 
-  if(loginError){{
-    button.disabled = false;
-    showError(
-      loginError.message ||
-      'Unable to log in. Please check your email and password.'
-    );
-    return;
-  }}
+const button =
+  document.getElementById("loginBtn");
 
-  const {{
-    data: profile,
-    error: profileError
-  }} = await supabase
-    .from('profiles')
-    .select('full_name, position, role')
-    .eq('id', data.user.id)
-    .single();
+const error =
+  document.getElementById("error");
 
-  if(profileError || !profile){{
-    await supabase.auth.signOut();
-    button.disabled = false;
-    showError(
-      'Your account is valid, but no staff profile was found. Please contact the manager.'
-    );
-    return;
-  }}
+const status =
+  document.getElementById("status");
 
-  sessionStorage.setItem('staff_role', profile.role);
-  sessionStorage.setItem('staff_name', profile.full_name);
-  sessionStorage.setItem('staff_position', profile.position || '');
-  sessionStorage.setItem('staff_email', data.user.email || '');
 
-  window.location.replace('index.html');
-}});
+/* =========================================================
+   SHOW ERROR
+   ========================================================= */
 
-const {{
-  data: {{ session }}
-}} = await supabase.auth.getSession();
+function showError(message){
 
-if(session){{
-  window.location.replace('index.html');
-}}
+  error.textContent =
+    message;
+
+  error.style.display =
+    "block";
+
+  status.style.display =
+    "none";
+
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+form.addEventListener(
+  "submit",
+  async (event) => {
+
+    event.preventDefault();
+
+    error.style.display =
+      "none";
+
+    button.disabled =
+      true;
+
+    status.style.display =
+      "block";
+
+
+    try{
+
+      /* -----------------------------------------
+         SIGN IN
+         ----------------------------------------- */
+
+      const {
+        data,
+        error: loginError
+      } =
+        await supabase.auth.signInWithPassword({
+
+          email:
+            email.value.trim(),
+
+          password:
+            password.value
+
+        });
+
+
+      /* -----------------------------------------
+         LOGIN FAILED
+         ----------------------------------------- */
+
+      if(loginError){
+
+        button.disabled =
+          false;
+
+        showError(
+          loginError.message ||
+          "Unable to log in. Please check your email and password."
+        );
+
+        return;
+
+      }
+
+
+      /* -----------------------------------------
+         GET STAFF PROFILE
+         ----------------------------------------- */
+
+      const {
+        data: profile,
+        error: profileError
+      } =
+        await supabase
+
+          .from("profiles")
+
+          .select(
+            "full_name, position, role"
+          )
+
+          .eq(
+            "id",
+            data.user.id
+          )
+
+          .single();
+
+
+      /* -----------------------------------------
+         PROFILE NOT FOUND
+         ----------------------------------------- */
+
+      if(
+        profileError ||
+        !profile
+      ){
+
+        await supabase.auth.signOut();
+
+        button.disabled =
+          false;
+
+        showError(
+          "Your account is valid, but no staff profile was found. Please contact the manager."
+        );
+
+        return;
+
+      }
+
+
+      /* -----------------------------------------
+         SAVE STAFF INFORMATION
+         ----------------------------------------- */
+
+      sessionStorage.setItem(
+        "staff_role",
+        profile.role || ""
+      );
+
+      sessionStorage.setItem(
+        "staff_name",
+        profile.full_name || ""
+      );
+
+      sessionStorage.setItem(
+        "staff_position",
+        profile.position || ""
+      );
+
+      sessionStorage.setItem(
+        "staff_email",
+        data.user.email || ""
+      );
+
+
+      /* -----------------------------------------
+         GO TO INDEX
+         ----------------------------------------- */
+
+      window.location.replace(
+        "index.html"
+      );
+
+    }
+    catch(err){
+
+      console.error(
+        "Login error:",
+        err
+      );
+
+      button.disabled =
+        false;
+
+      showError(
+        "Something went wrong while signing in. Please try again."
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   CHECK EXISTING SESSION
+   ========================================================= */
+
+const {
+  data: {
+    session
+  }
+} =
+  await supabase.auth.getSession();
+
+
+if(session){
+
+  window.location.replace(
+    "index.html"
+  );
+
+}
 
 </script>
 
 </body>
 </html>
-"""
-
-out = Path("/mnt/data/login_embedded_logo.html")
-out.write_text(html, encoding="utf-8")
-
-print(f"Created: {out}")
-print(f"Embedded logo size: {len(logo_b64):,} Base64 characters")
