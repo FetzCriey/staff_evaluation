@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Evaluation — Login</title>
+
+<style>
+:root{
+  --ink:#13202b;
+  --muted:#5b7080;
+  --accent:#15ACE3;
+  --accent-dark:#0e7fab;
+  --paper:#dcecf6;
+  --panel:#fff;
+  --line:#cfe2ee;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Inter,"Segoe UI",system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.card{
+  width:100%;
+  max-width:430px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  box-shadow:0 12px 40px rgba(13,32,43,.12);
+  padding:36px;
+}
+
+.logo{
+  width:72px;
+  height:72px;
+  border-radius:14px;
+  margin:0 auto 22px;
+  display:block;
+  object-fit:contain;
+  background:#fff;
+  border:1px solid var(--line);
+  padding:7px;
+  box-shadow:0 1px 2px rgba(13,32,43,.05),
+             0 8px 24px rgba(13,90,130,.08);
+}
+
+.eyebrow{
+  text-align:center;
+  font-size:11px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:#0e7fab;
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+h1{
+  text-align:center;
+  font-family:Georgia,serif;
+  font-size:30px;
+  margin:0;
+}
+
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+  margin:10px 0 28px;
+}
+
+label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--muted);
+  margin:0 0 6px;
+}
+
+input{
+  width:100%;
+  padding:12px 13px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  font-size:15px;
+  margin-bottom:17px;
+  outline:none;
+}
+
+input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(21,172,227,.12);
+}
+
+button{
+  width:100%;
+  border:0;
+  border-radius:9px;
+  background:var(--accent);
+  color:#fff;
+  font-weight:700;
+  font-size:15px;
+  padding:13px;
+  cursor:pointer;
+}
+
+button:hover{
+  background:var(--accent-dark);
+}
+
+button:disabled{
+  opacity:.65;
+  cursor:not-allowed;
+}
+
+#error{
+  display:none;
+  margin-bottom:16px;
+  padding:11px 13px;
+  border-radius:8px;
+  background:#fff0f0;
+  color:#a62a2a;
+  border:1px solid #f1caca;
+  font-size:13px;
+}
+
+#status{
+  display:none;
+  text-align:center;
+  margin-top:16px;
+  color:var(--muted);
+  font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <!-- Company logo from index.html -->
+  <img
+    class="logo"
+    id="companyLogo"
+    alt="Company logo"
+  >
+
+  <div class="eyebrow">
+    Employee Assessment
+  </div>
+
+  <h1>Performance Evaluation</h1>
+
+  <div class="sub">
+    Sign in with your staff account to continue.
+  </div>
+
+  <div id="error"></div>
+
+  <form id="loginForm">
+
+    <label for="email">
+      Email
+    </label>
+
+    <input
+      id="email"
+      type="email"
+      autocomplete="username"
+      placeholder="name@example.com"
+      required
+    >
+
+    <label for="password">
+      Password
+    </label>
+
+    <input
+      id="password"
+      type="password"
+      autocomplete="current-password"
+      placeholder="Password"
+      required
+    >
+
+    <button id="loginBtn" type="submit">
+      Log in
+    </button>
+
+  </form>
+
+  <div id="status">
+    Signing in...
+  </div>
+
+</div>
+
+<script type="module">
+
+import { createClient }
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+
+/* =========================================================
+   SUPABASE
+   ========================================================= */
+
+const SUPABASE_URL =
+  'https://giosjwjhalhmwcuyzfos.supabase.co';
+
+const SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_';
+
+const supabase =
+  createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
+
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
+
+const form =
+  document.getElementById('loginForm');
+
+const email =
+  document.getElementById('email');
+
+const password =
+  document.getElementById('password');
+
+const button =
+  document.getElementById('loginBtn');
+
+const error =
+  document.getElementById('error');
+
+const status =
+  document.getElementById('status');
+
+const companyLogo =
+  document.getElementById('companyLogo');
+
+
+/* =========================================================
+   LOAD COMPANY LOGO FROM index.html
+   ========================================================= */
+
+async function loadCompanyLogo(){
+
+  try{
+
+    const response =
+      await fetch('index.html', {
+        cache:'no-store'
+      });
+
+    if(!response.ok){
+      throw new Error('Unable to load index.html');
+    }
+
+    const html =
+      await response.text();
+
+    /*
+      Finds:
+
+      const LOGO_JPG_B64=".....";
+    */
+
+    const match =
+      html.match(
+        /const\s+LOGO_JPG_B64\s*=\s*["']([^"']+)["']/
+      );
+
+    if(match && match[1]){
+
+      companyLogo.src =
+        'data:image/jpeg;base64,' +
+        match[1];
+
+    }
+
+  }catch(err){
+
+    console.error(
+      'Could not load company logo:',
+      err
+    );
+
+  }
+
+}
+
+loadCompanyLogo();
+
+
+/* =========================================================
+   ERROR MESSAGE
+   ========================================================= */
+
+function showError(message){
+
+  error.textContent =
+    message;
+
+  error.style.display =
+    'block';
+
+  status.style.display =
+    'none';
+
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+form.addEventListener(
+  'submit',
+  async (event) => {
+
+    event.preventDefault();
+
+    error.style.display =
+      'none';
+
+    button.disabled =
+      true;
+
+    status.style.display =
+      'block';
+
+
+    const {
+      data,
+      error: loginError
+    } =
+      await supabase.auth.signInWithPassword({
+
+        email:
+          email.value.trim(),
+
+        password:
+          password.value
+
+      });
+
+
+    /* -----------------------------------------
+       LOGIN ERROR
+       ----------------------------------------- */
+
+    if(loginError){
+
+      button.disabled =
+        false;
+
+      showError(
+        loginError.message ||
+        'Unable to log in. Please check your email and password.'
+      );
+
+      return;
+
+    }
+
+
+    /* -----------------------------------------
+       GET PROFILE
+       ----------------------------------------- */
+
+    const {
+      data: profile,
+      error: profileError
+    } =
+      await supabase
+
+        .from('profiles')
+
+        .select(
+          'full_name, position, role'
+        )
+
+        .eq(
+          'id',
+          data.user.id
+        )
+
+        .single();
+
+
+    /* -----------------------------------------
+       PROFILE NOT FOUND
+       ----------------------------------------- */
+
+    if(
+      profileError ||
+      !profile
+    ){
+
+      await supabase.auth.signOut();
+
+      button.disabled =
+        false;
+
+      showError(
+        'Your account is valid, but no staff profile was found. Please contact the manager.'
+      );
+
+      return;
+
+    }
+
+
+    /* -----------------------------------------
+       SAVE USER INFORMATION
+       ----------------------------------------- */
+
+    sessionStorage.setItem(
+      'staff_role',
+      profile.role
+    );
+
+    sessionStorage.setItem(
+      'staff_name',
+      profile.full_name
+    );
+
+    sessionStorage.setItem(
+      'staff_position',
+      profile.position || ''
+    );
+
+    sessionStorage.setItem(
+      'staff_email',
+      data.user.email
+    );
+
+
+    /* -----------------------------------------
+       GO TO MAIN SYSTEM
+       ----------------------------------------- */
+
+    window.location.href =
+      'index.html';
+
+  }
+);
+
+
+/* =========================================================
+   CHECK EXISTING LOGIN
+   ========================================================= */
+
+const {
+  data: {
+    session
+  }
+} =
+  await supabase.auth.getSession();
+
+
+if(session){
+
+  window.location.href =
+    'index.html';
+
+}
+
+</script>
+
+</body>
+</html>
