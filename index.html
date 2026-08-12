@@ -29,7 +29,7 @@
   .field input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--panel);font-family:inherit;color:var(--ink)}
   .field input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
   .field .ro{background:#f4f2ec;color:var(--muted)}
-  .evaluator-ctl{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .evaluator-ctl{display:none}
   .evaluator-ctl span{font-size:13px;color:var(--muted)}
   .stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden}
   .stepper button{border:0;background:var(--panel);width:34px;height:34px;font-size:18px;cursor:pointer;color:var(--accent);font-weight:600}
@@ -127,12 +127,13 @@
   }
 </style>
 </head>
-<body>
+\1
+<div style="position:fixed;bottom:12px;right:12px;z-index:9999;background:#13202b;color:#fff;font:600 12px/1 Inter,system-ui,sans-serif;padding:9px 14px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:.92">PREVIEW — mock data · signed in as manager</div>
 <div id="authLoading" class="auth-loading">Checking your sign-in…</div>
 <div id="appShell" style="display:none">
   <aside class="account-sidebar" id="accountSidebar">
     <div class="sidebar-brand">
-      <img src="123.png" alt="Company logo">
+      <img src="data:image/png;base64,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" alt="Company logo">
       <div><strong>Performance<br>Evaluation</strong><span>Better Practice</span></div>
     </div>
     <div class="sidebar-account">
@@ -210,7 +211,36 @@
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===== PREVIEW MODE: mock Supabase client, no real backend calls ===== */
+const __mockUser = {id:'d874ad74-753e-4550-912d-b3c88bde632e', email:'aiko.yasuda@betterpractice.com'};
+const __mockProfile = {id:__mockUser.id, full_name:'Aiko Yasuda', position:'General Manager', role:'manager'};
+const __mockEvals = [
+  {id:'ev1', employee_id:'78d92f3e-282d-4be2-9862-4767c1ef6e0d', evaluator_id:'d874ad74-753e-4550-912d-b3c88bde632e',
+   average:4.3, comments:'Consistent performer, great client communication.', created_at:'2026-08-10T09:15:00Z',
+   form_role:'Junior Staff', scores:{0:5,1:4,2:5,3:4,4:4,5:4,6:5,7:4,8:4,9:4},
+   employee:{full_name:'John Dionisio'}, evaluator:{full_name:'Rosalyn Villano'}},
+  {id:'ev2', employee_id:'ec9c61af-4ac2-47da-9717-f905a4856088', evaluator_id:'c188c278-c48c-4d5d-a807-0cf76a27a625',
+   average:3.8, comments:'Improving steadily; needs support on turnaround time.', created_at:'2026-08-11T14:40:00Z',
+   form_role:'Probationary', scores:{0:4,1:4,2:4,3:3,4:4,5:4,6:4,7:4,8:4,9:3},
+   employee:{full_name:'Monique Eileen Irog-Irog'}, evaluator:{full_name:'Marivie Marquez'}}
+];
+window.supabase = { createClient: () => ({
+  from: (table) => ({
+    select: () => ({
+      eq: () => ({ single: async () => ({data:__mockProfile, error:null}) }),
+      order: async () => ({data:__mockEvals, error:null})
+    }),
+    insert: async () => ({error:null})
+  }),
+  auth: {
+    getSession: async () => ({data:{session:{user:__mockUser}}, error:null}),
+    signOut: async () => ({}),
+    onAuthStateChange: () => ({})
+  }
+})};
+</script>
+
 <script>
 const SUPABASE_URL="https://giosjwjhalhmwcuyzfos.supabase.co";
 const SUPABASE_KEY="sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_";
@@ -275,7 +305,7 @@ async function bootAuth(){
   const {data:{session},error}=await supabaseClient.auth.getSession();
 
   if(error || !session){
-    window.location.replace('login.html');
+    console.log('[preview] would redirect to login');
     return;
   }
 
@@ -291,7 +321,7 @@ async function enterApp(user){
   }catch(e){
     console.error('Profile lookup failed:',e);
     await supabaseClient.auth.signOut();
-    window.location.replace('login.html');
+    console.log('[preview] would redirect to login');
     return;
   }
 
@@ -308,7 +338,7 @@ async function enterApp(user){
 
   const logout=async()=>{
     await supabaseClient.auth.signOut();
-    window.location.replace('login.html');
+    console.log('[preview] would redirect to login');
   };
   document.getElementById('sidebarLogout').onclick=logout;
 
@@ -364,7 +394,7 @@ async function enterApp(user){
 
 supabaseClient.auth.onAuthStateChange((event,session)=>{
   if(event==='SIGNED_OUT' || !session){
-    window.location.replace('login.html');
+    console.log('[preview] would redirect to login');
   }
 });
 
@@ -381,8 +411,8 @@ const FORMS = {
   "Senior Staff":{title:"BETTER PRACTICE SENIOR EVALUATION FORM",position:"Senior",senior:true,rows:[["Leadership & Team Guidance","Ability to guide, support, and motivate team members effectively."],["Team Productivity & Task Management","Proper delegation, monitoring, and completion of team tasks and deadlines."],["Decision-Making & Problem Solving","Ability to resolve issues, escalations, and operational concerns efficiently."],["Communication Skills","Clear, professional, and timely communication with team members and clients."],["Quality Control & Accuracy","Reviews endorsements, onboarding, monitoring, and outputs for completeness and accuracy."],["Workload Management","Ability to balance workloads fairly and support high-volume or urgent cases."],["Accountability & Reliability","Ownership of team performance, punctuality, follow-through, and consistency."],["Coaching & Staff Development","Provides training, guidance, and constructive feedback to junior staff."],["Professionalism","Demonstrates integrity, professionalism, and proper handling of sensitive situations."],["Team Performance Outcome","Overall team performance, turnaround time, coordination, and client satisfaction under the team leader's supervision."]]}
 };
 
-let role="Probationary", evaluators=6;
-const MIN_EV=1,MAX_EV=10;
+let role="Probationary", evaluators=1;
+const MIN_EV=1,MAX_EV=1;
 let scores={};
 let managerSaved={normal:"Aiko Yasuda", senior:"Client Relation Department"};
 
