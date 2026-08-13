@@ -1537,7 +1537,7 @@ if(!session){
   let me = null;
   try{
     const { data } = await supabase.from('profiles')
-      .select('id, full_name, position, role').eq('id', uid).maybeSingle();
+      .select('id, full_name, position, role, form_role').eq('id', uid).maybeSingle();
     me = data;
   }catch(_){}
 
@@ -1566,12 +1566,22 @@ if(!session){
   // Everything here goes through the manage-users Edge Function, which re-checks
   // that the caller is a manager before touching anything. The browser never
   // holds an admin key — hiding this panel is convenience, not the security.
-  if(me?.role === 'manager'){
+  const canAdmin = (me?.role === 'manager') || (me?.form_role === 'Senior Staff');
+  if(canAdmin){
+    const isManager = me?.role === 'manager';
     const panel = document.getElementById('mgrPanel');
     const list  = document.getElementById('mgrList');
     const msg   = document.getElementById('mgrMsg');
     const FORM_ROLES = ['Probationary','Junior Staff','Senior Staff'];
     panel.classList.add('on');
+    if(!isManager){
+      // Senior staff administer employees only.
+      const acc = document.getElementById('mgrAccess');
+      const mgrOpt = acc.querySelector('option[value="manager"]');
+      if(mgrOpt) mgrOpt.remove();
+      const hint = panel.querySelector('.mgr-hint');
+      if(hint) hint.textContent = 'Senior staff can add and remove employees. Manager accounts are managed by a manager.';
+    }
 
     const say = (t, cls='') => { msg.textContent = t; msg.className = 'mgr-msg ' + cls; };
 
@@ -1634,7 +1644,10 @@ if(!session){
         del.className = 'mgr-del';
         del.title = 'Remove ' + r.full_name;
         del.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-        del.disabled = (r.id === uid);
+        const locked = (r.role === 'manager') && !isManager;
+        sel.disabled = locked;
+        del.disabled = (r.id === uid) || locked;
+        if(locked){ del.title = 'Only a manager can change this account'; }
         del.addEventListener('click', async () => {
           if(!confirm('Remove ' + r.full_name + '?\n\nThis deletes their sign-in account and roster entry. It cannot be undone.')) return;
           del.disabled = true; say('Removing ' + r.full_name + '…');
