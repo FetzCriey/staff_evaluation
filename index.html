@@ -471,6 +471,27 @@
   .pill-state.locked{background:#fdf3e6;color:#96601a;border-color:#e8d3b2}
   .pill-state.dirty{background:var(--accent-soft);color:var(--lagoon-deep);border-color:#bfe4f5}
   .hide{display:none !important}
+
+  /* ================= REVIEWER PROGRESS ================= */
+  .prog-wrap{margin:0 0 20px;padding:14px 16px;border-radius:14px;background:#fff;
+    border:1.5px solid var(--edge);box-shadow:var(--shadow-sm)}
+  .prog-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .prog-ttl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);font-weight:700}
+  .prog-num{margin-left:auto;font-family:"Bricolage Grotesque","Inter",sans-serif;
+    font-weight:800;font-size:15px;color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
+  .prog-bar{height:9px;border-radius:999px;background:#e4eff6;overflow:hidden}
+  .prog-bar span{display:block;height:100%;width:0;border-radius:999px;
+    background:linear-gradient(90deg,var(--lagoon),var(--lagoon-deep));
+    transition:width .35s cubic-bezier(.4,0,.2,1)}
+  .prog-bar.done span{background:linear-gradient(90deg,#33b877,#1f7a4d)}
+  .prog-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .prog-chip{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+    padding:5px 10px;border-radius:999px;border:1.5px solid var(--line);
+    background:#f7fbfd;color:var(--muted)}
+  .prog-chip.ok{background:#eaf7f0;border-color:#bfe3ce;color:#1f7a4d}
+  .prog-chip .dot{width:6px;height:6px;border-radius:50%;background:#c9d9e4}
+  .prog-chip.ok .dot{background:#27ae60}
 </style>
 </head>
 <body>
@@ -579,6 +600,15 @@
     <span class="pill-state" id="whoState">No employee selected</span>
   </div>
 
+  <div class="prog-wrap hide" id="progWrap">
+    <div class="prog-head">
+      <span class="prog-ttl">Scoring progress</span>
+      <span class="prog-num" id="progNum">0 / 0</span>
+    </div>
+    <div class="prog-bar" id="progBar"><span id="progFill"></span></div>
+    <div class="prog-list" id="progList"></div>
+  </div>
+
   <div class="meta">
     <div class="field"><label>Employee name</label><input id="empName" placeholder="Full name" autocomplete="off"></div>
     <div class="field"><label>Position</label><input id="position" class="ro" readonly></div>
@@ -633,7 +663,7 @@
   </div>
 
   <div class="actions">
-    <button class="btn save hide" id="saveBtn">Save my evaluation</button>
+    <button class="btn save hide" id="saveBtn">Submit my scores</button>
     <button class="btn hide" id="printBtn">Print</button>
     <button class="btn hide" id="pdfBtn">Export to PDF</button>
     <button class="btn ghost hide" id="exportBtn">Export to Word</button>
@@ -1999,7 +2029,12 @@ if(!session){
     api.clearScores();
     api.setComments('');
     myRow = null; anyLocked = false;
-    if(!id){ api.clearColumns(); setState('No employee selected'); return; }
+    if(!id){
+      api.clearColumns();
+      el('progWrap').classList.add('hide');
+      setState('No employee selected');
+      return;
+    }
     if(id === uid && !isReviewer){
       setState('You cannot evaluate yourself', 'locked');
       api.setReadOnly(true);
@@ -2038,6 +2073,7 @@ if(!session){
       .eq('employee_id', id);
     if(error){ setState('Could not load evaluations', 'locked'); return; }
     const rows = data ?? [];
+    paintProgress(id, rows);
     if(!rows.length){
       api.clearColumns();
       api.setColumns(['No submissions yet']);
@@ -2059,6 +2095,32 @@ if(!session){
     api.setReadOnly(true);
     setState(rows.length + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
              anyLocked ? 'locked' : 'saved');
+  }
+
+  // ----- progress: who has scored this person, who hasn't -----
+  // Everyone evaluates everyone, so the expected set is all staff bar the employee.
+  function paintProgress(employeeId, rows){
+    if(!isReviewer) return;
+    el('progWrap').classList.remove('hide');
+    const expected = [...nameById.entries()].filter(([pid]) => pid !== employeeId);
+    const doneIds = new Set(rows.map(r => r.evaluator_id));
+    const n = expected.filter(([pid]) => doneIds.has(pid)).length;
+    const total = expected.length;
+    el('progNum').textContent = n + ' / ' + total;
+    el('progFill').style.width = total ? (n / total * 100) + '%' : '0%';
+    el('progBar').classList.toggle('done', total > 0 && n === total);
+    const list = el('progList');
+    list.innerHTML = '';
+    expected
+      .sort((a,b) => a[1].localeCompare(b[1]))
+      .forEach(([pid, name]) => {
+        const c = document.createElement('span');
+        const ok = doneIds.has(pid);
+        c.className = 'prog-chip' + (ok ? ' ok' : '');
+        c.innerHTML = '<span class="dot"></span>' + name;
+        c.title = ok ? name + ' has submitted' : name + ' has not submitted yet';
+        list.appendChild(c);
+      });
   }
 
   // ----- saving -----
