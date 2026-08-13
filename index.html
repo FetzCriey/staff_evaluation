@@ -198,6 +198,45 @@
   .lay-txt{flex:1 1 auto;min-width:0}
   .lay-nm{font-size:13px;font-weight:700;line-height:1.25}
   .lay-ds{font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
+  /* ---- manager staff panel ---- */
+  .mgr{display:none;border-top:1.5px solid var(--line);margin-top:8px;padding:14px 12px 4px}
+  .mgr.on{display:block}
+  .mgr h3{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin:0 0 10px 2px}
+  .mgr-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  .mgr-row{display:flex;align-items:center;gap:8px;padding:8px 9px;border:1.5px solid var(--line);
+    border-radius:11px;background:#f7fbfd}
+  .mgr-nm{flex:1 1 auto;min-width:0;font-size:12px;font-weight:600;line-height:1.25;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mgr-sel{flex:0 0 92px;font-family:inherit;font-size:11px;font-weight:600;color:var(--ink-soft);
+    border:1.5px solid #bcd8ea;border-radius:8px;padding:5px 6px;background:#fff;cursor:pointer}
+  .mgr-sel:focus{outline:none;border-color:var(--lagoon);box-shadow:0 0 0 3px rgba(21,172,227,.14)}
+  .mgr-del{flex:0 0 26px;height:26px;border-radius:8px;border:1.5px solid #e6c3c3;background:#fff6f6;
+    color:#a62a2a;cursor:pointer;display:grid;place-items:center;transition:.15s;padding:0}
+  .mgr-del:hover{background:#ffe4e4;border-color:#d99a9a}
+  .mgr-del:disabled{opacity:.45;cursor:not-allowed}
+  .mgr-nm .tag{display:inline-block;margin-left:6px;font-size:9.5px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;padding:1px 5px;border-radius:5px;vertical-align:1px}
+  .tag.mg{background:var(--accent-soft);color:var(--lagoon-deep)}
+  .tag.no{background:#fdf3e6;color:#96601a}
+  .mgr-add{display:flex;flex-direction:column;gap:8px;padding:11px;border-radius:12px;
+    background:#f2f9fc;border:1.5px solid var(--edge)}
+  .mgr-add input,.mgr-add select{width:100%;font-family:inherit;font-size:12.5px;color:var(--ink);
+    border:1.5px solid #bcd8ea;border-radius:9px;padding:9px 10px;background:#fff}
+  .mgr-add input:focus,.mgr-add select:focus{outline:none;border-color:var(--lagoon);
+    box-shadow:0 0 0 3px rgba(21,172,227,.14)}
+  .mgr-add .btn-add{display:flex;align-items:center;justify-content:center;gap:8px;border:0;
+    border-radius:10px;padding:10px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:700;
+    font-family:inherit;background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
+    box-shadow:0 8px 18px -8px rgba(21,172,227,.55);transition:transform .12s ease,filter .12s ease}
+  .mgr-add .btn-add:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  .mgr-add .btn-add:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
+  .mgr-msg{font-size:11px;line-height:1.4;color:var(--muted);min-height:15px}
+  .mgr-msg.err{color:#a62a2a}
+  .mgr-msg.ok{color:#1f7a4d}
+  .mgr-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:9px;padding-top:9px;
+    border-top:1px solid var(--line)}
+
   /* ---- account block in the drawer ---- */
   .acct{margin:auto 12px 14px;padding:13px;border-radius:14px;background:#f2f9fc;border:1.5px solid var(--edge)}
   .acct-row{display:flex;align-items:center;gap:11px}
@@ -381,6 +420,31 @@
         <span class="lay-txt"><span class="lay-nm">Criterion cards</span>
         <span class="lay-ds">One card per criterion, no scrolling</span></span></button>
     </div>
+    <div class="mgr" id="mgrPanel">
+      <h3>Staff &amp; form roles</h3>
+      <div class="mgr-list" id="mgrList"></div>
+      <div class="mgr-add">
+        <input id="mgrName" placeholder="Full name" autocomplete="off">
+        <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
+        <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
+        <select id="mgrRole">
+          <option value="Probationary">Probationary</option>
+          <option value="Junior Staff">Junior Staff</option>
+          <option value="Senior Staff">Senior Staff</option>
+        </select>
+        <select id="mgrAccess">
+          <option value="employee">Employee access</option>
+          <option value="manager">Manager access</option>
+        </select>
+        <button class="btn-add" id="mgrAdd">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Create user</span>
+        </button>
+        <div class="mgr-msg" id="mgrMsg"></div>
+      </div>
+      <div class="mgr-hint">Creates the sign-in account and the roster entry together. Removing a person deletes both.</div>
+    </div>
+
     <div class="acct" id="acct">
       <div class="acct-row">
         <div class="avatar" id="acctInitials">&mdash;</div>
@@ -1497,6 +1561,121 @@ if(!session){
       console.info('Roster: only your own profile is readable (row-level security), keeping the built-in list.');
     }
   }catch(err){ console.info('Roster fetch failed, keeping the built-in list.', err); }
+
+  // ---- 3b. manager-only staff panel -----------------------------------
+  // Everything here goes through the manage-users Edge Function, which re-checks
+  // that the caller is a manager before touching anything. The browser never
+  // holds an admin key — hiding this panel is convenience, not the security.
+  if(me?.role === 'manager'){
+    const panel = document.getElementById('mgrPanel');
+    const list  = document.getElementById('mgrList');
+    const msg   = document.getElementById('mgrMsg');
+    const FORM_ROLES = ['Probationary','Junior Staff','Senior Staff'];
+    panel.classList.add('on');
+
+    const say = (t, cls='') => { msg.textContent = t; msg.className = 'mgr-msg ' + cls; };
+
+    async function admin(payload){
+      const { data, error } = await supabase.functions.invoke('manage-users', { body: payload });
+      if(error){
+        let detail = error.message;
+        try{ detail = (await error.context?.json())?.error || detail; }catch(_){}
+        throw new Error(detail);
+      }
+      if(data?.error) throw new Error(data.error);
+      return data;
+    }
+
+    async function reload(){
+      try{
+        const { users } = await admin({ action:'list' });
+        renderList(users);
+        window.setRoster(users);
+      }catch(err){ say('Could not load staff: ' + err.message, 'err'); }
+    }
+
+    function renderList(rows){
+      list.innerHTML = '';
+      rows.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'mgr-row';
+
+        const nm = document.createElement('div');
+        nm.className = 'mgr-nm';
+        nm.textContent = r.full_name;
+        nm.title = (r.email || 'No sign-in account') + (r.role==='manager' ? ' · manager' : '');
+        if(r.role === 'manager'){
+          const t = document.createElement('span'); t.className='tag mg'; t.textContent='mgr'; nm.appendChild(t);
+        }
+        if(!r.has_login){
+          const t = document.createElement('span'); t.className='tag no'; t.textContent='no login'; nm.appendChild(t);
+        }
+
+        const sel = document.createElement('select');
+        sel.className = 'mgr-sel';
+        FORM_ROLES.forEach(fr => {
+          const o = document.createElement('option');
+          o.value = fr; o.textContent = fr; o.selected = (r.form_role === fr);
+          sel.appendChild(o);
+        });
+        sel.addEventListener('change', async () => {
+          const prev = r.form_role;
+          sel.disabled = true;
+          try{
+            await admin({ action:'set_role', id:r.id, form_role:sel.value });
+            r.form_role = sel.value;
+            say(r.full_name + ' → ' + sel.value, 'ok');
+            reload();
+          }catch(err){ sel.value = prev; say('Could not save: ' + err.message, 'err'); }
+          sel.disabled = false;
+        });
+
+        const del = document.createElement('button');
+        del.className = 'mgr-del';
+        del.title = 'Remove ' + r.full_name;
+        del.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+        del.disabled = (r.id === uid);
+        del.addEventListener('click', async () => {
+          if(!confirm('Remove ' + r.full_name + '?\n\nThis deletes their sign-in account and roster entry. It cannot be undone.')) return;
+          del.disabled = true; say('Removing ' + r.full_name + '…');
+          try{
+            await admin({ action:'delete', id:r.id });
+            say(r.full_name + ' removed.', 'ok');
+            reload();
+          }catch(err){ del.disabled = false; say(err.message, 'err'); }
+        });
+
+        row.append(nm, sel, del);
+        list.appendChild(row);
+      });
+    }
+
+    document.getElementById('mgrAdd').addEventListener('click', async () => {
+      const btn = document.getElementById('mgrAdd');
+      const full_name = document.getElementById('mgrName').value.trim();
+      const email     = document.getElementById('mgrEmail').value.trim();
+      const password  = document.getElementById('mgrPass').value;
+      const form_role = document.getElementById('mgrRole').value;
+      const role      = document.getElementById('mgrAccess').value;
+
+      if(!full_name){ say('Enter a name.', 'err'); return; }
+      if(!email.includes('@')){ say('Enter a valid email.', 'err'); return; }
+      if(password.length < 8){ say('Password must be at least 8 characters.', 'err'); return; }
+
+      btn.disabled = true; say('Creating account…');
+      try{
+        await admin({ action:'create', full_name, email, password, form_role, role });
+        document.getElementById('mgrName').value = '';
+        document.getElementById('mgrEmail').value = '';
+        document.getElementById('mgrPass').value = '';
+        say(full_name + ' can now sign in with ' + email + '.', 'ok');
+        reload();
+      }catch(err){ say(err.message, 'err'); }
+      btn.disabled = false;
+    });
+
+    reload();
+  }
 
   // ---- 4. sign out ------------------------------------------------------
   document.getElementById('signOut').addEventListener('click', async () => {
