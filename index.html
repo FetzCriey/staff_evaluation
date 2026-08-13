@@ -421,6 +421,15 @@
   .lay-opt .ds{display:block;font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
   .lay-opt .tick{flex:0 0 auto;color:var(--lagoon-deep);opacity:0;margin-top:5px}
   .lay-opt[aria-selected="true"] .tick{opacity:1}
+
+  /* ================= HIDE DRAWER SCROLLBARS ================= */
+  /* The drawer still scrolls — only the bar itself is hidden, so opening
+     Form roles or Add staff doesn't put a track down the side of the panel. */
+  .drawer{scrollbar-width:none;-ms-overflow-style:none}
+  .drawer::-webkit-scrollbar{width:0;height:0}
+  .mgr-list,.lay-menu,.evtabs{scrollbar-width:none;-ms-overflow-style:none}
+  .mgr-list::-webkit-scrollbar,.lay-menu::-webkit-scrollbar,
+  .evtabs::-webkit-scrollbar{width:0;height:0}
 </style>
 </head>
 <body>
