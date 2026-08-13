@@ -184,20 +184,6 @@
   .x{width:34px;height:34px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);
     background:rgba(255,255,255,.10);color:#f2fafe;cursor:pointer;display:grid;place-items:center}
   .x:hover{background:rgba(255,255,255,.2)}
-  .lay{display:flex;flex-direction:column;gap:7px;padding:14px 12px}
-  .lay-btn{display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;
-    border:1.5px solid transparent;background:transparent;border-radius:13px;padding:11px;
-    cursor:pointer;font-family:inherit;color:var(--ink-soft);
-    transition:background .15s ease,border-color .15s ease,transform .12s ease}
-  .lay-btn:hover{background:#f4fafd;border-color:var(--line);transform:translateY(-1px)}
-  .lay-btn.active{background:var(--accent-soft);border-color:#bfe4f5;color:var(--ink)}
-  .lay-btn:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
-  .lay-ico{flex:0 0 30px;height:30px;border-radius:9px;background:#f0f8fc;display:grid;place-items:center;
-    color:var(--lagoon-deep);border:1.5px solid var(--line)}
-  .lay-btn.active .lay-ico{background:#fff;border-color:#bfe4f5}
-  .lay-txt{flex:1 1 auto;min-width:0}
-  .lay-nm{font-size:13px;font-weight:700;line-height:1.25}
-  .lay-ds{font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
   /* ---- manager staff panel ---- */
   .mgr{display:none;border-top:1.5px solid var(--line);margin-top:8px;padding:14px 12px 4px}
   .mgr.on{display:block}
@@ -394,6 +380,21 @@
   #mgrMsg{margin-top:4px}
   .mgr-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:10px;
     padding-top:9px;border-top:1px solid var(--line)}
+
+  /* ================= CRITERIA VIEW DROPDOWN ================= */
+  .lay{display:block;padding:14px 12px 4px}
+  .lay-lbl{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);font-weight:700;margin:0 0 7px 2px}
+  .lay-wrap{position:relative}
+  .lay-wrap select{appearance:none;-webkit-appearance:none;width:100%;
+    padding:11px 32px 11px 12px;border:1.5px solid #bcd8ea;border-radius:12px;background:#fff;
+    font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;
+    text-overflow:ellipsis;transition:border-color .15s ease,box-shadow .15s ease}
+  .lay-wrap select:hover{border-color:var(--lagoon)}
+  .lay-wrap select:focus{outline:none;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+  .lay-chev{position:absolute;right:11px;top:50%;transform:translateY(-50%);
+    pointer-events:none;color:var(--lagoon-deep);opacity:.75}
+  .lay-ds{font-size:11px;color:var(--muted);line-height:1.4;margin:8px 2px 0}
 </style>
 </head>
 <body>
@@ -423,26 +424,18 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
-    <div class="lay" id="layPicker">
-      <button class="lay-btn" data-lay="grid">
-        <span class="lay-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16M3 10h18"/></svg></span>
-        <span class="lay-txt"><span class="lay-nm">Full grid</span>
-        <span class="lay-ds">Every evaluator in one wide table</span></span></button>
-
-      <button class="lay-btn" data-lay="pinned">
-        <span class="lay-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M13 12h6M17 9l3 3-3 3" stroke-linecap="round"/></svg></span>
-        <span class="lay-txt"><span class="lay-nm">Pinned criteria</span>
-        <span class="lay-ds">Same table, criteria column stays put</span></span></button>
-
-      <button class="lay-btn" data-lay="single">
-        <span class="lay-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="7" r="3"/><path d="M6 20v-1a6 6 0 0112 0v1"/></svg></span>
-        <span class="lay-txt"><span class="lay-nm">One at a time</span>
-        <span class="lay-ds">Score as one evaluator, then move on</span></span></button>
-
-      <button class="lay-btn" data-lay="cards">
-        <span class="lay-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg></span>
-        <span class="lay-txt"><span class="lay-nm">Criterion cards</span>
-        <span class="lay-ds">One card per criterion, no scrolling</span></span></button>
+    <div class="lay">
+      <label class="lay-lbl" for="laySelect">Criteria view</label>
+      <div class="lay-wrap">
+        <select id="laySelect">
+          <option value="grid">Full grid</option>
+          <option value="pinned">Pinned criteria</option>
+          <option value="single">One evaluator at a time</option>
+          <option value="cards">Criterion cards</option>
+        </select>
+        <svg class="lay-chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="lay-ds" id="layDesc"></div>
     </div>
     <div class="mgr" id="mgrPanel">
       <h3>Staff administration</h3>
@@ -487,7 +480,6 @@
         </div>
       </div>
       <div class="mgr-msg" id="mgrMsg"></div>
-      <div class="mgr-hint">Creates the sign-in account and the roster entry together. Removing a person deletes both.</div>
     </div>
 
     <div class="acct" id="acct">
@@ -658,10 +650,18 @@ function setLayout(l){
   show('evtabs',     l==='single');
   show('cards',      l==='cards');
   document.getElementById('panel').classList.toggle('pinned', l==='pinned');
-  document.querySelectorAll('.lay-btn').forEach(b=>b.classList.toggle('active',b.dataset.lay===l));
+  const LABELS={grid:'Full grid',pinned:'Pinned criteria',single:'One at a time',cards:'Criterion cards'};
+  const NOTES={
+    grid:'Every evaluator in one wide table. Scrolls sideways.',
+    pinned:'The criteria column stays put while the scores scroll.',
+    single:'Score as one evaluator, then move to the next.',
+    cards:'One card per criterion, with every evaluator inside it.'};
+  const sel=document.getElementById('laySelect');
+  if(sel && sel.value!==l) sel.value=l;
   const now=document.getElementById('layNow');
-  const cur=document.querySelector('.lay-btn[data-lay="'+l+'"] .lay-nm');
-  if(now&&cur) now.textContent=cur.textContent+' view';
+  if(now) now.textContent=LABELS[l]+' view';
+  const desc=document.getElementById('layDesc');
+  if(desc) desc.textContent=NOTES[l]||'';
   // Empty the layouts that are not on screen: they reuse the same element ids
   // (av-0, sc-0 ...), so leaving them in the DOM would shadow the live ones.
   const clear=id=>{const el=document.getElementById(id); if(el) el.innerHTML='';};
@@ -931,14 +931,14 @@ function openDrawer(v){
   drawer.setAttribute('aria-hidden',String(!v));
   document.getElementById('burger').setAttribute('aria-expanded',String(v));
   document.body.style.overflow=v?'hidden':'';
-  if(v) drawer.querySelector('.lay-btn.active,.lay-btn').focus();
+  if(v) document.getElementById('laySelect').focus();
   else document.getElementById('burger').focus();
 }
 document.getElementById('burger').onclick=()=>openDrawer(!drawer.classList.contains('open'));
 document.getElementById('drawerClose').onclick=()=>openDrawer(false);
 scrim.onclick=()=>openDrawer(false);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&drawer.classList.contains('open')) openDrawer(false); });
-document.querySelectorAll('.lay-btn').forEach(b=>b.onclick=()=>{ setLayout(b.dataset.lay); openDrawer(false); });
+document.getElementById('laySelect').addEventListener('change',e=>{ setLayout(e.target.value); openDrawer(false); });
 const gotoEv=d=>{ curEv=Math.min(Math.max(curEv+d,0),evaluators-1);
   buildHead(); buildBody(); compute();
   const f=document.querySelector('#rows .score-in'); if(f){f.focus();f.select();} };
