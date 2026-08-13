@@ -430,6 +430,17 @@
   .mgr-list,.lay-menu,.evtabs{scrollbar-width:none;-ms-overflow-style:none}
   .mgr-list::-webkit-scrollbar,.lay-menu::-webkit-scrollbar,
   .evtabs::-webkit-scrollbar{width:0;height:0}
+
+  /* ================= ROSTER ROW — STACKED ================= */
+  /* Name on its own line so long names are readable in full,
+     with the form-role picker and remove button beneath it. */
+  .mgr-row{display:block;padding:9px 10px}
+  .mgr-nm{display:block;width:100%;font-size:12.5px;font-weight:700;line-height:1.3;
+    white-space:normal;overflow:visible;text-overflow:clip;color:var(--ink);margin-bottom:7px}
+  .mgr-nm .tag{vertical-align:1px}
+  .mgr-ctl{display:flex;align-items:center;gap:8px}
+  .mgr-sel{flex:1 1 auto;width:auto;min-width:0;font-size:11.5px}
+  .mgr-del{flex:0 0 28px;height:28px}
 </style>
 </head>
 <body>
@@ -1804,7 +1815,10 @@ if(!session){
           }catch(err){ del.disabled = false; say(err.message, 'err'); }
         });
 
-        row.append(nm, sel, del);
+        const ctl = document.createElement('div');
+        ctl.className = 'mgr-ctl';
+        ctl.append(sel, del);
+        row.append(nm, ctl);
         list.appendChild(row);
       });
     }
