@@ -63,22 +63,6 @@
   }
   .sub{color:rgba(210,236,248,.82);font-size:13.5px;margin-top:7px;max-width:62ch}
 
-  /* ================= ROLE PILLS ================= */
-  .roles{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px;justify-content:center}
-  .role-btn{
-    border:1.5px solid var(--line);background:var(--panel);
-    padding:9px 17px;border-radius:999px;font-size:13.5px;font-weight:600;
-    cursor:pointer;color:var(--ink-soft);font-family:inherit;
-    transition:border-color .15s ease,box-shadow .15s ease,transform .12s ease,color .15s ease;
-  }
-  .role-btn:hover{border-color:var(--lagoon);color:var(--ink);transform:translateY(-1px)}
-  .role-btn.active{
-    background:linear-gradient(180deg,var(--lagoon) 0%,var(--lagoon-deep) 100%);
-    color:#fff;border-color:transparent;
-    box-shadow:0 10px 22px -10px rgba(21,172,227,.65);
-  }
-  .role-btn:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
-
   /* ================= FIELDS ================= */
   .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:26px}
   .field label,.comment label{
@@ -171,6 +155,119 @@
   .status{font-size:13px;color:var(--muted);flex-basis:100%;text-align:center;margin-top:4px}
   .hint{font-size:12px;color:var(--muted);margin-top:10px}
 
+
+  /* ================= DRAWER (hamburger) ================= */
+  .burger{flex:0 0 auto;width:42px;height:42px;border-radius:12px;cursor:pointer;
+    display:grid;place-items:center;color:#f2fafe;
+    background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.22);
+    transition:background .15s ease,transform .12s ease}
+  .burger:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
+  .burger:focus-visible{outline:3px solid #fff;outline-offset:2px}
+  .scrim{position:fixed;inset:0;background:rgba(5,30,45,.45);backdrop-filter:blur(2px);
+    opacity:0;visibility:hidden;transition:opacity .22s ease,visibility .22s ease;z-index:60}
+  .scrim.open{opacity:1;visibility:visible}
+  .drawer{position:fixed;top:0;left:0;bottom:0;width:290px;max-width:86vw;z-index:61;
+    background:var(--panel);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
+    transform:translateX(-100%);transition:transform .24s cubic-bezier(.4,0,.2,1);
+    display:flex;flex-direction:column;overflow-y:auto}
+  .drawer.open{transform:translateX(0)}
+  .drawer-top{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:20px 18px;color:#f2fafe;
+    background:radial-gradient(120% 90% at 85% -10%,rgba(21,172,227,.55),transparent 55%),
+      linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 55%,#051e2d 100%)}
+  .drawer-top .t{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:16px}
+  .drawer-top .s{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:rgba(180,224,245,.85);font-weight:600;margin-top:3px}
+  .x{width:34px;height:34px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);
+    background:rgba(255,255,255,.10);color:#f2fafe;cursor:pointer;display:grid;place-items:center}
+  .x:hover{background:rgba(255,255,255,.2)}
+  .lay{display:flex;flex-direction:column;gap:7px;padding:14px 12px}
+  .lay-btn{display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;
+    border:1.5px solid transparent;background:transparent;border-radius:13px;padding:11px;
+    cursor:pointer;font-family:inherit;color:var(--ink-soft);
+    transition:background .15s ease,border-color .15s ease,transform .12s ease}
+  .lay-btn:hover{background:#f4fafd;border-color:var(--line);transform:translateY(-1px)}
+  .lay-btn.active{background:var(--accent-soft);border-color:#bfe4f5;color:var(--ink)}
+  .lay-btn:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .lay-ico{flex:0 0 30px;height:30px;border-radius:9px;background:#f0f8fc;display:grid;place-items:center;
+    color:var(--lagoon-deep);border:1.5px solid var(--line)}
+  .lay-btn.active .lay-ico{background:#fff;border-color:#bfe4f5}
+  .lay-txt{flex:1 1 auto;min-width:0}
+  .lay-nm{font-size:13px;font-weight:700;line-height:1.25}
+  .lay-ds{font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
+  .side-note{margin:auto 12px 16px;padding:11px 12px;border-radius:12px;background:#f4fafd;
+    border:1.5px solid var(--line);font-size:11px;color:var(--muted);line-height:1.45}
+  .laynow{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(180,224,245,.9);margin-left:2px}
+
+  /* ================= LAYOUT: PINNED CRITERIA ================= */
+  .pinned table{border-collapse:separate;border-spacing:0}
+  .pinned thead th{position:sticky;top:0;z-index:2}
+  .pinned th.crit,.pinned td.crit{position:sticky;left:0;z-index:3;background:var(--panel);
+    box-shadow:6px 0 12px -8px rgba(8,52,76,.35)}
+  .pinned thead th.crit{z-index:4;background:#f4fafd}
+  .pinned tbody tr:hover td.crit{background:#fbfdff}
+  .scrollhint{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);
+    padding:10px 22px;background:#f4fafd;border-bottom:1.5px solid var(--line)}
+
+  /* ================= LAYOUT: ONE EVALUATOR ================= */
+  .evtabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 14px}
+  .evtab{flex:0 0 auto;border:1.5px solid var(--line);background:var(--panel);border-radius:999px;
+    padding:9px 16px;font-size:13.5px;font-weight:600;font-family:inherit;color:var(--ink-soft);
+    cursor:pointer;display:flex;align-items:center;gap:8px;
+    transition:border-color .15s ease,transform .12s ease,box-shadow .15s ease}
+  .evtab:hover{border-color:var(--lagoon);transform:translateY(-1px)}
+  .evtab.active{background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));color:#fff;
+    border-color:transparent;box-shadow:0 10px 22px -10px rgba(21,172,227,.65)}
+  .evtab:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .evdot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:0 0 auto}
+  .evtab.done .evdot{background:#27ae60}
+  .evtab.active .evdot{background:rgba(255,255,255,.85)}
+  .evhead{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+    padding:18px 24px;background:#f4fafd;border-bottom:1.5px solid var(--line)}
+  .evlbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .evwho{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:20px}
+  .evprog{font-size:12.5px;color:var(--muted);font-weight:600}
+  .crow{display:flex;align-items:center;gap:18px;padding:13px 24px;border-bottom:1px solid var(--line)}
+  .crow:last-child{border-bottom:0}
+  .crow:hover{background:#fbfdff}
+  .cnum{flex:0 0 28px;height:28px;border-radius:9px;background:var(--accent-soft);color:var(--lagoon-deep);
+    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:12.5px;display:grid;place-items:center}
+  .ctext{flex:1 1 auto;min-width:0}
+  .rowavg{flex:0 0 74px;text-align:right;font-size:11px;color:var(--muted);
+    letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+  .rowavg b{display:block;font-size:15px;color:var(--lagoon-deep);letter-spacing:0;font-variant-numeric:tabular-nums}
+  .evnav{display:flex;gap:12px;justify-content:space-between;padding:15px 24px;
+    background:#f4fafd;border-top:1.5px solid var(--line)}
+  .evnav .btn{padding:11px 20px;font-size:14px}
+
+  /* ================= LAYOUT: CRITERION CARDS ================= */
+  .cards{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--panel);border:1.5px solid var(--line);border-radius:18px;
+    box-shadow:var(--shadow-sm);overflow:hidden}
+  .card.filled{border-color:#bfe4f5}
+  .chead{display:flex;gap:14px;align-items:flex-start;padding:16px 20px 12px}
+  .cpill{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:5px 11px;border-radius:999px;background:#f4fafd;color:var(--muted);
+    border:1.5px solid var(--line);white-space:nowrap}
+  .card.filled .cpill{background:var(--accent-soft);color:var(--lagoon-deep);border-color:#bfe4f5}
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px;padding:0 20px 18px}
+  .cell{border:1.5px solid var(--line);border-radius:12px;padding:8px 11px;display:flex;
+    align-items:center;gap:10px;background:#fbfdff}
+  .cell:focus-within{border-color:var(--lagoon);background:#fff}
+  .cell .nm{flex:1 1 auto;min-width:0;font-size:11.5px;font-weight:600;color:var(--ink-soft);line-height:1.25;
+    overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .cell .score-in{flex:0 0 46px;width:46px;padding:6px 2px;font-size:13.5px}
+  .cbar{height:5px;background:var(--line)}
+  .cbar span{display:block;height:100%;width:0;transition:width .25s ease;
+    background:linear-gradient(90deg,var(--lagoon),var(--lagoon-deep))}
+  @media(max-width:560px){
+    .cgrid{grid-template-columns:1fr 1fr;padding:0 14px 14px;gap:8px}
+    .chead{padding:14px 14px 10px}
+    .crow{gap:12px;padding:12px 15px}.rowavg{display:none}
+    .evhead{padding:15px}.evnav{padding:13px 15px}.evnav .btn{flex:1 1 0}
+  }
+
   /* --- employee name autocomplete --- */
   .ac-box{position:absolute;top:100%;left:0;right:0;z-index:50;margin-top:6px;
     background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
@@ -195,15 +292,55 @@
 <body>
 <div class="wrap">
   <header class="top">
+    <button class="burger" id="burger" aria-label="Open layout menu" aria-expanded="false" aria-controls="drawer">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
     <img class="logo" id="logoImg" alt="Company logo">
     <div class="htext">
       <div class="eyebrow">Employee Assessment</div>
       <h1>Performance Evaluation</h1>
+      <div class="laynow" id="layNow"></div>
     </div>
   </header>
 
-  <div class="roles" id="roles"></div>
 
+  <div class="shell">
+
+  <!-- ================= LAYOUT DRAWER ================= -->
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" aria-label="Form layout" aria-hidden="true">
+    <div class="drawer-top">
+      <div><div class="t">Form layout</div><div class="s">Choose a view</div></div>
+      <button class="x" id="drawerClose" aria-label="Close menu">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="lay" id="layPicker">
+      <button class="lay-btn" data-lay="grid">
+        <span class="lay-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16M3 10h18"/></svg></span>
+        <span class="lay-txt"><span class="lay-nm">Full grid</span>
+        <span class="lay-ds">Every evaluator in one wide table</span></span></button>
+
+      <button class="lay-btn" data-lay="pinned">
+        <span class="lay-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M13 12h6M17 9l3 3-3 3" stroke-linecap="round"/></svg></span>
+        <span class="lay-txt"><span class="lay-nm">Pinned criteria</span>
+        <span class="lay-ds">Same table, criteria column stays put</span></span></button>
+
+      <button class="lay-btn" data-lay="single">
+        <span class="lay-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="7" r="3"/><path d="M6 20v-1a6 6 0 0112 0v1"/></svg></span>
+        <span class="lay-txt"><span class="lay-nm">One at a time</span>
+        <span class="lay-ds">Score as one evaluator, then move on</span></span></button>
+
+      <button class="lay-btn" data-lay="cards">
+        <span class="lay-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg></span>
+        <span class="lay-txt"><span class="lay-nm">Criterion cards</span>
+        <span class="lay-ds">One card per criterion, no scrolling</span></span></button>
+    </div>
+    <div class="side-note">Scores stay put when you switch layouts &mdash; only the way they are shown changes.</div>
+  </aside>
+
+  <!-- ================= FORM ================= -->
+  <main class="main">
   <div class="meta">
     <div class="field"><label>Employee name</label><input id="empName" placeholder="Full name" autocomplete="off"></div>
     <div class="field"><label>Position</label><input id="position" class="ro" readonly></div>
@@ -220,10 +357,37 @@
     </div>
   </div>
 
-  <div class="panel">
-    <div class="scroll">
+  <!-- layout: one evaluator at a time -->
+  <div class="evtabs" id="evtabs" hidden></div>
+
+  <div class="panel" id="panel">
+    <!-- layout: pinned -->
+    <div class="scrollhint" id="scrollhint" hidden>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>
+      Scroll the grid sideways for the remaining evaluators &mdash; the criteria stay pinned
+    </div>
+
+    <!-- layout: grid / pinned -->
+    <div class="scroll" id="gridWrap">
       <table id="grid"><thead><tr id="headRow"></tr></thead><tbody id="body"></tbody></table>
     </div>
+
+    <!-- layout: one evaluator at a time -->
+    <div id="singleWrap" hidden>
+      <div class="evhead">
+        <div><div class="evlbl">Now scoring as</div><div class="evwho" id="evWho"></div></div>
+        <div class="evprog" id="evProg"></div>
+      </div>
+      <div id="rows"></div>
+      <div class="evnav">
+        <button class="btn ghost" id="evPrev">&larr; Previous</button>
+        <button class="btn ghost" id="evNext">Next evaluator &rarr;</button>
+      </div>
+    </div>
+
+    <!-- layout: criterion cards -->
+    <div class="cards" id="cards" hidden></div>
+
     <div class="totals">
       <div class="interp" id="interp"></div>
       <div class="tcard"><div class="k">Total Score</div><div class="v" id="totalScore">0</div></div>
@@ -243,7 +407,9 @@
     <button class="btn ghost" id="resetBtn">Clear scores</button>
     <span class="status" id="status"></span>
   </div>
+  </main>
   </div>
+
 </div>
 
 <script>
@@ -285,14 +451,6 @@ let managerSaved={normal:"Aiko Yasuda", senior:"Client Relation Department"};
 const round1=n=>Math.round(n*10)/10;
 function ensureStore(){ if(!scores[role])scores[role]={}; FORMS[role].rows.forEach((_,i)=>{ if(!scores[role][i])scores[role][i]={}; }); }
 
-function buildRoles(){
-  const c=document.getElementById('roles'); c.innerHTML='';
-  Object.keys(FORMS).forEach(r=>{
-    const b=document.createElement('button');
-    b.className='role-btn'+(r===role?' active':''); b.textContent=r;
-    b.onclick=()=>{role=r;render();}; c.appendChild(b);
-  });
-}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // Column labels: once an employee is named, Eval 1 becomes the manager/department
 // and the remaining columns are filled with the other employees on the roster.
@@ -310,15 +468,89 @@ function evaluatorNames(){
   for(let e=base;e<evaluators;e++) out.push(pool[e-base]||('Eval '+(e+1)));
   return out;
 }
+let layout='grid', curEv=0;
+const LAYOUTS=['grid','pinned','single','cards'];
+
+function setLayout(l){
+  if(!LAYOUTS.includes(l)) l='grid';
+  layout=l;
+  const show=(id,on)=>{const el=document.getElementById(id); if(el) el.hidden=!on;};
+  show('gridWrap',   l==='grid'||l==='pinned');
+  show('scrollhint', l==='pinned');
+  show('singleWrap', l==='single');
+  show('evtabs',     l==='single');
+  show('cards',      l==='cards');
+  document.getElementById('panel').classList.toggle('pinned', l==='pinned');
+  document.querySelectorAll('.lay-btn').forEach(b=>b.classList.toggle('active',b.dataset.lay===l));
+  const now=document.getElementById('layNow');
+  const cur=document.querySelector('.lay-btn[data-lay="'+l+'"] .lay-nm');
+  if(now&&cur) now.textContent=cur.textContent+' view';
+  // Empty the layouts that are not on screen: they reuse the same element ids
+  // (av-0, sc-0 ...), so leaving them in the DOM would shadow the live ones.
+  const clear=id=>{const el=document.getElementById(id); if(el) el.innerHTML='';};
+  if(l!=='grid'&&l!=='pinned'){ clear('headRow'); clear('body'); }
+  if(l!=='single'){ clear('rows'); clear('evtabs'); }
+  if(l!=='cards'){ clear('cards'); }
+  buildHead(); buildBody(); compute();
+}
+
+function evScored(e){
+  ensureStore();
+  return FORMS[role].rows.filter((_,ci)=>scores[role][ci][e]!==undefined).length;
+}
+
 function buildHead(){
+  if(layout==='single'){ buildTabs(); return; }
+  if(layout==='cards') return;              // labels live inside each card
   const names=evaluatorNames();
   let h='<th class="crit">Criteria &amp; Description</th>';
   for(let e=0;e<evaluators;e++) h+=`<th class="evh" title="${esc(names[e])}">${esc(names[e])}</th>`;
   h+='<th class="tot">Score</th><th class="tot">Average</th>';
   document.getElementById('headRow').innerHTML=h;
 }
+
+function buildTabs(){
+  if(curEv>evaluators-1) curEv=evaluators-1;
+  if(curEv<0) curEv=0;
+  const names=evaluatorNames(), c=document.getElementById('evtabs');
+  c.innerHTML='';
+  names.forEach((n,i)=>{
+    const b=document.createElement('button');
+    const done=evScored(i)===FORMS[role].rows.length;
+    b.className='evtab'+(i===curEv?' active':'')+(done?' done':'');
+    b.title=n+(done?' — complete':'');
+    b.innerHTML='<span class="evdot"></span>'+esc(n);
+    b.onclick=()=>{curEv=i;buildHead();buildBody();compute();};
+    c.appendChild(b);
+  });
+  document.getElementById('evWho').textContent=names[curEv]||'';
+  document.getElementById('evPrev').disabled=curEv===0;
+  document.getElementById('evNext').disabled=curEv===evaluators-1;
+  paintProgress();
+}
+function paintProgress(){
+  const el=document.getElementById('evProg');
+  if(el&&layout==='single') el.textContent=evScored(curEv)+' of '+FORMS[role].rows.length+' scored';
+}
+function refreshTabs(){
+  if(layout!=='single') return;
+  const c=document.getElementById('evtabs'); if(!c) return;
+  [...c.children].forEach((b,i)=>b.classList.toggle('done',evScored(i)===FORMS[role].rows.length));
+  paintProgress();
+}
+
+function wireInputs(host){
+  host.querySelectorAll('.score-in').forEach(inp=>{
+    inp.addEventListener('input',onScoreInput);
+    inp.addEventListener('keydown',onScoreKey);
+    inp.addEventListener('blur',onScoreBlur);
+  });
+}
+
 function buildBody(){
   ensureStore();
+  if(layout==='single')      return buildSingle();
+  if(layout==='cards')       return buildCards();
   const tb=document.getElementById('body'); tb.innerHTML='';
   FORMS[role].rows.forEach(([name,desc],ci)=>{
     const tr=document.createElement('tr');
@@ -330,10 +562,52 @@ function buildBody(){
     cells+=`<td class="calc" id="sc-${ci}">0</td><td class="calc dim" id="av-${ci}">0</td>`;
     tr.innerHTML=cells; tb.appendChild(tr);
   });
-  tb.querySelectorAll('.score-in').forEach(inp=>{
-    inp.addEventListener('input',onScoreInput);
-    inp.addEventListener('keydown',onScoreKey);
-    inp.addEventListener('blur',onScoreBlur);
+  wireInputs(tb);
+}
+
+function buildSingle(){
+  const host=document.getElementById('rows'); host.innerHTML='';
+  FORMS[role].rows.forEach(([name,desc],ci)=>{
+    const v=scores[role][ci][curEv]??'';
+    const d=document.createElement('div'); d.className='crow';
+    d.innerHTML=`<div class="cnum">${ci+1}</div>`+
+      `<div class="ctext"><div class="crit-name">${name}</div><div class="crit-desc">${desc}</div></div>`+
+      `<input class="score-in" inputmode="decimal" data-c="${ci}" data-e="${curEv}" value="${v}">`+
+      `<div class="rowavg">avg<b id="av-${ci}">0</b><span id="sc-${ci}" hidden>0</span></div>`;
+    host.appendChild(d);
+  });
+  wireInputs(host);
+}
+
+function buildCards(){
+  const names=evaluatorNames();
+  const host=document.getElementById('cards'); host.innerHTML='';
+  FORMS[role].rows.forEach(([name,desc],ci)=>{
+    let cells='';
+    for(let e=0;e<evaluators;e++){
+      const v=scores[role][ci][e]??'';
+      cells+=`<label class="cell"><span class="nm" title="${esc(names[e])}">${esc(names[e])}</span>`+
+        `<input class="score-in" inputmode="decimal" data-c="${ci}" data-e="${e}" value="${v}"></label>`;
+    }
+    const d=document.createElement('div'); d.className='card'; d.id='card-'+ci;
+    d.innerHTML=`<div class="chead"><div class="cnum">${ci+1}</div>`+
+      `<div class="ctext"><div class="crit-name">${name}</div><div class="crit-desc">${desc}</div></div>`+
+      `<div class="cpill"><span id="av-${ci}">0</span> avg &middot; <span id="n-${ci}">0</span>/${evaluators}`+
+      `<span id="sc-${ci}" hidden>0</span></div></div>`+
+      `<div class="cgrid">${cells}</div><div class="cbar"><span id="bar-${ci}"></span></div>`;
+    host.appendChild(d);
+  });
+  wireInputs(host);
+  paintCards();
+}
+function paintCards(){
+  if(layout!=='cards') return;
+  ensureStore();
+  FORMS[role].rows.forEach((_,ci)=>{
+    let n=0; for(let e=0;e<evaluators;e++) if(scores[role][ci][e]!==undefined) n++;
+    const nEl=document.getElementById('n-'+ci); if(nEl) nEl.textContent=n;
+    const bar=document.getElementById('bar-'+ci); if(bar) bar.style.width=(n/evaluators*100)+'%';
+    const card=document.getElementById('card-'+ci); if(card) card.classList.toggle('filled',n===evaluators);
   });
 }
 function onScoreBlur(e){
@@ -379,7 +653,11 @@ function onScoreKey(e){
   switch(e.key){
     case "ArrowUp":   focusCell(ci>0?ci-1:lastRow, ev); break;
     case "ArrowDown":
-    case "Enter":     focusCell(ci<lastRow?ci+1:0, ev); break;
+    case "Enter":
+      if(ci<lastRow) focusCell(ci+1, ev);
+      else if(e.key==="Enter" && layout==='single' && curEv<evaluators-1) document.getElementById('evNext').click();
+      else focusCell(0, ev);
+      break;
     case "ArrowRight":
       // jump to next column only when cursor is at end of the text
       if(inp.selectionStart===inp.value.length){
@@ -401,14 +679,14 @@ function onScoreKey(e){
 }
 function onScoreInput(e){
   const inp=e.target, ci=+inp.dataset.c, ev=+inp.dataset.e, raw=inp.value.trim();
-  if(raw===''){ delete scores[role][ci][ev]; inp.classList.remove('bad'); compute(); return; }
+  if(raw===''){ delete scores[role][ci][ev]; inp.classList.remove('bad'); compute(); refreshTabs(); return; }
   if(raw==="."){ inp.classList.add('bad'); return; }
   const typing=/^\d+\.$/.test(raw);              // e.g. "4." while still typing
   const num=Number(raw);
   if(isNaN(num)||num<SCALE_MIN||num>SCALE_MAX||(!typing&&!/^\d+(\.\d{1,2})?$/.test(raw))){
     inp.classList.add('bad'); return;
   }
-  inp.classList.remove('bad'); scores[role][ci][ev]=num; compute();
+  inp.classList.remove('bad'); scores[role][ci][ev]=num; compute(); refreshTabs();
 }
 function interpret(avg){
   if(avg>=4.5)return"Outstanding"; if(avg>=3.5)return"Very Good";
@@ -422,8 +700,8 @@ function compute(){
     for(let e=0;e<evaluators;e++) if(obj[e]!==undefined) vals.push(obj[e]);
     const sum=round1(vals.reduce((a,b)=>a+b,0));
     const avg=vals.length?round1(sum/vals.length):0;
-    document.getElementById('sc-'+ci).textContent=sum;
-    document.getElementById('av-'+ci).textContent=avg;
+    const scEl=document.getElementById('sc-'+ci); if(scEl) scEl.textContent=sum;
+    const avEl=document.getElementById('av-'+ci); if(avEl) avEl.textContent=avg;
     if(vals.length){ avgVals.push(avg); scoreVals.push(sum); }
   });
   const totalScore=round1(scoreVals.reduce((a,b)=>a+b,0));
@@ -432,6 +710,7 @@ function compute(){
   document.getElementById('totalAvg').textContent=avgScore;
   const word=interpret(avgScore);
   document.getElementById('interp').innerHTML=word?`Interpretation: <b>${word}</b>`:'';
+  paintCards();
 }
 function currentData(){
   const scoreRows=[], avgRows=[];
@@ -452,7 +731,7 @@ function currentData(){
   return {rows:scoreRows, scoreRows, avgRows, totalScore, avgScore, maxPossible};
 }
 function render(){
-  buildRoles(); buildHead(); buildBody();
+  setLayout(layout);
   document.getElementById('position').value=FORMS[role].position;
   const mField=document.getElementById('managerField');
   const mInput=document.getElementById('manager');
@@ -469,6 +748,26 @@ function render(){
   compute();
 }
 
+const drawer=document.getElementById('drawer'), scrim=document.getElementById('scrim');
+function openDrawer(v){
+  drawer.classList.toggle('open',v);
+  scrim.hidden=false; scrim.classList.toggle('open',v);
+  drawer.setAttribute('aria-hidden',String(!v));
+  document.getElementById('burger').setAttribute('aria-expanded',String(v));
+  document.body.style.overflow=v?'hidden':'';
+  if(v) drawer.querySelector('.lay-btn.active,.lay-btn').focus();
+  else document.getElementById('burger').focus();
+}
+document.getElementById('burger').onclick=()=>openDrawer(!drawer.classList.contains('open'));
+document.getElementById('drawerClose').onclick=()=>openDrawer(false);
+scrim.onclick=()=>openDrawer(false);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&drawer.classList.contains('open')) openDrawer(false); });
+document.querySelectorAll('.lay-btn').forEach(b=>b.onclick=()=>{ setLayout(b.dataset.lay); openDrawer(false); });
+const gotoEv=d=>{ curEv=Math.min(Math.max(curEv+d,0),evaluators-1);
+  buildHead(); buildBody(); compute();
+  const f=document.querySelector('#rows .score-in'); if(f){f.focus();f.select();} };
+document.getElementById('evPrev').onclick=()=>gotoEv(-1);
+document.getElementById('evNext').onclick=()=>gotoEv(1);
 document.getElementById('evPlus').onclick=()=>{if(evaluators<MAX_EV){evaluators++;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('evMinus').onclick=()=>{if(evaluators>MIN_EV){evaluators--;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('resetBtn').onclick=()=>{
