@@ -199,7 +199,7 @@
   .lay-nm{font-size:13px;font-weight:700;line-height:1.25}
   .lay-ds{font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
   /* ---- account block in the drawer ---- */
-  .acct{margin:auto 12px 12px;padding:13px;border-radius:14px;background:#f2f9fc;border:1.5px solid var(--edge)}
+  .acct{margin:auto 12px 14px;padding:13px;border-radius:14px;background:#f2f9fc;border:1.5px solid var(--edge)}
   .acct-row{display:flex;align-items:center;gap:11px}
   .avatar{flex:0 0 38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;
     font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:14px;
@@ -207,13 +207,21 @@
   .acct-txt{flex:1 1 auto;min-width:0}
   .acct-nm{font-size:13px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .acct-rl{font-size:11px;color:var(--muted);margin-top:1px}
-  .signout{width:100%;margin-top:11px;border:1.5px solid #e6c3c3;background:#fff6f6;color:#a62a2a;
-    border-radius:11px;padding:10px;font:700 13px inherit;font-family:inherit;cursor:pointer;transition:.15s}
-  .signout:hover{background:#ffecec;border-color:#dcaaaa}
+  .signout{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:12px;
+    border:0;border-radius:12px;padding:12px;cursor:pointer;color:#fff;
+    font-size:13.5px;font-weight:700;font-family:inherit;letter-spacing:.01em;
+    background:linear-gradient(180deg,#5b7a8d 0%,#3b596c 100%);
+    box-shadow:0 8px 18px -8px rgba(20,52,70,.55);
+    transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
+  .signout:hover{filter:brightness(1.07);transform:translateY(-1px);
+    box-shadow:0 12px 24px -8px rgba(20,52,70,.6)}
+  .signout:active{transform:translateY(0)}
   .signout:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .signout:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
+  .signout svg{flex:0 0 auto;opacity:.9}
   .gate{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:var(--page-top);
     color:var(--muted);font-size:13.5px;font-weight:600}
-  .side-note{margin:0 12px 16px;padding:11px 12px;border-radius:12px;background:#f4fafd;
+  .side-note{display:none;margin:0 12px 16px;padding:11px 12px;border-radius:12px;background:#f4fafd;
     border:1.5px solid var(--line);font-size:11px;color:var(--muted);line-height:1.45}
   .laynow{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
     color:rgba(180,224,245,.9);margin-left:2px}
@@ -373,8 +381,6 @@
         <span class="lay-txt"><span class="lay-nm">Criterion cards</span>
         <span class="lay-ds">One card per criterion, no scrolling</span></span></button>
     </div>
-    <div class="side-note">Scores stay put when you switch layouts &mdash; only the way they are shown changes.</div>
-
     <div class="acct" id="acct">
       <div class="acct-row">
         <div class="avatar" id="acctInitials">&mdash;</div>
@@ -383,7 +389,10 @@
           <div class="acct-rl" id="acctRole">Loading account&hellip;</div>
         </div>
       </div>
-      <button class="signout" id="signOut">Sign out</button>
+      <button class="signout" id="signOut">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5"/></svg>
+        <span>Sign out</span>
+      </button>
     </div>
   </aside>
 
@@ -1480,7 +1489,8 @@ if(!session){
   // ---- 4. sign out ------------------------------------------------------
   document.getElementById('signOut').addEventListener('click', async () => {
     const b = document.getElementById('signOut');
-    b.disabled = true; b.textContent = 'Signing out…';
+    b.disabled = true;
+    const label = b.querySelector('span'); if(label) label.textContent = 'Signing out…';
     await supabase.auth.signOut();
     window.location.replace('login.html');
   });
