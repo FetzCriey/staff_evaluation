@@ -4,80 +4,192 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Performance Evaluation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#13202b; --paper:#dcecf6; --panel:#ffffff; --line:#cfe2ee;
-    --muted:#5b7080; --accent:#15ACE3; --accent-deep:#0e7fab; --accent-soft:#e2f4fc;
-    --sky:#77D0F0; --gold:#0e7fab;
-    --shadow:0 1px 2px rgba(13,32,43,.05),0 8px 24px rgba(13,90,130,.08);
+    --ink:#0a2233;
+    --ink-soft:#28455c;
+    --muted:#5b7080;
+    --lagoon:#15ACE3;
+    --lagoon-deep:#0b7fb0;
+    --lagoon-dark:#08344c;
+    --mist:#eaf4fa;
+    --panel:#ffffff;
+    --line:#d3e5f0;
+    --error-bg:#fff0f0;
+    --error-ink:#a62a2a;
+    --error-line:#f1caca;
+    --shadow:0 24px 70px -20px rgba(8,52,76,.35);
+    --shadow-sm:0 10px 30px -14px rgba(8,52,76,.35);
+    /* legacy aliases so existing rules keep resolving */
+    --paper:var(--mist); --accent:var(--lagoon); --accent-deep:var(--lagoon-deep);
+    --accent-soft:#e2f4fc; --sky:#77D0F0; --gold:var(--lagoon-deep);
   }
-  *{box-sizing:border-box} html,body{margin:0}
-  body{font-family:"Inter","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45}
-  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
-  header.top{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:26px;display:flex;align-items:flex-start;gap:18px}
-  header.top .logo{width:56px;height:56px;flex:0 0 auto;border-radius:12px;background:#fff;border:1px solid var(--line);padding:7px;box-shadow:var(--shadow)}
-  header.top .htext{flex:1 1 auto}
-  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:8px}
-  h1{font-family:"Georgia",serif;font-weight:600;font-size:30px;line-height:1.1;margin:0;letter-spacing:-.01em}
-  .sub{color:var(--muted);font-size:14px;margin-top:8px;max-width:62ch}
-  .roles{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 28px;justify-content:center}
-  .role-btn{border:1px solid var(--line);background:var(--panel);padding:9px 16px;border-radius:999px;font-size:13.5px;font-weight:500;cursor:pointer;color:var(--ink);transition:.15s}
-  .role-btn:hover{border-color:var(--accent)}
-  .role-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:26px}
-  .field label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
-  .field input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--panel);font-family:inherit;color:var(--ink)}
-  .field input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
-  .field .ro{background:#f4f2ec;color:var(--muted)}
-  .evaluator-ctl{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-  .evaluator-ctl span{font-size:13px;color:var(--muted)}
-  .stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-  .stepper button{border:0;background:var(--panel);width:34px;height:34px;font-size:18px;cursor:pointer;color:var(--accent);font-weight:600}
+  *{box-sizing:border-box} html,body{margin:0;min-height:100%}
+  body{
+    font-family:"Inter","Segoe UI",system-ui,sans-serif;
+    background:var(--mist);color:var(--ink);
+    -webkit-font-smoothing:antialiased;line-height:1.5;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:34px 20px 80px}
+
+  /* ================= BRAND HEADER — mirrors the login brand panel ================= */
+  header.top{
+    position:relative;display:flex;align-items:center;gap:16px;
+    padding:26px 30px;margin-bottom:28px;border:0;
+    border-radius:22px;color:#f2fafe;overflow:hidden;
+    box-shadow:var(--shadow);
+    background:
+      radial-gradient(120% 90% at 85% -10%, rgba(21,172,227,.55), transparent 55%),
+      radial-gradient(100% 80% at -10% 110%, rgba(21,172,227,.30), transparent 50%),
+      linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 55%,#051e2d 100%);
+  }
+  header.top .logo{
+    width:52px;height:52px;flex:0 0 auto;object-fit:cover;
+    border-radius:14px;background:#fff;padding:6px;border:0;
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
+  }
+  header.top .htext{flex:1 1 auto;min-width:0}
+  .eyebrow{
+    font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:rgba(180,224,245,.85);font-weight:600;margin-bottom:6px;
+  }
+  h1{
+    font-family:"Bricolage Grotesque","Inter",sans-serif;
+    font-weight:800;font-size:30px;line-height:1.1;
+    letter-spacing:-.01em;margin:0;color:#f2fafe;
+  }
+  .sub{color:rgba(210,236,248,.82);font-size:13.5px;margin-top:7px;max-width:62ch}
+
+  /* ================= ROLE PILLS ================= */
+  .roles{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px;justify-content:center}
+  .role-btn{
+    border:1.5px solid var(--line);background:var(--panel);
+    padding:9px 17px;border-radius:999px;font-size:13.5px;font-weight:600;
+    cursor:pointer;color:var(--ink-soft);font-family:inherit;
+    transition:border-color .15s ease,box-shadow .15s ease,transform .12s ease,color .15s ease;
+  }
+  .role-btn:hover{border-color:var(--lagoon);color:var(--ink);transform:translateY(-1px)}
+  .role-btn.active{
+    background:linear-gradient(180deg,var(--lagoon) 0%,var(--lagoon-deep) 100%);
+    color:#fff;border-color:transparent;
+    box-shadow:0 10px 22px -10px rgba(21,172,227,.65);
+  }
+  .role-btn:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+
+  /* ================= FIELDS ================= */
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:26px}
+  .field label,.comment label{
+    display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-soft);margin:0 0 7px;
+  }
+  .field input{
+    width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;
+    font-size:14.5px;background:#fbfdff;font-family:inherit;color:var(--ink);outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+  }
+  .field input:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+  .field .ro{background:#eef6fb;color:var(--muted)}
+  .field input.bad{border-color:var(--error-line);background:var(--error-bg);color:var(--error-ink)}
+
+  .evaluator-ctl{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .evaluator-ctl span{
+    font-size:11.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-soft);
+  }
+  .stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel)}
+  .stepper button{border:0;background:transparent;width:36px;height:36px;font-size:18px;cursor:pointer;color:var(--lagoon-deep);font-weight:700}
   .stepper button:hover{background:var(--accent-soft)}
-  .stepper .val{width:36px;text-align:center;font-weight:600;font-size:14px;border-left:1px solid var(--line);border-right:1px solid var(--line);line-height:34px}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  .stepper .val{width:38px;text-align:center;font-weight:700;font-size:14px;border-left:1.5px solid var(--line);border-right:1.5px solid var(--line);line-height:36px}
+
+  /* ================= SCORE PANEL ================= */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-sm);overflow:hidden}
   .scroll{overflow-x:auto}
   table{border-collapse:collapse;width:100%;min-width:720px}
-  thead th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:center;padding:14px 8px;border-bottom:1px solid var(--line);background:#faf9f4}
-  thead th.crit{text-align:left;min-width:260px;padding-left:20px}
-  thead th.tot{color:var(--accent)}
-  tbody td{padding:8px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
-  tbody td.crit{text-align:left;font-size:13.5px;font-weight:500;padding-left:20px;color:var(--ink);max-width:340px;vertical-align:top}
-  .crit-name{font-weight:600;color:var(--ink);margin-bottom:2px;font-size:14px}
-  .crit-desc{font-weight:400;font-size:12px;color:var(--muted);line-height:1.35}
+  thead th{
+    font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);
+    font-weight:700;text-align:center;padding:15px 8px;border-bottom:1.5px solid var(--line);background:#f4fafd;
+  }
+  thead th.crit{text-align:left;min-width:260px;padding-left:22px}
+  thead th.evh{min-width:96px;max-width:120px;letter-spacing:.04em;line-height:1.3;word-break:break-word;text-transform:none;font-size:11.5px}
+  thead th.tot{color:var(--lagoon-deep)}
+  tbody td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+  tbody tr:hover td{background:#fbfdff}
+  tbody td.crit{text-align:left;font-size:13.5px;padding-left:22px;color:var(--ink);max-width:340px;vertical-align:top}
+  .crit-name{font-weight:700;color:var(--ink);margin-bottom:2px;font-size:14px}
+  .crit-desc{font-weight:400;font-size:12px;color:var(--muted);line-height:1.4}
   tbody tr:last-child td{border-bottom:0}
-  .score-in{width:58px;padding:7px 4px;text-align:center;border:1.5px solid var(--accent);border-radius:7px;font-size:13.5px;font-family:inherit;color:var(--ink)}
-  .score-in:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
-  .score-in.bad{border-color:#c0392b;background:#fdf0ee}
-  .field input.bad{border-color:#c0392b;background:#fdf0ee}
-  td.calc{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent);font-size:14px}
+  .score-in{
+    width:58px;padding:8px 4px;text-align:center;border:1.5px solid var(--line);
+    border-radius:9px;font-size:13.5px;font-family:inherit;color:var(--ink);background:#fbfdff;outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+  }
+  .score-in:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+  .score-in.bad{border-color:var(--error-line);background:var(--error-bg);color:var(--error-ink)}
+  td.calc{font-variant-numeric:tabular-nums;font-weight:700;color:var(--lagoon-deep);font-size:14px}
   td.calc.dim{color:var(--muted);font-weight:500}
-  .totals{display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap;padding:18px 20px;background:#faf9f4;border-top:1px solid var(--line)}
-  .tcard{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:12px 18px;min-width:140px;text-align:right}
-  .tcard .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .tcard .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent);font-family:"Georgia",serif}
+
+  .totals{display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap;padding:18px 20px;background:#f4fafd;border-top:1.5px solid var(--line)}
+  .tcard{border:1.5px solid var(--line);border-radius:14px;background:var(--panel);padding:12px 18px;min-width:144px;text-align:right}
+  .tcard .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .tcard .v{
+    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;
+    font-size:26px;font-variant-numeric:tabular-nums;color:var(--lagoon-deep);letter-spacing:-.01em;
+  }
   .interp{margin-left:auto;align-self:center;font-size:13px;color:var(--muted)}
-  .interp b{color:var(--accent);font-weight:600}
-  .comment{margin-top:24px}
-  .comment label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
-  .comment textarea{width:100%;min-height:90px;padding:11px;border:1px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;resize:vertical;background:var(--panel);color:var(--ink)}
-  .comment textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
-  .actions{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;align-items:center;justify-content:center}
-  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:14px 28px;border-radius:11px;font-size:15.5px;font-weight:600;cursor:pointer}
-  .btn:hover{background:var(--accent-deep)} .btn:disabled{opacity:.5;cursor:default}
-  .btn.ghost{background:transparent;color:var(--accent)} .btn.ghost:hover{background:var(--accent-soft)}
-  .status{font-size:13px;color:var(--muted);flex-basis:100%;text-align:center}
+  .interp b{color:var(--lagoon-deep);font-weight:700}
+
+  /* ================= COMMENTS ================= */
+  .comment{margin-top:26px}
+  .comment textarea{
+    width:100%;min-height:100px;padding:13px 14px;border:1.5px solid var(--line);border-radius:13px;
+    font-family:inherit;font-size:14.5px;resize:vertical;background:#fbfdff;color:var(--ink);outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+  }
+  .comment textarea:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+
+  /* ================= ACTIONS ================= */
+  .actions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;align-items:center;justify-content:center}
+  .btn{
+    border:0;border-radius:11px;font-family:inherit;font-size:15px;font-weight:700;
+    padding:14px 28px;cursor:pointer;color:#fff;
+    background:linear-gradient(180deg,var(--lagoon) 0%,var(--lagoon-deep) 100%);
+    box-shadow:0 10px 24px -8px rgba(21,172,227,.55);
+    transition:transform .12s ease,box-shadow .12s ease,filter .12s ease;
+  }
+  .btn:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 14px 28px -8px rgba(21,172,227,.6)}
+  .btn:active{transform:translateY(0)}
+  .btn:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .btn:disabled{opacity:.65;cursor:not-allowed;transform:none;filter:none}
+  .btn.ghost{
+    background:var(--panel);color:var(--lagoon-deep);
+    border:1.5px solid var(--line);box-shadow:none;
+  }
+  .btn.ghost:hover{background:var(--accent-soft);border-color:var(--lagoon);filter:none}
+  .status{font-size:13px;color:var(--muted);flex-basis:100%;text-align:center;margin-top:4px}
   .hint{font-size:12px;color:var(--muted);margin-top:10px}
 
   /* --- employee name autocomplete --- */
-  .ac-box{position:absolute;top:100%;left:0;right:0;z-index:50;margin-top:4px;
-    background:var(--panel);border:1px solid var(--line);border-radius:8px;
-    box-shadow:var(--shadow);overflow:hidden;display:none}
+  .ac-box{position:absolute;top:100%;left:0;right:0;z-index:50;margin-top:6px;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
+    box-shadow:var(--shadow-sm);overflow:hidden;display:none}
   .ac-box.open{display:block}
-  .ac-item{padding:8px 11px;font-size:14px;cursor:pointer}
-  .ac-item:hover,.ac-item.sel{background:var(--accent-soft);color:var(--accent-deep)}
+  .ac-item{padding:10px 13px;font-size:14px;cursor:pointer}
+  .ac-item:hover,.ac-item.sel{background:var(--accent-soft);color:var(--lagoon-deep)}
 
-  @media (max-width:560px){h1{font-size:24px}.wrap{padding-top:22px}}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+
+  @media (max-width:560px){
+    .wrap{padding:16px 14px 60px}
+    header.top{padding:22px 20px;border-radius:18px;gap:13px}
+    h1{font-size:23px}
+    .sub{display:none}
+    .btn{flex:1 1 100%}
+  }
 </style>
 </head>
 <body>
@@ -146,6 +258,25 @@ const FORMS = {
   "Senior Staff":{title:"BETTER PRACTICE SENIOR EVALUATION FORM",position:"Senior",senior:true,rows:[["Leadership & Team Guidance","Ability to guide, support, and motivate team members effectively."],["Team Productivity & Task Management","Proper delegation, monitoring, and completion of team tasks and deadlines."],["Decision-Making & Problem Solving","Ability to resolve issues, escalations, and operational concerns efficiently."],["Communication Skills","Clear, professional, and timely communication with team members and clients."],["Quality Control & Accuracy","Reviews endorsements, onboarding, monitoring, and outputs for completeness and accuracy."],["Workload Management","Ability to balance workloads fairly and support high-volume or urgent cases."],["Accountability & Reliability","Ownership of team performance, punctuality, follow-through, and consistency."],["Coaching & Staff Development","Provides training, guidance, and constructive feedback to junior staff."],["Professionalism","Demonstrates integrity, professionalism, and proper handling of sensitive situations."],["Team Performance Outcome","Overall team performance, turnaround time, coordination, and client satisfaction under the team leader's supervision."]]}
 };
 
+// Roster + the form each person is evaluated on.
+const STAFF={
+  "Mark Ian Buenzalida":"Probationary",
+  "Rose Villano":"Probationary",
+  "John Louis Marcos Dionisio":"Probationary",
+  "Aiko Yasuda":"Senior Staff",
+  "Marivie Marquez":"Junior Staff",
+  "Camila Haduca":"Junior Staff",
+  "Monique Eileen Irog-irog":"Junior Staff"
+};
+const EMPLOYEES=Object.keys(STAFF).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+const nameKey=x=>String(x||'').toLowerCase().replace(/\s+/g,' ').trim();
+const STAFF_BY_KEY={}; for(const n of EMPLOYEES) STAFF_BY_KEY[nameKey(n)]=STAFF[n];
+// Switch the form to match the named employee. Returns true if the role changed.
+function applyRoleFromName(){
+  const r=STAFF_BY_KEY[nameKey(document.getElementById('empName').value)];
+  if(!r||r===role) return false;
+  role=r; render(); return true;
+}
 let role="Probationary", evaluators=6;
 const MIN_EV=1,MAX_EV=10;
 let scores={};
@@ -162,9 +293,27 @@ function buildRoles(){
     b.onclick=()=>{role=r;render();}; c.appendChild(b);
   });
 }
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Column labels: once an employee is named, Eval 1 becomes the manager/department
+// and the remaining columns are filled with the other employees on the roster.
+function evaluatorNames(){
+  const emp=(document.getElementById('empName')?.value||'').trim();
+  const mgr=(document.getElementById('manager')?.value||'').trim();
+  const out=[];
+  if(!emp){ for(let e=0;e<evaluators;e++) out.push('Eval '+(e+1)); return out; }
+  const taken=new Set([nameKey(emp)]);
+  // On the Senior form the first field is a Department, not a person, so it
+  // never becomes a column header — every column comes from the roster instead.
+  if(!FORMS[role].senior){ out.push(mgr||'Eval 1'); taken.add(nameKey(mgr)); }
+  const pool=EMPLOYEES.filter(n=>!taken.has(nameKey(n)));
+  const base=out.length;
+  for(let e=base;e<evaluators;e++) out.push(pool[e-base]||('Eval '+(e+1)));
+  return out;
+}
 function buildHead(){
+  const names=evaluatorNames();
   let h='<th class="crit">Criteria &amp; Description</th>';
-  for(let e=0;e<evaluators;e++) h+=`<th>Eval ${e+1}</th>`;
+  for(let e=0;e<evaluators;e++) h+=`<th class="evh" title="${esc(names[e])}">${esc(names[e])}</th>`;
   h+='<th class="tot">Score</th><th class="tot">Average</th>';
   document.getElementById('headRow').innerHTML=h;
 }
@@ -326,7 +475,7 @@ document.getElementById('resetBtn').onclick=()=>{
   if(!confirm("Clear everything on this form (scores, name, and comments)? This cannot be undone.")) return;
   scores[role]={};ensureStore();buildBody();compute();
   const empN=document.getElementById('empName');
-  empN.value=""; empN.classList.remove('bad');
+  empN.value=""; empN.classList.remove('bad'); buildHead();
   document.getElementById('comment').value="";
   const st=document.getElementById('status');
   st.textContent="Form cleared.";
@@ -817,7 +966,7 @@ function toProperCase(s){
     .replace(/([A-Za-z])([''-])([a-z])/g,(m,a,sep,b)=>a+sep+b.toUpperCase());
 }
 const empNameEl=document.getElementById('empName');
-empNameEl.addEventListener('input',e=>{ if(e.target.value.trim()) e.target.classList.remove('bad'); });
+empNameEl.addEventListener('input',e=>{ if(e.target.value.trim()) e.target.classList.remove('bad'); if(!applyRoleFromName()) buildHead(); });
 empNameEl.addEventListener('blur',e=>{ const v=e.target.value.trim(); if(v) e.target.value=toProperCase(v); });
 empNameEl.addEventListener('keydown',e=>{
   if(e.key==="Enter"){
@@ -832,13 +981,11 @@ empNameEl.addEventListener('keydown',e=>{
 document.getElementById('manager').addEventListener('input',e=>{
   if(FORMS[role].senior) managerSaved.senior=e.target.value;
   else managerSaved.normal=e.target.value;
+  buildHead();
 });
 
 // ---- Employee name autocomplete (predictive suggestions) ----
-const EMPLOYEES=[
-  "Mark Ian Buenzalida","Rose Villano","Marivie Marquez",
-  "Camila Haduca","Monique Eileen Irog-irog","John Louis Marcos Dionisio"
-];
+
 const acNorm=s=>s.toLowerCase().replace(/[^a-z\s-]/g,"").trim();
 function acSuggest(q){
   q=acNorm(q); if(!q) return [];
@@ -879,7 +1026,7 @@ function acSuggest(q){
     });
     items.length?open():close();
   }
-  function pick(name){ inp.value=name; inp.classList.remove('bad'); close(); inp.focus(); }
+  function pick(name){ inp.value=name; inp.classList.remove('bad'); close(); inp.focus(); if(!applyRoleFromName()) buildHead(); }
   function move(step){
     if(!items.length) return;
     idx=(idx+step+items.length)%items.length;
