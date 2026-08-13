@@ -362,6 +362,38 @@
   .evtab{border-color:#bcd8ea}
   .totals,.evhead,.evnav,thead th{background:#f2f9fc}
   thead th.crit,.pinned thead th.crit{background:#f2f9fc}
+
+  /* ================= MANAGER PANEL — ACCORDION ================= */
+  #mgrPanel h3{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin:0 0 10px 2px}
+  .mgr-sec{border:1.5px solid var(--line);border-radius:13px;background:#fff;
+    margin-bottom:9px;overflow:hidden}
+  .mgr-sum{display:flex;align-items:center;gap:9px;width:100%;padding:11px 12px;cursor:pointer;
+    background:#f7fbfd;border:0;font-family:inherit;color:var(--ink-soft);text-align:left;
+    font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    transition:background .15s ease}
+  .mgr-sum:hover{background:#eef6fb}
+  .mgr-sum:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:-3px}
+  .mgr-sum .lbl{flex:1 1 auto;min-width:0}
+  .mgr-sum .cnt{flex:0 0 auto;font-size:10px;letter-spacing:.04em;font-weight:700;
+    padding:2px 7px;border-radius:999px;background:var(--accent-soft);
+    color:var(--lagoon-deep);text-transform:none}
+  .mgr-sum .chev{flex:0 0 auto;transition:transform .2s ease;opacity:.65}
+  .mgr-sec.open .mgr-sum{background:var(--accent-soft);color:var(--lagoon-deep)}
+  .mgr-sec.open .mgr-sum .chev{transform:rotate(180deg)}
+  .mgr-panel-body{display:none;padding:11px}
+  .mgr-sec.open .mgr-panel-body{display:block}
+  .mgr-list{display:flex;flex-direction:column;gap:6px;margin:0}
+  .mgr-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
+  .mgr-add{display:flex;flex-direction:column;gap:8px;padding:0;background:none;border:0}
+  .mgr-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin:5px 0 -2px 2px}
+  .mgr-lbl:first-child{margin-top:0}
+  .mgr-row{align-items:center}
+  .mgr-nm{font-size:12px}
+  #mgrMsg{margin-top:4px}
+  .mgr-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:10px;
+    padding-top:9px;border-top:1px solid var(--line)}
 </style>
 </head>
 <body>
