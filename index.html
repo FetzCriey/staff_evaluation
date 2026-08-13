@@ -453,6 +453,24 @@
     color:#a62a2a;transition:background .15s ease,border-color .15s ease}
   .mgr-del:hover{background:#ffe4e4;border-color:#d99a9a}
   .mgr-del:disabled{opacity:.45;cursor:not-allowed}
+
+  /* ================= SAVE BAR / MODES ================= */
+  .btn.save{background:linear-gradient(180deg,#2fa96b,#1f7a4d);
+    box-shadow:0 10px 24px -8px rgba(31,122,77,.55)}
+  .btn.lock{background:#fff;color:#96601a;border:1.5px solid #e8d3b2;box-shadow:none}
+  .btn.lock:hover{background:#fdf3e6;filter:none}
+  .whobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 18px;
+    padding:11px 14px;border-radius:13px;background:#fff;border:1.5px solid var(--edge)}
+  .whobar .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);font-weight:700}
+  .whobar .v{font-size:13.5px;font-weight:700;color:var(--ink)}
+  .pill-state{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;padding:4px 10px;border-radius:999px;
+    background:#f4fafd;color:var(--muted);border:1.5px solid var(--line)}
+  .pill-state.saved{background:#eaf7f0;color:#1f7a4d;border-color:#bfe3ce}
+  .pill-state.locked{background:#fdf3e6;color:#96601a;border-color:#e8d3b2}
+  .pill-state.dirty{background:var(--accent-soft);color:var(--lagoon-deep);border-color:#bfe4f5}
+  .hide{display:none !important}
 </style>
 </head>
 <body>
@@ -555,6 +573,12 @@
 
   <!-- ================= FORM ================= -->
   <main class="main">
+  <div class="whobar" id="whoBar">
+    <span class="k" id="whoK">Signed in as</span>
+    <span class="v" id="whoV">&mdash;</span>
+    <span class="pill-state" id="whoState">No employee selected</span>
+  </div>
+
   <div class="meta">
     <div class="field"><label>Employee name</label><input id="empName" placeholder="Full name" autocomplete="off"></div>
     <div class="field"><label>Position</label><input id="position" class="ro" readonly></div>
@@ -609,9 +633,11 @@
   </div>
 
   <div class="actions">
-    <button class="btn" id="printBtn">Print</button>
-    <button class="btn" id="pdfBtn">Export to PDF</button>
-    <button class="btn ghost" id="exportBtn">Export to Word</button>
+    <button class="btn save hide" id="saveBtn">Save my evaluation</button>
+    <button class="btn hide" id="printBtn">Print</button>
+    <button class="btn hide" id="pdfBtn">Export to PDF</button>
+    <button class="btn ghost hide" id="exportBtn">Export to Word</button>
+    <button class="btn lock hide" id="lockBtn">Lock evaluations</button>
     <button class="btn ghost" id="resetBtn">Clear scores</button>
     <span class="status" id="status"></span>
   </div>
@@ -681,6 +707,11 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 // Column labels: once an employee is named, Eval 1 becomes the manager/department
 // and the remaining columns are filled with the other employees on the roster.
 function evaluatorNames(){
+  if(NAME_OVERRIDE){
+    const out=NAME_OVERRIDE.slice(0,evaluators);
+    while(out.length<evaluators) out.push('Eval '+(out.length+1));
+    return out;
+  }
   const emp=(document.getElementById('empName')?.value||'').trim();
   const mgr=(document.getElementById('manager')?.value||'').trim();
   const out=[];
@@ -902,7 +933,8 @@ function onScoreKey(e){
 }
 function onScoreInput(e){
   const inp=e.target, ci=+inp.dataset.c, ev=+inp.dataset.e, raw=inp.value.trim();
-  if(raw===''){ delete scores[role][ci][ev]; inp.classList.remove('bad'); compute(); refreshTabs(); return; }
+  if(raw===''){ delete scores[role][ci][ev]; inp.classList.remove('bad'); compute(); refreshTabs();
+    if(window.__scoreHook) window.__scoreHook(); return; }
   if(raw==="."){ inp.classList.add('bad'); return; }
   const typing=/^\d+\.$/.test(raw);              // e.g. "4." while still typing
   const num=Number(raw);
@@ -910,6 +942,7 @@ function onScoreInput(e){
     inp.classList.add('bad'); return;
   }
   inp.classList.remove('bad'); scores[role][ci][ev]=num; compute(); refreshTabs();
+  if(window.__scoreHook) window.__scoreHook();
 }
 function interpret(avg){
   if(avg>=4.5)return"Outstanding"; if(avg>=3.5)return"Very Good";
@@ -1053,6 +1086,7 @@ document.getElementById('resetBtn').onclick=()=>{
   const empN=document.getElementById('empName');
   empN.value=""; empN.classList.remove('bad'); buildHead();
   document.getElementById('comment').value="";
+  if(window.__scoreHook) window.__scoreHook();
   const st=document.getElementById('status');
   st.textContent="Form cleared.";
   setTimeout(()=>st.textContent="",3000);
@@ -1086,6 +1120,62 @@ function requireValidScores(){
   }
   return true;
 }
+// ---------------------------------------------------------------
+// Bridge used by the Supabase module below. Column names come from the
+// roster by default; in reviewer mode they are the actual evaluators.
+// ---------------------------------------------------------------
+let NAME_OVERRIDE = null;
+window.evalApi = {
+  formRole: () => role,
+  criteriaCount: () => FORMS[role].rows.length,
+
+  // reviewer mode: one column per person who submitted
+  setColumns(names){
+    NAME_OVERRIDE = names.slice();
+    evaluators = Math.max(1, names.length);
+    document.getElementById('evVal').textContent = evaluators;
+    curEv = 0;
+    buildHead(); buildBody(); compute();
+  },
+  clearColumns(){ NAME_OVERRIDE = null; },
+
+  // wipe every score for the current form
+  clearScores(){ scores[role] = {}; ensureStore(); buildHead(); buildBody(); compute(); },
+
+  // {criterionIndex: value} for one column
+  setColumnScores(idx, obj){
+    ensureStore();
+    FORMS[role].rows.forEach((_, ci) => {
+      const v = obj?.[ci] ?? obj?.[String(ci)];
+      if (v === undefined || v === null) delete scores[role][ci][idx];
+      else scores[role][ci][idx] = Number(v);
+    });
+    buildHead(); buildBody(); compute();
+  },
+  getColumnScores(idx){
+    ensureStore();
+    const out = {};
+    FORMS[role].rows.forEach((_, ci) => {
+      const v = scores[role][ci][idx];
+      if (v !== undefined) out[ci] = v;
+    });
+    return out;
+  },
+  columnComplete(idx){
+    ensureStore();
+    return FORMS[role].rows.every((_, ci) => scores[role][ci][idx] !== undefined);
+  },
+  average(){ return Number(document.getElementById('totalAvg').textContent) || 0; },
+  comments(){ return document.getElementById('comment').value; },
+  setComments(t){ document.getElementById('comment').value = t || ''; },
+  employeeName(){ return document.getElementById('empName').value.trim(); },
+  onScoreChange(fn){ window.__scoreHook = fn; },
+  setReadOnly(on){
+    document.querySelectorAll('.score-in').forEach(i => { i.readOnly = !!on; });
+    document.getElementById('comment').readOnly = !!on;
+  }
+};
+
 function canExport(){ return requireName() && requireValidScores(); }
 
 document.getElementById('printBtn').onclick=()=>{ if(!canExport()) return; openPrint(); };
@@ -1861,6 +1951,171 @@ if(!session){
 
     reload();
   }
+
+  // ---- 3c. evaluation mode ---------------------------------------------
+  // Staff score one colleague at a time and save their own column.
+  // Managers and Senior Staff see every submitted column and export the result.
+  const isReviewer = canAdmin;
+  const api = window.evalApi;
+
+  const el = id => document.getElementById(id);
+  const show = (id, on) => el(id).classList.toggle('hide', !on);
+  const stateEl = el('whoState');
+  const setState = (text, cls='') => { stateEl.textContent = text; stateEl.className = 'pill-state ' + cls; };
+
+  el('whoV').textContent = me?.full_name || session.user.email;
+  el('whoK').textContent = isReviewer ? 'Reviewing as' : 'Evaluating as';
+
+  show('saveBtn', !isReviewer);
+  show('printBtn', isReviewer);
+  show('pdfBtn', isReviewer);
+  show('exportBtn', isReviewer);
+  show('lockBtn', isReviewer);
+  if(!isReviewer){
+    // staff see a single column: their own
+    el('evPlus').disabled = true;
+    el('evMinus').disabled = true;
+  }
+
+  // name -> id, so we know who is being evaluated
+  let idByName = new Map();
+  let nameById = new Map();
+  async function loadIds(){
+    const { data } = await supabase.from('profiles').select('id, full_name');
+    (data ?? []).forEach(p => { idByName.set(p.full_name.toLowerCase(), p.id); nameById.set(p.id, p.full_name); });
+  }
+  await loadIds();
+
+  let target = null;      // employee being evaluated
+  let myRow = null;       // this evaluator's saved row for that employee
+  let anyLocked = false;
+
+  function targetId(){ return idByName.get(api.employeeName().toLowerCase()) || null; }
+
+  async function onEmployeeChange(){
+    const id = targetId();
+    if(id === target) return;
+    target = id;
+    api.clearScores();
+    api.setComments('');
+    myRow = null; anyLocked = false;
+    if(!id){ api.clearColumns(); setState('No employee selected'); return; }
+    if(id === uid && !isReviewer){
+      setState('You cannot evaluate yourself', 'locked');
+      api.setReadOnly(true);
+      return;
+    }
+    isReviewer ? await loadAll(id) : await loadMine(id);
+  }
+
+  // ----- staff: their own single column -----
+  async function loadMine(id){
+    api.clearColumns();
+    api.setColumns([ me?.full_name || 'You' ]);
+    const { data, error } = await supabase.from('evaluations')
+      .select('id, scores, comments, locked')
+      .eq('employee_id', id).eq('evaluator_id', uid).maybeSingle();
+    if(error){ setState('Could not load your evaluation', 'locked'); return; }
+    myRow = data || null;
+    if(myRow){
+      api.setColumnScores(0, myRow.scores || {});
+      api.setComments(myRow.comments || '');
+      anyLocked = !!myRow.locked;
+      api.setReadOnly(anyLocked);
+      setState(anyLocked ? 'Locked by a reviewer' : 'Saved — you can still edit',
+               anyLocked ? 'locked' : 'saved');
+    }else{
+      api.setReadOnly(false);
+      setState('Not submitted yet');
+    }
+    el('saveBtn').disabled = anyLocked;
+  }
+
+  // ----- reviewer: every submitted column -----
+  async function loadAll(id){
+    const { data, error } = await supabase.from('evaluations')
+      .select('id, evaluator_id, scores, comments, locked')
+      .eq('employee_id', id);
+    if(error){ setState('Could not load evaluations', 'locked'); return; }
+    const rows = data ?? [];
+    if(!rows.length){
+      api.clearColumns();
+      api.setColumns(['No submissions yet']);
+      setState('Nobody has evaluated this person', '');
+      el('lockBtn').disabled = true;
+      return;
+    }
+    rows.sort((a,b) => (nameById.get(a.evaluator_id)||'').localeCompare(nameById.get(b.evaluator_id)||''));
+    api.setColumns(rows.map(r => nameById.get(r.evaluator_id) || 'Unknown'));
+    rows.forEach((r,i) => api.setColumnScores(i, r.scores || {}));
+    const notes = rows.map(r => {
+      const t = (r.comments||'').trim();
+      return t ? (nameById.get(r.evaluator_id)||'Evaluator') + ': ' + t : '';
+    }).filter(Boolean).join('\n');
+    api.setComments(notes);
+    anyLocked = rows.every(r => r.locked);
+    el('lockBtn').disabled = false;
+    el('lockBtn').textContent = anyLocked ? 'Unlock evaluations' : 'Lock evaluations';
+    api.setReadOnly(true);
+    setState(rows.length + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
+             anyLocked ? 'locked' : 'saved');
+  }
+
+  // ----- saving -----
+  el('saveBtn').addEventListener('click', async () => {
+    const id = targetId();
+    if(!id){ alert('Choose the employee you are evaluating first.'); return; }
+    if(id === uid){ alert('You cannot evaluate yourself.'); return; }
+    const btn = el('saveBtn');
+    btn.disabled = true; el('status').textContent = 'Saving…';
+    const payload = {
+      employee_id: id,
+      evaluator_id: uid,
+      scores: api.getColumnScores(0),
+      average: api.average(),
+      comments: api.comments(),
+      form_role: api.formRole(),
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supabase.from('evaluations')
+      .upsert(payload, { onConflict: 'evaluator_id,employee_id' });
+    btn.disabled = false;
+    if(error){
+      el('status').textContent = '';
+      setState('Save failed', 'locked');
+      alert('Could not save: ' + error.message);
+      return;
+    }
+    el('status').textContent = 'Saved.';
+    setTimeout(() => { if(el('status').textContent === 'Saved.') el('status').textContent = ''; }, 2500);
+    setState(api.columnComplete(0) ? 'Saved — you can still edit' : 'Saved (incomplete)', 'saved');
+  });
+
+  // ----- locking -----
+  el('lockBtn').addEventListener('click', async () => {
+    const id = targetId();
+    if(!id) return;
+    const next = !anyLocked;
+    if(!confirm(next
+      ? 'Lock all evaluations for this person? They will not be able to edit further.'
+      : 'Unlock and allow evaluators to edit again?')) return;
+    const btn = el('lockBtn'); btn.disabled = true;
+    const { error } = await supabase.from('evaluations').update({ locked: next }).eq('employee_id', id);
+    btn.disabled = false;
+    if(error){ alert('Could not change the lock: ' + error.message); return; }
+    await loadAll(id);
+  });
+
+  // mark unsaved edits
+  if(!isReviewer){
+    api.onScoreChange(() => {
+      if(!anyLocked && target) setState('Unsaved changes', 'dirty');
+    });
+  }
+
+  el('empName').addEventListener('change', onEmployeeChange);
+  el('empName').addEventListener('blur', onEmployeeChange);
+  setInterval(onEmployeeChange, 900);   // catches autocomplete picks
 
   // ---- 4. sign out ------------------------------------------------------
   document.getElementById('signOut').addEventListener('click', async () => {
