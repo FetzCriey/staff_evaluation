@@ -211,14 +211,6 @@
   .mgr-sel{flex:0 0 92px;font-family:inherit;font-size:11px;font-weight:600;color:var(--ink-soft);
     border:1.5px solid #bcd8ea;border-radius:8px;padding:5px 6px;background:#fff;cursor:pointer}
   .mgr-sel:focus{outline:none;border-color:var(--lagoon);box-shadow:0 0 0 3px rgba(21,172,227,.14)}
-  .mgr-del{flex:0 0 26px;height:26px;border-radius:8px;border:1.5px solid #e6c3c3;background:#fff6f6;
-    color:#a62a2a;cursor:pointer;display:grid;place-items:center;transition:.15s;padding:0}
-  .mgr-del:hover{background:#ffe4e4;border-color:#d99a9a}
-  .mgr-del:disabled{opacity:.45;cursor:not-allowed}
-  .mgr-nm .tag{display:inline-block;margin-left:6px;font-size:9.5px;font-weight:700;letter-spacing:.06em;
-    text-transform:uppercase;padding:1px 5px;border-radius:5px;vertical-align:1px}
-  .tag.mg{background:var(--accent-soft);color:var(--lagoon-deep)}
-  .tag.no{background:#fdf3e6;color:#96601a}
   .mgr-add{display:flex;flex-direction:column;gap:8px;padding:11px;border-radius:12px;
     background:#f2f9fc;border:1.5px solid var(--edge)}
   .mgr-add input,.mgr-add select{width:100%;font-family:inherit;font-size:12.5px;color:var(--ink);
@@ -421,27 +413,48 @@
         <span class="lay-ds">One card per criterion, no scrolling</span></span></button>
     </div>
     <div class="mgr" id="mgrPanel">
-      <h3>Staff &amp; form roles</h3>
-      <div class="mgr-list" id="mgrList"></div>
-      <div class="mgr-add">
-        <input id="mgrName" placeholder="Full name" autocomplete="off">
-        <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
-        <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
-        <select id="mgrRole">
-          <option value="Probationary">Probationary</option>
-          <option value="Junior Staff">Junior Staff</option>
-          <option value="Senior Staff">Senior Staff</option>
-        </select>
-        <select id="mgrAccess">
-          <option value="employee">Employee access</option>
-          <option value="manager">Manager access</option>
-        </select>
-        <button class="btn-add" id="mgrAdd">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Create user</span>
+      <h3>Staff administration</h3>
+
+      <div class="mgr-sec" id="secRoles">
+        <button class="mgr-sum" id="sumRoles" aria-expanded="false" aria-controls="bodyRoles">
+          <span class="lbl">Form roles</span>
+          <span class="cnt" id="rolesCount">0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <div class="mgr-msg" id="mgrMsg"></div>
+        <div class="mgr-panel-body" id="bodyRoles">
+          <div class="mgr-list" id="mgrList"></div>
+        </div>
       </div>
+      <div class="mgr-sec" id="secAdd">
+        <button class="mgr-sum" id="sumAdd" aria-expanded="false" aria-controls="bodyAdd">
+          <span class="lbl">Add staff</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mgr-panel-body" id="bodyAdd">
+          <div class="mgr-add">
+            <div class="mgr-lbl">Person</div>
+            <input id="mgrName" placeholder="Full name" autocomplete="off">
+            <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
+            <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
+            <div class="mgr-lbl">Evaluation form</div>
+            <select id="mgrRole">
+              <option value="Probationary">Probationary</option>
+              <option value="Junior Staff">Junior Staff</option>
+              <option value="Senior Staff">Senior Staff</option>
+            </select>
+            <div class="mgr-lbl">Access level</div>
+            <select id="mgrAccess">
+              <option value="employee">Employee access</option>
+              <option value="manager">Manager access</option>
+            </select>
+            <button class="btn-add" id="mgrAdd">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Create user</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="mgr-msg" id="mgrMsg"></div>
       <div class="mgr-hint">Creates the sign-in account and the roster entry together. Removing a person deletes both.</div>
     </div>
 
@@ -1585,6 +1598,24 @@ if(!session){
 
     const say = (t, cls='') => { msg.textContent = t; msg.className = 'mgr-msg ' + cls; };
 
+    // Both sections start closed; opening one closes the other so the drawer
+    // never becomes a long scroll.
+    const SECTIONS = [['secRoles','sumRoles'], ['secAdd','sumAdd']];
+    SECTIONS.forEach(([secId, sumId]) => {
+      const sec = document.getElementById(secId);
+      document.getElementById(sumId).addEventListener('click', () => {
+        const opening = !sec.classList.contains('open');
+        SECTIONS.forEach(([s2, b2]) => {
+          document.getElementById(s2).classList.remove('open');
+          document.getElementById(b2).setAttribute('aria-expanded','false');
+        });
+        if(opening){
+          sec.classList.add('open');
+          document.getElementById(sumId).setAttribute('aria-expanded','true');
+        }
+      });
+    });
+
     async function admin(payload){
       const { data, error } = await supabase.functions.invoke('manage-users', { body: payload });
       if(error){
@@ -1606,6 +1637,11 @@ if(!session){
 
     function renderList(rows){
       list.innerHTML = '';
+      document.getElementById('rolesCount').textContent = rows.length;
+      if(!rows.length){
+        list.innerHTML = '<div class="mgr-empty">Nobody on the roster yet.</div>';
+        return;
+      }
       rows.forEach(r => {
         const row = document.createElement('div');
         row.className = 'mgr-row';
