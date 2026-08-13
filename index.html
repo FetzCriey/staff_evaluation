@@ -382,21 +382,22 @@
     padding-top:9px;border-top:1px solid var(--line)}
 
   /* ================= CRITERIA VIEW DROPDOWN ================= */
-  /* Matched to .mgr-sum so the three drawer controls read as one set. */
+  /* Mirrors .field input — same border, radius, fill and focus ring. */
   .lay{display:block;padding:14px 12px 0}
-  .lay-lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .lay-wrap{position:relative;border:1.5px solid var(--line);border-radius:13px;overflow:hidden;background:#fff}
+  .lay-lbl{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-soft);margin:0 0 7px 1px}
+  .lay-wrap{position:relative}
   .lay-wrap select{appearance:none;-webkit-appearance:none;width:100%;
-    padding:11px 34px 11px 12px;border:0;background:#f7fbfd;cursor:pointer;
-    font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--ink-soft);text-overflow:ellipsis;
-    transition:background .15s ease,color .15s ease}
-  .lay-wrap select:hover{background:#eef6fb}
-  .lay-wrap select:focus{outline:none;background:var(--accent-soft);color:var(--lagoon-deep)}
-  .lay-wrap select option{text-transform:none;letter-spacing:0;font-weight:600;
-    font-size:13px;color:var(--ink);background:#fff}
-  .lay-chev{position:absolute;right:12px;top:50%;transform:translateY(-50%);
-    pointer-events:none;color:currentColor;opacity:.65}
+    padding:12px 34px 12px 14px;border:1.5px solid #bcd8ea;border-radius:11px;
+    background:#fff;font-family:inherit;font-size:14px;font-weight:500;
+    color:var(--ink);cursor:pointer;outline:none;text-overflow:ellipsis;
+    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
+  .lay-wrap select:hover{border-color:var(--lagoon)}
+  .lay-wrap select:focus{background:#fff;border-color:var(--lagoon);
+    box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+  .lay-wrap select option{font-size:14px;font-weight:500;color:var(--ink);background:#fff}
+  .lay-chev{position:absolute;right:13px;top:50%;transform:translateY(-50%);
+    pointer-events:none;color:var(--lagoon-deep);opacity:.8}
   .lay-ds{font-size:10.5px;color:var(--muted);line-height:1.45;margin:8px 2px 0;padding-bottom:2px}
 </style>
 </head>
