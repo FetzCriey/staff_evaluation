@@ -880,6 +880,18 @@ function canExport(){ return requireName() && requireValidScores(); }
 
 document.getElementById('printBtn').onclick=()=>{ if(!canExport()) return; openPrint(); };
 
+// Ctrl+P / Cmd+P prints the evaluation form, not the web page.
+document.addEventListener('keydown',e=>{
+  const key=(e.key||'').toLowerCase();
+  if(key!=='p' || !(e.ctrlKey||e.metaKey) || e.altKey || e.shiftKey) return;
+  e.preventDefault();                     // stop the browser's own print dialog
+  if(document.getElementById('__printFrame')) return;   // already printing
+  const el=document.activeElement;
+  if(el && el.blur) el.blur();            // commit whatever cell is being edited
+  if(!canExport()) return;                // same name/score checks as the button
+  openPrint();
+});
+
 document.getElementById('pdfBtn').onclick=()=>{
   if(!canExport()) return;
   const btn=document.getElementById('pdfBtn'), st=document.getElementById('status');
