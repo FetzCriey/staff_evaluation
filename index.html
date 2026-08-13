@@ -381,24 +381,46 @@
   .mgr-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:10px;
     padding-top:9px;border-top:1px solid var(--line)}
 
-  /* ================= CRITERIA VIEW DROPDOWN ================= */
-  /* Mirrors .field input — same border, radius, fill and focus ring. */
+  /* ================= CRITERIA VIEW PICKER ================= */
+  /* Custom listbox — a native <select> renders its list through the OS, which
+     can't be styled to match anything else on the page. */
   .lay{display:block;padding:14px 12px 0}
   .lay-lbl{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;color:var(--ink-soft);margin:0 0 7px 1px}
   .lay-wrap{position:relative}
-  .lay-wrap select{appearance:none;-webkit-appearance:none;width:100%;
-    padding:12px 34px 12px 14px;border:1.5px solid #bcd8ea;border-radius:11px;
-    background:#fff;font-family:inherit;font-size:14px;font-weight:500;
-    color:var(--ink);cursor:pointer;outline:none;text-overflow:ellipsis;
-    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
-  .lay-wrap select:hover{border-color:var(--lagoon)}
-  .lay-wrap select:focus{background:#fff;border-color:var(--lagoon);
+  .lay-tr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;
+    padding:11px 12px;border:1.5px solid #bcd8ea;border-radius:11px;background:#fff;
+    font-family:inherit;font-size:14px;color:var(--ink);outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease}
+  .lay-tr:hover{border-color:var(--lagoon)}
+  .lay-tr:focus-visible,.lay-wrap.open .lay-tr{border-color:var(--lagoon);
     box-shadow:0 0 0 4px rgba(21,172,227,.14)}
-  .lay-wrap select option{font-size:14px;font-weight:500;color:var(--ink);background:#fff}
-  .lay-chev{position:absolute;right:13px;top:50%;transform:translateY(-50%);
-    pointer-events:none;color:var(--lagoon-deep);opacity:.8}
-  .lay-ds{font-size:10.5px;color:var(--muted);line-height:1.45;margin:8px 2px 0;padding-bottom:2px}
+  .lay-tr .ico{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    background:var(--accent-soft);color:var(--lagoon-deep)}
+  .lay-tr .cur{flex:1 1 auto;min-width:0;font-weight:600;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .lay-chev{flex:0 0 auto;color:var(--lagoon-deep);opacity:.8;transition:transform .2s ease}
+  .lay-wrap.open .lay-chev{transform:rotate(180deg)}
+
+  .lay-menu{position:absolute;z-index:70;top:calc(100% + 6px);left:0;right:0;
+    background:#fff;border:1.5px solid #bcd8ea;border-radius:13px;padding:5px;
+    box-shadow:0 20px 44px -18px rgba(8,52,76,.55);
+    opacity:0;visibility:hidden;transform:translateY(-4px);
+    transition:opacity .16s ease,transform .16s ease,visibility .16s ease}
+  .lay-wrap.open .lay-menu{opacity:1;visibility:visible;transform:translateY(0)}
+  .lay-opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;cursor:pointer;
+    padding:9px 10px;border:0;border-radius:9px;background:transparent;font-family:inherit;
+    color:var(--ink-soft);transition:background .13s ease}
+  .lay-opt:hover,.lay-opt.cursor{background:#f2f9fc}
+  .lay-opt[aria-selected="true"]{background:var(--accent-soft);color:var(--lagoon-deep)}
+  .lay-opt .ico{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    background:#f0f8fc;color:var(--lagoon-deep);border:1.5px solid var(--line)}
+  .lay-opt[aria-selected="true"] .ico{background:#fff;border-color:#bfe4f5}
+  .lay-opt .txt{flex:1 1 auto;min-width:0}
+  .lay-opt .nm{display:block;font-size:13px;font-weight:700;line-height:1.25}
+  .lay-opt .ds{display:block;font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
+  .lay-opt .tick{flex:0 0 auto;color:var(--lagoon-deep);opacity:0;margin-top:5px}
+  .lay-opt[aria-selected="true"] .tick{opacity:1}
 </style>
 </head>
 <body>
@@ -429,17 +451,15 @@
       </button>
     </div>
     <div class="lay">
-      <label class="lay-lbl" for="laySelect">Criteria view</label>
-      <div class="lay-wrap">
-        <select id="laySelect">
-          <option value="grid">Full grid</option>
-          <option value="pinned">Pinned criteria</option>
-          <option value="single">One evaluator at a time</option>
-          <option value="cards">Criterion cards</option>
-        </select>
-        <svg class="lay-chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      <div class="lay-lbl" id="layLbl">Criteria view</div>
+      <div class="lay-wrap" id="layWrap">
+        <button class="lay-tr" id="layTrigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="ico" id="layIco"></span>
+          <span class="cur" id="layCur">Full grid</span>
+          <svg class="lay-chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="lay-menu" id="layMenu" role="listbox" aria-labelledby="layLbl"></div>
       </div>
-      <div class="lay-ds" id="layDesc"></div>
     </div>
     <div class="mgr" id="mgrPanel">
       <h3>Staff administration</h3>
@@ -654,18 +674,9 @@ function setLayout(l){
   show('evtabs',     l==='single');
   show('cards',      l==='cards');
   document.getElementById('panel').classList.toggle('pinned', l==='pinned');
-  const LABELS={grid:'Full grid',pinned:'Pinned criteria',single:'One at a time',cards:'Criterion cards'};
-  const NOTES={
-    grid:'Every evaluator in one wide table. Scrolls sideways.',
-    pinned:'The criteria column stays put while the scores scroll.',
-    single:'Score as one evaluator, then move to the next.',
-    cards:'One card per criterion, with every evaluator inside it.'};
-  const sel=document.getElementById('laySelect');
-  if(sel && sel.value!==l) sel.value=l;
   const now=document.getElementById('layNow');
-  if(now) now.textContent=LABELS[l]+' view';
-  const desc=document.getElementById('layDesc');
-  if(desc) desc.textContent=NOTES[l]||'';
+  if(now) now.textContent=(VIEWS.find(v=>v.id===l)?.name||'')+' view';
+  paintPicker(l);
   // Empty the layouts that are not on screen: they reuse the same element ids
   // (av-0, sc-0 ...), so leaving them in the DOM would shadow the live ones.
   const clear=id=>{const el=document.getElementById(id); if(el) el.innerHTML='';};
@@ -935,14 +946,68 @@ function openDrawer(v){
   drawer.setAttribute('aria-hidden',String(!v));
   document.getElementById('burger').setAttribute('aria-expanded',String(v));
   document.body.style.overflow=v?'hidden':'';
-  if(v) document.getElementById('laySelect').focus();
+  if(v) document.getElementById('layTrigger').focus();
   else document.getElementById('burger').focus();
 }
 document.getElementById('burger').onclick=()=>openDrawer(!drawer.classList.contains('open'));
 document.getElementById('drawerClose').onclick=()=>openDrawer(false);
 scrim.onclick=()=>openDrawer(false);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&drawer.classList.contains('open')) openDrawer(false); });
-document.getElementById('laySelect').addEventListener('change',e=>{ setLayout(e.target.value); openDrawer(false); });
+// ---- criteria view picker (custom listbox) ----
+const VIEWS=[
+  {id:'grid',   name:'Full grid',      ds:'Every evaluator in one wide table',
+   ico:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16M3 10h18"/></svg>'},
+  {id:'pinned', name:'Pinned criteria',ds:'Criteria column stays put while scores scroll',
+   ico:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M13 12h6M17 9l3 3-3 3" stroke-linecap="round"/></svg>'},
+  {id:'single', name:'One at a time',  ds:'Score as one evaluator, then move on',
+   ico:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="7" r="3"/><path d="M6 20v-1a6 6 0 0112 0v1"/></svg>'},
+  {id:'cards',  name:'Criterion cards',ds:'One card per criterion, no scrolling',
+   ico:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>'}];
+const TICK='<svg class="tick" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+const layWrap=document.getElementById('layWrap'), layMenu=document.getElementById('layMenu'),
+      layTrigger=document.getElementById('layTrigger');
+let layCursor=0;
+
+VIEWS.forEach((v,i)=>{
+  const b=document.createElement('button');
+  b.className='lay-opt'; b.type='button'; b.setAttribute('role','option'); b.dataset.lay=v.id;
+  b.innerHTML=`<span class="ico">${v.ico}</span><span class="txt"><span class="nm">${v.name}</span>`+
+              `<span class="ds">${v.ds}</span></span>${TICK}`;
+  b.addEventListener('click',()=>{ setLayout(v.id); openPicker(false); openDrawer(false); });
+  b.addEventListener('mousemove',()=>{ layCursor=i; paintCursor(); });
+  layMenu.appendChild(b);
+});
+
+function paintPicker(l){
+  const v=VIEWS.find(x=>x.id===l)||VIEWS[0];
+  document.getElementById('layCur').textContent=v.name;
+  document.getElementById('layIco').innerHTML=v.ico;
+  [...layMenu.children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.lay===l)));
+  layCursor=Math.max(0,VIEWS.findIndex(x=>x.id===l));
+  paintCursor();
+}
+function paintCursor(){
+  [...layMenu.children].forEach((b,i)=>b.classList.toggle('cursor',i===layCursor));
+}
+function openPicker(v){
+  layWrap.classList.toggle('open',v);
+  layTrigger.setAttribute('aria-expanded',String(v));
+  if(v) paintCursor();
+}
+layTrigger.addEventListener('click',e=>{ e.stopPropagation(); openPicker(!layWrap.classList.contains('open')); });
+document.addEventListener('click',e=>{ if(!layWrap.contains(e.target)) openPicker(false); });
+layWrap.addEventListener('keydown',e=>{
+  const open=layWrap.classList.contains('open');
+  if(e.key==='Escape'&&open){ e.stopPropagation(); openPicker(false); layTrigger.focus(); return; }
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!open){ openPicker(true); return; }
+    layCursor=(layCursor+(e.key==='ArrowDown'?1:-1)+VIEWS.length)%VIEWS.length;
+    paintCursor();
+  }else if((e.key==='Enter'||e.key===' ')&&open){
+    e.preventDefault(); layMenu.children[layCursor].click();
+  }
+});
 const gotoEv=d=>{ curEv=Math.min(Math.max(curEv+d,0),evaluators-1);
   buildHead(); buildBody(); compute();
   const f=document.querySelector('#rows .score-in'); if(f){f.focus();f.select();} };
