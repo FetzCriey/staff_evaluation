@@ -15,14 +15,15 @@
     --lagoon:#15ACE3;
     --lagoon-deep:#0b7fb0;
     --lagoon-dark:#08344c;
-    --mist:#eaf4fa;
+    --mist:#d5e7f3;
+    --mist-deep:#c3dcec;
     --panel:#ffffff;
-    --line:#d3e5f0;
+    --line:#c9dfee;
     --error-bg:#fff0f0;
     --error-ink:#a62a2a;
     --error-line:#f1caca;
     --shadow:0 24px 70px -20px rgba(8,52,76,.35);
-    --shadow-sm:0 10px 30px -14px rgba(8,52,76,.35);
+    --shadow-sm:0 2px 4px rgba(8,52,76,.06),0 14px 34px -16px rgba(8,52,76,.42);
     /* legacy aliases so existing rules keep resolving */
     --paper:var(--mist); --accent:var(--lagoon); --accent-deep:var(--lagoon-deep);
     --accent-soft:#e2f4fc; --sky:#77D0F0; --gold:var(--lagoon-deep);
@@ -30,7 +31,9 @@
   *{box-sizing:border-box} html,body{margin:0;min-height:100%}
   body{
     font-family:"Inter","Segoe UI",system-ui,sans-serif;
-    background:var(--mist);color:var(--ink);
+    background:linear-gradient(180deg,var(--mist) 0%,var(--mist-deep) 100%)
+      fixed no-repeat var(--mist);
+    color:var(--ink);
     -webkit-font-smoothing:antialiased;line-height:1.5;
   }
   .wrap{max-width:1040px;margin:0 auto;padding:34px 20px 80px}
@@ -71,7 +74,7 @@
   }
   .field input{
     width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;
-    font-size:14.5px;background:#fbfdff;font-family:inherit;color:var(--ink);outline:none;
+    font-size:14.5px;background:#f2f8fc;font-family:inherit;color:var(--ink);outline:none;
     transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
   }
   .field input:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
@@ -89,7 +92,7 @@
   .stepper .val{width:38px;text-align:center;font-weight:700;font-size:14px;border-left:1.5px solid var(--line);border-right:1.5px solid var(--line);line-height:36px}
 
   /* ================= SCORE PANEL ================= */
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-sm);overflow:hidden}
+  .panel{background:var(--panel);border:1.5px solid var(--line);border-radius:20px;box-shadow:var(--shadow-sm);overflow:hidden}
   .scroll{overflow-x:auto}
   table{border-collapse:collapse;width:100%;min-width:720px}
   thead th{
@@ -107,7 +110,7 @@
   tbody tr:last-child td{border-bottom:0}
   .score-in{
     width:58px;padding:8px 4px;text-align:center;border:1.5px solid var(--line);
-    border-radius:9px;font-size:13.5px;font-family:inherit;color:var(--ink);background:#fbfdff;outline:none;
+    border-radius:9px;font-size:13.5px;font-family:inherit;color:var(--ink);background:#f2f8fc;outline:none;
     transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
   }
   .score-in:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
@@ -129,7 +132,7 @@
   .comment{margin-top:26px}
   .comment textarea{
     width:100%;min-height:100px;padding:13px 14px;border:1.5px solid var(--line);border-radius:13px;
-    font-family:inherit;font-size:14.5px;resize:vertical;background:#fbfdff;color:var(--ink);outline:none;
+    font-family:inherit;font-size:14.5px;resize:vertical;background:#f2f8fc;color:var(--ink);outline:none;
     transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
   }
   .comment textarea:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
@@ -195,7 +198,22 @@
   .lay-txt{flex:1 1 auto;min-width:0}
   .lay-nm{font-size:13px;font-weight:700;line-height:1.25}
   .lay-ds{font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
-  .side-note{margin:auto 12px 16px;padding:11px 12px;border-radius:12px;background:#f4fafd;
+  /* ---- account block in the drawer ---- */
+  .acct{margin:auto 12px 12px;padding:13px;border-radius:14px;background:#f2f9fc;border:1.5px solid var(--edge)}
+  .acct-row{display:flex;align-items:center;gap:11px}
+  .avatar{flex:0 0 38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;
+    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:14px;
+    background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep))}
+  .acct-txt{flex:1 1 auto;min-width:0}
+  .acct-nm{font-size:13px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .acct-rl{font-size:11px;color:var(--muted);margin-top:1px}
+  .signout{width:100%;margin-top:11px;border:1.5px solid #e6c3c3;background:#fff6f6;color:#a62a2a;
+    border-radius:11px;padding:10px;font:700 13px inherit;font-family:inherit;cursor:pointer;transition:.15s}
+  .signout:hover{background:#ffecec;border-color:#dcaaaa}
+  .signout:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .gate{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:var(--page-top);
+    color:var(--muted);font-size:13.5px;font-weight:600}
+  .side-note{margin:0 12px 16px;padding:11px 12px;border-radius:12px;background:#f4fafd;
     border:1.5px solid var(--line);font-size:11px;color:var(--muted);line-height:1.45}
   .laynow{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
     color:rgba(180,224,245,.9);margin-left:2px}
@@ -207,8 +225,6 @@
     box-shadow:6px 0 12px -8px rgba(8,52,76,.35)}
   .pinned thead th.crit{z-index:4;background:#f4fafd}
   .pinned tbody tr:hover td.crit{background:#fbfdff}
-  .scrollhint{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);
-    padding:10px 22px;background:#f4fafd;border-bottom:1.5px solid var(--line)}
 
   /* ================= LAYOUT: ONE EVALUATOR ================= */
   .evtabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 14px}
@@ -243,24 +259,20 @@
 
   /* ================= LAYOUT: CRITERION CARDS ================= */
   .cards{display:flex;flex-direction:column;gap:14px}
-  .card{background:var(--panel);border:1.5px solid var(--line);border-radius:18px;
-    box-shadow:var(--shadow-sm);overflow:hidden}
+  .card{background:var(--panel);border:1.5px solid #c3dced;border-radius:18px;
+    box-shadow:0 1px 2px rgba(8,52,76,.06),0 14px 34px -18px rgba(8,52,76,.42);overflow:hidden}
   .card.filled{border-color:#bfe4f5}
-  .chead{display:flex;gap:14px;align-items:flex-start;padding:16px 20px 12px}
+  .chead{display:flex;gap:14px;align-items:flex-start;padding:15px 20px 11px}
   .cpill{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
     padding:5px 11px;border-radius:999px;background:#f4fafd;color:var(--muted);
     border:1.5px solid var(--line);white-space:nowrap}
   .card.filled .cpill{background:var(--accent-soft);color:var(--lagoon-deep);border-color:#bfe4f5}
-  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px;padding:0 20px 18px}
-  .cell{border:1.5px solid var(--line);border-radius:12px;padding:8px 11px;display:flex;
-    align-items:center;gap:10px;background:#fbfdff}
-  .cell:focus-within{border-color:var(--lagoon);background:#fff}
-  .cell .nm{flex:1 1 auto;min-width:0;font-size:11.5px;font-weight:600;color:var(--ink-soft);line-height:1.25;
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:12px 18px;padding:2px 20px 16px}
+  .cell{border:0;border-radius:0;padding:2px 0;display:flex;align-items:center;gap:10px;background:transparent}
+  .cell .nm{flex:1 1 auto;min-width:0;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.25;
     overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .cell .score-in{flex:0 0 46px;width:46px;padding:6px 2px;font-size:13.5px}
-  .cbar{height:5px;background:var(--line)}
-  .cbar span{display:block;height:100%;width:0;transition:width .25s ease;
-    background:linear-gradient(90deg,var(--lagoon),var(--lagoon-deep))}
   @media(max-width:560px){
     .cgrid{grid-template-columns:1fr 1fr;padding:0 14px 14px;gap:8px}
     .chead{padding:14px 14px 10px}
@@ -287,9 +299,34 @@
     .sub{display:none}
     .btn{flex:1 1 100%}
   }
+
+  /* ================= SURFACE CONTRAST ================= */
+  :root{
+    --page-top:#cfe3f1;
+    --page-bottom:#b9d5e8;
+    --edge:#a9cbe2;
+  }
+  body{
+    background:linear-gradient(180deg,var(--page-top) 0%,var(--page-bottom) 100%)
+      fixed no-repeat var(--page-top);
+  }
+  .panel,.card{
+    background:#fff;
+    border:1.5px solid var(--edge);
+    box-shadow:0 1px 2px rgba(8,52,76,.07),0 20px 46px -22px rgba(8,52,76,.50);
+  }
+  .side,.drawer{border-color:var(--edge)}
+  .field input,.comment textarea,.score-in,.stepper{
+    background:#fff;border-color:#bcd8ea;
+  }
+  .field .ro{background:#eef5fa}
+  .evtab{border-color:#bcd8ea}
+  .totals,.evhead,.evnav,thead th{background:#f2f9fc}
+  thead th.crit,.pinned thead th.crit{background:#f2f9fc}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">Checking your session&hellip;</div>
 <div class="wrap">
   <header class="top">
     <button class="burger" id="burger" aria-label="Open layout menu" aria-expanded="false" aria-controls="drawer">
@@ -337,6 +374,17 @@
         <span class="lay-ds">One card per criterion, no scrolling</span></span></button>
     </div>
     <div class="side-note">Scores stay put when you switch layouts &mdash; only the way they are shown changes.</div>
+
+    <div class="acct" id="acct">
+      <div class="acct-row">
+        <div class="avatar" id="acctInitials">&mdash;</div>
+        <div class="acct-txt">
+          <div class="acct-nm" id="acctName">Signed in</div>
+          <div class="acct-rl" id="acctRole">Loading account&hellip;</div>
+        </div>
+      </div>
+      <button class="signout" id="signOut">Sign out</button>
+    </div>
   </aside>
 
   <!-- ================= FORM ================= -->
@@ -361,12 +409,6 @@
   <div class="evtabs" id="evtabs" hidden></div>
 
   <div class="panel" id="panel">
-    <!-- layout: pinned -->
-    <div class="scrollhint" id="scrollhint" hidden>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>
-      Scroll the grid sideways for the remaining evaluators &mdash; the criteria stay pinned
-    </div>
-
     <!-- layout: grid / pinned -->
     <div class="scroll" id="gridWrap">
       <table id="grid"><thead><tr id="headRow"></tr></thead><tbody id="body"></tbody></table>
@@ -434,9 +476,27 @@ const STAFF={
   "Camila Haduca":"Junior Staff",
   "Monique Eileen Irog-irog":"Junior Staff"
 };
-const EMPLOYEES=Object.keys(STAFF).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+let EMPLOYEES=Object.keys(STAFF).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
 const nameKey=x=>String(x||'').toLowerCase().replace(/\s+/g,' ').trim();
-const STAFF_BY_KEY={}; for(const n of EMPLOYEES) STAFF_BY_KEY[nameKey(n)]=STAFF[n];
+let STAFF_BY_KEY={}; for(const n of EMPLOYEES) STAFF_BY_KEY[nameKey(n)]=STAFF[n];
+// Replace the built-in roster with rows from Supabase. Each row: {full_name, form_role}.
+// Anything without a usable form_role keeps its built-in mapping, then falls back to Probationary.
+window.setRoster=function(rows){
+  if(!Array.isArray(rows)||!rows.length) return false;
+  const valid=Object.keys(FORMS);
+  const next={};
+  rows.forEach(r=>{
+    const n=(r.full_name||'').trim(); if(!n) return;
+    let f=(r.form_role||'').trim();
+    if(!valid.includes(f)) f=STAFF_BY_KEY[nameKey(n)]||'Probationary';
+    next[n]=f;
+  });
+  if(!Object.keys(next).length) return false;
+  EMPLOYEES=Object.keys(next).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+  STAFF_BY_KEY={}; EMPLOYEES.forEach(n=>STAFF_BY_KEY[nameKey(n)]=next[n]);
+  if(!applyRoleFromName()) { buildHead(); buildBody(); compute(); }
+  return true;
+};
 // Switch the form to match the named employee. Returns true if the role changed.
 function applyRoleFromName(){
   const r=STAFF_BY_KEY[nameKey(document.getElementById('empName').value)];
@@ -476,7 +536,6 @@ function setLayout(l){
   layout=l;
   const show=(id,on)=>{const el=document.getElementById(id); if(el) el.hidden=!on;};
   show('gridWrap',   l==='grid'||l==='pinned');
-  show('scrollhint', l==='pinned');
   show('singleWrap', l==='single');
   show('evtabs',     l==='single');
   show('cards',      l==='cards');
@@ -594,7 +653,7 @@ function buildCards(){
       `<div class="ctext"><div class="crit-name">${name}</div><div class="crit-desc">${desc}</div></div>`+
       `<div class="cpill"><span id="av-${ci}">0</span> avg &middot; <span id="n-${ci}">0</span>/${evaluators}`+
       `<span id="sc-${ci}" hidden>0</span></div></div>`+
-      `<div class="cgrid">${cells}</div><div class="cbar"><span id="bar-${ci}"></span></div>`;
+      `<div class="cgrid">${cells}</div>`;
     host.appendChild(d);
   });
   wireInputs(host);
@@ -606,7 +665,6 @@ function paintCards(){
   FORMS[role].rows.forEach((_,ci)=>{
     let n=0; for(let e=0;e<evaluators;e++) if(scores[role][ci][e]!==undefined) n++;
     const nEl=document.getElementById('n-'+ci); if(nEl) nEl.textContent=n;
-    const bar=document.getElementById('bar-'+ci); if(bar) bar.style.width=(n/evaluators*100)+'%';
     const card=document.getElementById('card-'+ci); if(card) card.classList.toggle('filled',n===evaluators);
   });
 }
@@ -1278,6 +1336,7 @@ empNameEl.addEventListener('keydown',e=>{
 
 // remember edits to the Manager/Department field per role type
 document.getElementById('manager').addEventListener('input',e=>{
+  e.target.dataset.touched='1';
   if(FORMS[role].senior) managerSaved.senior=e.target.value;
   else managerSaved.normal=e.target.value;
   buildHead();
@@ -1352,6 +1411,84 @@ function acSuggest(q){
 const d=new Date();
 document.getElementById('date').value=d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
 render();
+</script>
+<script type="module">
+/* =========================================================
+   SUPABASE — session guard, account panel, roster
+   ========================================================= */
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const SUPABASE_URL = "https://giosjwjhalhmwcuyzfos.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_";
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+const gate = document.getElementById('gate');
+
+// Safety net: if the Supabase library or the network fails, never leave the user
+// staring at a permanently blank gate — give them a way back to the login page.
+const stuck = setTimeout(() => {
+  if(document.getElementById('gate')){
+    gate.innerHTML = 'Could not reach the sign-in service. ' +
+      '<a href="login.html" style="color:var(--lagoon-deep);font-weight:700">Go to login</a>';
+  }
+}, 8000);
+
+function initials(name){
+  const p = (name||'').trim().split(/\s+/).filter(Boolean);
+  return ((p[0]?.[0]||'') + (p.length>1 ? p[p.length-1][0] : '')).toUpperCase() || '—';
+}
+
+// ---- 1. require a session ----------------------------------------------
+const { data:{ session } } = await supabase.auth.getSession();
+if(!session){
+  clearTimeout(stuck);
+  window.location.replace('login.html');
+} else {
+  clearTimeout(stuck);
+  gate.remove();
+
+  // ---- 2. who is signed in --------------------------------------------
+  const uid = session.user.id;
+  let me = null;
+  try{
+    const { data } = await supabase.from('profiles')
+      .select('id, full_name, position, role').eq('id', uid).maybeSingle();
+    me = data;
+  }catch(_){}
+
+  const name = me?.full_name || session.user.email || 'Signed in';
+  document.getElementById('acctName').textContent = name;
+  document.getElementById('acctInitials').textContent = initials(me?.full_name || session.user.email);
+  document.getElementById('acctRole').textContent =
+    [me?.position, me?.role==='manager' ? 'Manager access' : null].filter(Boolean).join(' · ') || session.user.email;
+
+  // default the Manager / Evaluator field to whoever is signed in
+  const mgr = document.getElementById('manager');
+  if(me?.full_name && mgr && !mgr.dataset.touched) mgr.value = me.full_name;
+
+  // ---- 3. roster from the database ------------------------------------
+  try{
+    const { data:rows, error } = await supabase.from('profiles')
+      .select('full_name, position, role, form_role').order('full_name');
+    if(!error && rows && rows.length > 1){
+      window.setRoster(rows);
+    }else if(rows && rows.length <= 1){
+      console.info('Roster: only your own profile is readable (row-level security), keeping the built-in list.');
+    }
+  }catch(err){ console.info('Roster fetch failed, keeping the built-in list.', err); }
+
+  // ---- 4. sign out ------------------------------------------------------
+  document.getElementById('signOut').addEventListener('click', async () => {
+    const b = document.getElementById('signOut');
+    b.disabled = true; b.textContent = 'Signing out…';
+    await supabase.auth.signOut();
+    window.location.replace('login.html');
+  });
+
+  supabase.auth.onAuthStateChange((event) => {
+    if(event === 'SIGNED_OUT') window.location.replace('login.html');
+  });
+}
 </script>
 </body>
 </html>
