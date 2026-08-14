@@ -2248,6 +2248,11 @@ if(!session){
   let dirty = false;      // edits made since the last save
   let lastWarn = 0;       // throttles the finish-first warning
 
+  applyMode();
+  // One column from the outset — the grid otherwise shows the default six
+  // until the first employee change lands.
+  api.setColumns([ me?.full_name || 'You' ]);
+
   function targetId(){ return idByName.get(api.employeeName().toLowerCase()) || null; }
 
   function filledCount(){ return Object.keys(api.getColumnScores(0)).length; }
@@ -2405,10 +2410,38 @@ if(!session){
     }
     el('status').textContent = 'Saved.';
     setTimeout(() => { if(el('status').textContent === 'Saved.') el('status').textContent = ''; }, 2500);
+    if(api.columnComplete(0)) await goToNextColleague();
     dirty = false;
     setState(api.columnComplete(0) ? 'Saved — you can still edit' : 'Saved (incomplete)', 'saved');
     if(window.__refreshResults) window.__refreshResults();
   });
+
+  // ----- move on to the next colleague -----
+  // After a complete submission, open the next person this evaluator has not
+  // scored yet, in roster order. Nobody left means the round is finished.
+  async function goToNextColleague(){
+    const { data } = await supabase.from('evaluations')
+      .select('employee_id').eq('evaluator_id', uid).eq('archived', false);
+    const done = new Set((data ?? []).map(r => r.employee_id));
+    const queue = [...nameById.entries()]
+      .filter(([pid]) => pid !== uid && !done.has(pid))
+      .sort((a,b) => a[1].localeCompare(b[1]));
+
+    if(!queue.length){
+      api.clearScores(); api.setComments('');
+      api.setEmployee('');
+      target = null; targetName = ''; dirty = false;
+      setState('All colleagues evaluated', 'saved');
+      await uiAlert('All done', 'You have evaluated everyone. Thank you.');
+      return;
+    }
+    const [nextId, nextName] = queue[0];
+    await uiAlert('Saved', 'Next up: ' + nextName + '.');
+    api.setEmployee(nextName);
+    target = null;                 // force a fresh load for the new person
+    await onEmployeeChange();
+    document.querySelector('.score-in')?.focus();
+  }
 
   // ----- locking -----
   el('lockBtn').addEventListener('click', async () => {
@@ -2438,6 +2471,11 @@ if(!session){
 
   window.addEventListener('beforeunload', e => {
     if(dirty && !reviewing()){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  el('empName').addEventListener('input', () => {
+    if(!reviewing() && document.querySelectorAll('th.evh, #rows .crow').length > api.criteriaCount())
+      api.setColumns([ me?.full_name || 'You' ]);
   });
 
   el('empName').addEventListener('change', onEmployeeChange);
