@@ -558,6 +558,52 @@
     font:700 13px inherit;font-family:inherit;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft)}
   .rm-foot .all{border-color:#e6c3c3;background:#fff6f6;color:#a62a2a}
   .rm-foot .all:hover{background:#ffe4e4}
+
+  /* ================= IN-PAGE DIALOGS ================= */
+  .dlg-scrim{position:fixed;inset:0;z-index:95;background:rgba(5,30,45,.45);
+    backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px;
+    opacity:0;transition:opacity .16s ease}
+  .dlg-scrim.in{opacity:1}
+  .dlg{width:100%;max-width:400px;background:#fff;border-radius:18px;
+    border:1.5px solid var(--edge);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
+    overflow:hidden;transform:translateY(-6px) scale(.99);transition:transform .18s ease}
+  .dlg-scrim.in .dlg{transform:none}
+  .dlg-top{padding:18px 20px 14px}
+  .dlg-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;
+    font-size:17px;line-height:1.25;color:var(--ink)}
+  .dlg-msg{font-size:13px;line-height:1.5;color:var(--ink-soft);margin-top:8px;white-space:pre-line}
+  .dlg-foot{display:flex;gap:9px;padding:14px;background:#f4fafd;border-top:1.5px solid var(--line)}
+  .dlg-foot button{flex:1 1 0;border-radius:11px;padding:12px;cursor:pointer;
+    font-family:inherit;font-size:13.5px;font-weight:700;transition:transform .12s ease,filter .12s ease}
+  .dlg-foot button:hover{transform:translateY(-1px)}
+  .dlg-foot .cancel{border:1.5px solid var(--line);background:#fff;color:var(--ink-soft)}
+  .dlg-foot .cancel:hover{border-color:var(--lagoon);background:#f7fbfd}
+  .dlg-foot .ok{border:0;color:#fff;
+    background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
+    box-shadow:0 10px 22px -10px rgba(21,172,227,.6)}
+  .dlg-foot .ok:hover{filter:brightness(1.06)}
+  .dlg-foot .ok.danger{background:linear-gradient(180deg,#d2554f,#a62a2a);
+    box-shadow:0 10px 22px -10px rgba(166,42,42,.55)}
+  .dlg-foot button:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+
+  /* reset-submission dialog inherits the shared dialog chrome */
+  .rm-box{max-width:400px}
+  .rm-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:17px}
+  .rm-sub{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
+  .rm-top{padding:18px 20px 14px;background:#fff;border-bottom:0}
+  .rm-body{padding:0 14px 4px}
+  .rm-item{background:#f7fbfd;border-color:var(--line);border-radius:12px;padding:10px 11px}
+  .rm-nm{font-size:13px}
+  .rm-x{border-radius:9px;padding:7px 12px;font-size:12px}
+  .rm-foot{padding:14px;background:#f4fafd}
+  .rm-foot button{border-radius:11px;padding:12px;font-size:13.5px;font-weight:700;
+    transition:transform .12s ease,filter .12s ease}
+  .rm-foot button:hover{transform:translateY(-1px)}
+  .rm-foot .all{border:0;color:#fff;
+    background:linear-gradient(180deg,#d2554f,#a62a2a);
+    box-shadow:0 10px 22px -10px rgba(166,42,42,.55)}
+  .rm-foot .all:hover{filter:brightness(1.06);background:linear-gradient(180deg,#d2554f,#a62a2a)}
+  .rm-scrim{z-index:88}
 </style>
 </head>
 <body>
@@ -1210,8 +1256,10 @@ document.getElementById('evPrev').onclick=()=>gotoEv(-1);
 document.getElementById('evNext').onclick=()=>gotoEv(1);
 document.getElementById('evPlus').onclick=()=>{if(evaluators<MAX_EV){evaluators++;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('evMinus').onclick=()=>{if(evaluators>MIN_EV){evaluators--;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
-document.getElementById('resetBtn').onclick=()=>{
-  if(!confirm("Clear everything on this form (scores, name, and comments)? This cannot be undone.")) return;
+document.getElementById('resetBtn').onclick=async()=>{
+  if(!await uiConfirm("Clear this form?",
+      "Scores, the employee name, and comments will all be cleared. This cannot be undone.",
+      { ok: "Clear form", danger: true })) return;
   scores[role]={};ensureStore();buildBody();compute();
   const empN=document.getElementById('empName');
   empN.value=""; empN.classList.remove('bad'); buildHead();
@@ -1228,7 +1276,7 @@ function requireName(){
   if(!name){
     inp.classList.add('bad');
     inp.focus();
-    alert("Please enter the employee name first.");
+    uiAlert("Employee name needed", "Enter the name of the person being evaluated first.");
     return false;
   }
   name=toProperCase(name);
@@ -1314,6 +1362,59 @@ window.evalApi = {
     document.getElementById('comment').readOnly = !!on;
   }
 };
+
+// ---------------------------------------------------------------
+// In-page replacements for window.confirm / window.alert, so every
+// prompt matches the app rather than the browser chrome.
+// ---------------------------------------------------------------
+function uiDialog({ title, message = '', ok = 'OK', cancel = null, danger = false }){
+  return new Promise(resolve => {
+    const scrim = document.createElement('div');
+    scrim.className = 'dlg-scrim';
+    scrim.innerHTML =
+      '<div class="dlg" role="dialog" aria-modal="true">' +
+        '<div class="dlg-top"><div class="dlg-ttl"></div><div class="dlg-msg"></div></div>' +
+        '<div class="dlg-foot"></div>' +
+      '</div>';
+    scrim.querySelector('.dlg-ttl').textContent = title;
+    const msgEl = scrim.querySelector('.dlg-msg');
+    msgEl.textContent = message;
+    if(!message) msgEl.remove();
+
+    const foot = scrim.querySelector('.dlg-foot');
+    const done = v => {
+      scrim.classList.remove('in');
+      document.removeEventListener('keydown', onKey, true);
+      setTimeout(() => { scrim.remove(); document.body.style.overflow = prevOverflow; }, 160);
+      resolve(v);
+    };
+    if(cancel){
+      const c = document.createElement('button');
+      c.className = 'cancel'; c.type = 'button'; c.textContent = cancel;
+      c.addEventListener('click', () => done(false));
+      foot.appendChild(c);
+    }
+    const o = document.createElement('button');
+    o.className = 'ok' + (danger ? ' danger' : ''); o.type = 'button'; o.textContent = ok;
+    o.addEventListener('click', () => done(true));
+    foot.appendChild(o);
+
+    function onKey(e){
+      if(e.key === 'Escape'){ e.stopPropagation(); done(!cancel ? true : false); }
+      else if(e.key === 'Enter'){ e.stopPropagation(); done(true); }
+    }
+    document.addEventListener('keydown', onKey, true);
+    scrim.addEventListener('click', e => { if(e.target === scrim && cancel) done(false); });
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(scrim);
+    requestAnimationFrame(() => { scrim.classList.add('in'); o.focus(); });
+  });
+}
+window.uiAlert   = (title, message) => uiDialog({ title, message });
+window.uiConfirm = (title, message, opts = {}) =>
+  uiDialog({ title, message, ok: opts.ok || 'Continue', cancel: opts.cancel || 'Cancel', danger: !!opts.danger });
 
 function canExport(){ return requireName() && requireValidScores(); }
 
@@ -2047,7 +2148,9 @@ if(!session){
         del.disabled = (r.id === uid) || locked;
         if(locked){ del.title = 'Only a manager can change this account'; }
         del.addEventListener('click', async () => {
-          if(!confirm('Remove ' + r.full_name + '?\n\nThis deletes their sign-in account and roster entry. It cannot be undone.')) return;
+          if(!await uiConfirm('Remove ' + r.full_name + '?',
+              'This deletes their sign-in account and roster entry. It cannot be undone.',
+              { ok: 'Remove', danger: true })) return;
           del.disabled = true; say('Removing ' + r.full_name + '…');
           try{
             await admin({ action:'delete', id:r.id });
@@ -2168,7 +2271,7 @@ if(!session){
     if(stop){
       el('empName').value = targetName;   // put the previous name back
       const now = Date.now();
-      if(now - lastWarn > 4000){ lastWarn = now; alert(stop); }
+      if(now - lastWarn > 4000){ lastWarn = now; uiAlert('Not finished yet', stop); }
       else setState(stop, 'dirty');
       return;
     }
@@ -2278,8 +2381,8 @@ if(!session){
   // ----- saving -----
   el('saveBtn').addEventListener('click', async () => {
     const id = targetId();
-    if(!id){ alert('Choose the employee you are evaluating first.'); return; }
-    if(id === uid){ alert('You cannot evaluate yourself.'); return; }
+    if(!id){ uiAlert('No employee chosen', 'Pick the colleague you are evaluating first.'); return; }
+    if(id === uid){ uiAlert('Not allowed', 'You cannot evaluate yourself.'); return; }
     const btn = el('saveBtn');
     btn.disabled = true; el('status').textContent = 'Saving…';
     const payload = {
@@ -2297,7 +2400,7 @@ if(!session){
     if(error){
       el('status').textContent = '';
       setState('Save failed', 'locked');
-      alert('Could not save: ' + error.message);
+      uiAlert('Could not save', error.message);
       return;
     }
     el('status').textContent = 'Saved.';
@@ -2312,13 +2415,14 @@ if(!session){
     const id = targetId();
     if(!id) return;
     const next = !anyLocked;
-    if(!confirm(next
-      ? 'Lock all evaluations for this person? They will not be able to edit further.'
-      : 'Unlock and allow evaluators to edit again?')) return;
+    if(!await uiConfirm(next ? 'Lock these evaluations?' : 'Unlock these evaluations?',
+        next ? 'Evaluators will not be able to change their scores until you unlock them.'
+             : 'Evaluators will be able to change their scores again.',
+        { ok: next ? 'Lock' : 'Unlock' })) return;
     const btn = el('lockBtn'); btn.disabled = true;
     const { error } = await supabase.from('evaluations').update({ locked: next }).eq('employee_id', id);
     btn.disabled = false;
-    if(error){ alert('Could not change the lock: ' + error.message); return; }
+    if(error){ uiAlert('Could not change the lock', error.message); return; }
     await loadAll(id);
   });
 
@@ -2392,7 +2496,7 @@ if(!session){
     // open one person's collected scores in the main form
     async function openResults(pid, name){
       const stop = blockedFromLeaving();
-      if(stop){ alert(stop); return; }
+      if(stop){ uiAlert('Not finished yet', stop); return; }
       mode = 'review';
       if(window.__clearArchiveView) window.__clearArchiveView();
       api.setEmployee(name);
@@ -2431,15 +2535,15 @@ if(!session){
       const id = target;
       if(!id || viewingArchive) return;
       const name = api.employeeName();
-      if(!confirm('Finalise this evaluation for ' + name + '?\n\n' +
-                  'It moves to History and can no longer be edited. ' +
-                  'A new evaluation round opens for ' + name + '.')) return;
+      if(!await uiConfirm('Finalise this evaluation?',
+          name + "'s evaluation moves to History and can no longer be edited. " +
+          'A new evaluation round opens for ' + name + '.', { ok: 'Finalise' })) return;
       const stamp = new Date().toISOString();
       const { error } = await supabase.from('evaluations')
         .update({ archived: true, archived_at: stamp, archived_by: uid, locked: true })
         .eq('employee_id', id).eq('archived', false);
-      if(error){ alert('Could not archive: ' + error.message); return; }
-      alert(name + "'s evaluation is archived. A new round is now open.");
+      if(error){ uiAlert('Could not archive', error.message); return; }
+      await uiAlert('Archived', name + "'s evaluation is in History. A new round is now open.");
       await loadHistory();
       if(window.__refreshResults) window.__refreshResults();
       target = null;
@@ -2491,7 +2595,7 @@ if(!session){
 
     function openArchive(pid, name, when, rs){
       const stop = blockedFromLeaving();
-      if(stop){ alert(stop); return; }
+      if(stop){ uiAlert('Not finished yet', stop); return; }
       mode = 'review';
       viewingArchive = when;
       api.setEmployee(name);
@@ -2539,11 +2643,11 @@ if(!session){
   if(isReviewer){
     async function openResetDialog(){
       const id = target;
-      if(!id){ alert('Open an employee first.'); return; }
+      if(!id){ uiAlert('No employee open', 'Choose someone from the sidebar first.'); return; }
       const { data, error } = await supabase.from('evaluations')
         .select('id, evaluator_id, average')
         .eq('employee_id', id).eq('archived', false);
-      if(error){ alert('Could not load submissions: ' + error.message); return; }
+      if(error){ uiAlert('Could not load submissions', error.message); return; }
       const rows = data ?? [];
 
       const scrim = document.createElement('div');
@@ -2579,12 +2683,13 @@ if(!session){
           const x = document.createElement('button');
           x.className = 'rm-x'; x.type = 'button'; x.textContent = 'Clear';
           x.addEventListener('click', async () => {
-            if(!confirm('Clear ' + name + "'s scores for " + who + '?\n\n' +
-                        'They will be able to evaluate ' + who + ' again.')) return;
+            if(!await uiConfirm('Clear ' + name + "'s scores?",
+                'This removes their scores for ' + who + '. They will be able to evaluate ' +
+                who + ' again.', { ok: 'Clear scores', danger: true })) return;
             x.disabled = true; x.textContent = 'Clearing…';
             const { error } = await supabase.from('evaluations').delete().eq('id', r.id);
             if(error){ x.disabled = false; x.textContent = 'Clear';
-              alert('Could not clear: ' + error.message); return; }
+              uiAlert('Could not clear', error.message); return; }
             rows.splice(rows.indexOf(r), 1);
             paint();
             await refreshAfterReset();
@@ -2597,11 +2702,13 @@ if(!session){
 
       scrim.querySelector('#rmAll').addEventListener('click', async () => {
         if(!rows.length){ close(); return; }
-        if(!confirm('Clear all ' + rows.length + ' submissions for ' + who + '?\n\n' +
-                    'Everyone will need to evaluate ' + who + ' again. This cannot be undone.')) return;
+        if(!await uiConfirm('Clear all submissions?',
+            'All ' + rows.length + ' submissions for ' + who + ' will be removed and everyone ' +
+            'will need to evaluate ' + who + ' again. This cannot be undone.',
+            { ok: 'Clear all', danger: true })) return;
         const { error } = await supabase.from('evaluations')
           .delete().eq('employee_id', target).eq('archived', false);
-        if(error){ alert('Could not clear: ' + error.message); return; }
+        if(error){ uiAlert('Could not clear', error.message); return; }
         close();
         await refreshAfterReset();
       });
@@ -2627,7 +2734,8 @@ if(!session){
   // ---- 4. sign out ------------------------------------------------------
   document.getElementById('signOut').addEventListener('click', async () => {
     const b = document.getElementById('signOut');
-    if(dirty && !confirm('You have unsaved scores. Sign out anyway?')) return;
+    if(dirty && !await uiConfirm('Sign out with unsaved scores?',
+        'Your unsaved scores will be lost.', { ok: 'Sign out', danger: true })) return;
     dirty = false;              // deliberate exit — skip the leave prompt
     b.disabled = true;
     const label = b.querySelector('span'); if(label) label.textContent = 'Signing out…';
