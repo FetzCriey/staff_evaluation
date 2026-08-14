@@ -2427,186 +2427,33 @@ if(!session){
       });
   }
 
-// ----- saving -----
-el('saveBtn').addEventListener('click', async () => {
-
-  const id = targetId();
-
-  if(!id){
-    uiAlert(
-      'No employee chosen',
-      'Pick the colleague you are evaluating first.'
-    );
-    return;
-  }
-
-  if(id === uid){
-    uiAlert(
-      'Not allowed',
-      'You cannot evaluate yourself.'
-    );
-    return;
-  }
-
-  const btn = el('saveBtn');
-
-  btn.disabled = true;
-  el('status').textContent = 'Saving…';
-
-
-  const payload = {
-    employee_id: id,
-    evaluator_id: uid,
-    scores: api.getColumnScores(0),
-    average: api.average(),
-    comments: api.comments(),
-    form_role: api.formRole(),
-    updated_at: new Date().toISOString(),
-    archived: false
-  };
-
-
-  try {
-
-    /*
-     * Your database uses a PARTIAL unique index:
-     *
-     * UNIQUE (evaluator_id, employee_id)
-     * WHERE archived = false
-     *
-     * Therefore we cannot use:
-     *
-     * .upsert(..., {
-     *   onConflict: 'evaluator_id,employee_id'
-     * })
-     *
-     * Instead, find the current active evaluation first.
-     */
-
-    const {
-      data: existing,
-      error: findError
-    } = await supabase
-      .from('evaluations')
-      .select('id')
-      .eq('evaluator_id', uid)
-      .eq('employee_id', id)
-      .eq('archived', false)
-      .maybeSingle();
-
-
-    if(findError){
-      throw findError;
-    }
-
-
-    let saveError = null;
-
-
-    /*
-     * Existing active evaluation:
-     * update it.
-     */
-
-    if(existing){
-
-      const {
-        error
-      } = await supabase
-        .from('evaluations')
-        .update(payload)
-        .eq('id', existing.id);
-
-      saveError = error;
-
-    }
-
-
-    /*
-     * No active evaluation:
-     * create a new one.
-     */
-
-    else{
-
-      const {
-        error
-      } = await supabase
-        .from('evaluations')
-        .insert(payload);
-
-      saveError = error;
-
-    }
-
-
-    if(saveError){
-      throw saveError;
-    }
-
-
-    el('status').textContent = 'Saved.';
-
-    setState(
-      'Submitted',
-      'locked'
-    );
-
-
-    /*
-     * Move to the next colleague after saving.
-     */
-
-    setTimeout(async () => {
-
-      if(el('status').textContent === 'Saved.'){
-
-        el('status').textContent = '';
-
-        try{
-          await goToNextColleague();
-        }
-        catch(err){
-          console.error(
-            'Could not move to next colleague:',
-            err
-          );
-        }
-
-      }
-
-    }, 1000);
-
-
-  }
-  catch(error){
-
-    console.error(
-      'Evaluation save error:',
-      error
-    );
-
-    el('status').textContent = '';
-
-    setState(
-      'Save failed',
-      'locked'
-    );
-
-    uiAlert(
-      'Could not save',
-      error?.message ||
-      'An unexpected error occurred while saving the evaluation.'
-    );
-
-  }
-  finally{
-
+  // ----- saving -----
+  el('saveBtn').addEventListener('click', async () => {
+    const id = targetId();
+    if(!id){ uiAlert('No employee chosen', 'Pick the colleague you are evaluating first.'); return; }
+    if(id === uid){ uiAlert('Not allowed', 'You cannot evaluate yourself.'); return; }
+    const btn = el('saveBtn');
+    btn.disabled = true; el('status').textContent = 'Saving…';
+    const payload = {
+      employee_id: id,
+      evaluator_id: uid,
+      scores: api.getColumnScores(0),
+      average: api.average(),
+      comments: api.comments(),
+      form_role: api.formRole(),
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supabase.from('evaluations')
+      .upsert(payload, { onConflict: 'evaluator_id,employee_id' });
     btn.disabled = false;
-
-  }
-
-});
+    if(error){
+      el('status').textContent = '';
+      setState('Save failed', 'locked');
+      uiAlert('Could not save', error.message);
+      return;
+    }
+    el('status').textContent = 'Saved.';
+    setTimeout(() => { if(el('status').textContent === 'Saved.') el('status').textContent = ''; }, 2500);
     if(api.columnComplete(0)) await goToNextColleague();
     dirty = false;
     setState(api.columnComplete(0) ? 'Saved — you can still edit' : 'Saved (incomplete)', 'saved');
