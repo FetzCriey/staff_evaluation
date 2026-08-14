@@ -690,7 +690,7 @@
     <div class="field"><label>Date</label><input id="date" class="ro" readonly></div>
   </div>
 
-  <div class="evaluator-ctl">
+  <div class="evaluator-ctl hide">
     <span>Evaluators</span>
     <div class="stepper">
       <button id="evMinus" aria-label="Remove evaluator">&minus;</button>
@@ -2098,8 +2098,8 @@ if(!session){
       ? (me?.full_name || session.user.email)
       : (api.employeeName() || '—');
     el('empName').readOnly = !mine;        // in review the sidebar picks the person
-    const ctl = document.querySelector('.evaluator-ctl');
-    if(ctl) ctl.classList.toggle('hide', mine);   // one column when scoring your own
+    // No stepper anywhere: scoring your own shows one column, and reviewing
+    // shows one column per person who actually submitted.
   }
 
   // name -> id, so we know who is being evaluated
