@@ -2042,7 +2042,25 @@ if(!session){
   // Everything here goes through the manage-users Edge Function, which re-checks
   // that the caller is a manager before touching anything. The browser never
   // holds an admin key — hiding this panel is convenience, not the security.
+  // Three tiers of access. Everyone scores their own column; what differs is
+  // what else the sidebar exposes.
+  //   full   — manager / Senior Staff: results, history, roster, export, lock, reset
+  //   viewer — Junior Staff: results and history, read only
+  //   basic  — Probationary: criteria view only
   const canAdmin = (me?.role === 'manager') || (me?.form_role === 'Senior Staff');
+  const canView  = canAdmin || (me?.form_role === 'Junior Staff');
+
+  // The sidebar panel itself is shown to anyone who can view results; the
+  // roster sections inside it stay manager/senior only.
+  if(canView){
+    document.getElementById('mgrPanel').classList.add('on');
+    document.querySelector('#mgrPanel h3').textContent =
+      canAdmin ? 'Staff administration' : 'Evaluations';
+    if(!canAdmin){
+      document.getElementById('secRoles').classList.add('hide');
+      document.getElementById('secAdd').classList.add('hide');
+    }
+  }
   if(canAdmin){
     const isManager = me?.role === 'manager';
     const panel = document.getElementById('mgrPanel');
@@ -2197,7 +2215,8 @@ if(!session){
   // ---- 3c. evaluation mode ---------------------------------------------
   // Staff score one colleague at a time and save their own column.
   // Managers and Senior Staff see every submitted column and export the result.
-  const isReviewer = canAdmin;
+  const isReviewer = canView;      // may open other people's results
+  const isAdmin    = canAdmin;     // may also export, lock, reset and archive
   const api = window.evalApi;
 
   const el = id => document.getElementById(id);
@@ -2215,10 +2234,11 @@ if(!session){
   function applyMode(){
     const mine = !reviewing();
     show('saveBtn',  mine);
-    show('printBtn', !mine);
-    show('pdfBtn',   !mine);
-    show('exportBtn',!mine);
-    show('lockBtn',  !mine);
+    show('printBtn', !mine && isAdmin);
+    show('pdfBtn',   !mine && isAdmin);
+    show('exportBtn',!mine && isAdmin);
+    show('lockBtn',  !mine && isAdmin);
+    show('resetBtn', mine || isAdmin);      // viewers get no destructive controls
     el('resetBtn').textContent = mine ? 'Clear scores' : 'Reset a submission';
     show('backBar',  !mine);
     show('progWrap', !mine && !!target);
@@ -2588,13 +2608,15 @@ if(!session){
       await onEmployeeChange();
     }
 
-    // print/export first, then offer to finalise
-    ['printBtn','pdfBtn','exportBtn'].forEach(bid => {
-      el(bid).addEventListener('click', () => {
-        if(!reviewing() || viewingArchive) return;
-        setTimeout(archiveRound, 1200);      // let the document render first
+    // Only admins finalise a round; viewers never see these buttons anyway.
+    if(isAdmin){
+      ['printBtn','pdfBtn','exportBtn'].forEach(bid => {
+        el(bid).addEventListener('click', () => {
+          if(!reviewing() || viewingArchive) return;
+          setTimeout(archiveRound, 1200);    // let the document render first
+        });
       });
-    });
+    }
 
     async function loadHistory(){
       const { data, error } = await supabase.from('evaluations')
@@ -2675,10 +2697,10 @@ if(!session){
     loadHistory();
   }
 
-  // ---- 3f. reset a wrong submission (reviewers) ------------------------
+  // ---- 3f. reset a wrong submission (admins only) ----------------------
   // Deleting an active row lets that evaluator score the person again from
   // scratch. Archived rounds are never touched.
-  if(isReviewer){
+  if(isAdmin){
     async function openResetDialog(){
       const id = target;
       if(!id){ uiAlert('No employee open', 'Choose someone from the sidebar first.'); return; }
