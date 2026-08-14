@@ -2053,6 +2053,27 @@ if(!session){
   // The sidebar panel itself is shown to anyone who can view results; the
   // roster sections inside it stay manager/senior only.
   if(canView){
+    // Accordion wiring lives here, not in the manager block: a Junior sees the
+    // Results and History sections, so they need the click handlers too.
+    const SECTIONS = [['secResults','sumResults'], ['secHistory','sumHistory'],
+                      ['secRoles','sumRoles'], ['secAdd','sumAdd']];
+    SECTIONS.forEach(([secId, sumId]) => {
+      const sec = document.getElementById(secId);
+      const sum = document.getElementById(sumId);
+      if(!sec || !sum) return;
+      sum.addEventListener('click', () => {
+        const opening = !sec.classList.contains('open');
+        SECTIONS.forEach(([s2, b2]) => {
+          document.getElementById(s2)?.classList.remove('open');
+          document.getElementById(b2)?.setAttribute('aria-expanded','false');
+        });
+        if(opening){
+          sec.classList.add('open');
+          sum.setAttribute('aria-expanded','true');
+        }
+      });
+    });
+
     document.getElementById('mgrPanel').classList.add('on');
     document.querySelector('#mgrPanel h3').textContent =
       canAdmin ? 'Staff administration' : 'Evaluations';
@@ -2078,24 +2099,6 @@ if(!session){
     }
 
     const say = (t, cls='') => { msg.textContent = t; msg.className = 'mgr-msg ' + cls; };
-
-    // Both sections start closed; opening one closes the other so the drawer
-    // never becomes a long scroll.
-    const SECTIONS = [['secResults','sumResults'], ['secHistory','sumHistory'], ['secRoles','sumRoles'], ['secAdd','sumAdd']];
-    SECTIONS.forEach(([secId, sumId]) => {
-      const sec = document.getElementById(secId);
-      document.getElementById(sumId).addEventListener('click', () => {
-        const opening = !sec.classList.contains('open');
-        SECTIONS.forEach(([s2, b2]) => {
-          document.getElementById(s2).classList.remove('open');
-          document.getElementById(b2).setAttribute('aria-expanded','false');
-        });
-        if(opening){
-          sec.classList.add('open');
-          document.getElementById(sumId).setAttribute('aria-expanded','true');
-        }
-      });
-    });
 
     async function admin(payload){
       const { data, error } = await supabase.functions.invoke('manage-users', { body: payload });
@@ -2147,13 +2150,34 @@ if(!session){
         });
         sel.addEventListener('change', async () => {
           const prev = r.form_role;
+          const next = sel.value;
+          // Confirm first — the form role decides which criteria the person is
+          // scored against, and Senior Staff also unlocks admin access.
+          const extra = next === 'Senior Staff'
+            ? ' Senior Staff can also manage other users and finalise evaluations.'
+            : (prev === 'Senior Staff'
+                ? ' They will lose the ability to manage users and finalise evaluations.'
+                : '');
+          const ok = await uiConfirm(
+            'Change ' + r.full_name + "'s form role?",
+            'From ' + (prev || 'none') + ' to ' + next + '.' + extra +
+            ' Their next evaluation will use the ' + next + ' criteria.',
+            { ok: 'Change role' });
+          if(!ok){ sel.value = prev; return; }
+
           sel.disabled = true;
+          say('Saving…');
           try{
-            await admin({ action:'set_role', id:r.id, form_role:sel.value });
-            r.form_role = sel.value;
-            say(r.full_name + ' → ' + sel.value, 'ok');
+            await admin({ action:'set_role', id:r.id, form_role:next });
+            r.form_role = next;
+            say(r.full_name + ' → ' + next, 'ok');
             reload();
-          }catch(err){ sel.value = prev; say('Could not save: ' + err.message, 'err'); }
+            await uiAlert('Role updated', r.full_name + ' is now ' + next + '.');
+          }catch(err){
+            sel.value = prev;
+            say('Could not save: ' + err.message, 'err');
+            await uiAlert('Could not change the role', err.message);
+          }
           sel.disabled = false;
         });
 
