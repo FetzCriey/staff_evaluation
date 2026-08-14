@@ -2062,6 +2062,7 @@ if(!session){
   let myRow = null;       // this evaluator's saved row for that employee
   let anyLocked = false;
   let dirty = false;      // edits made since the last save
+  let lastWarn = 0;       // throttles the finish-first warning
 
   function targetId(){ return idByName.get(api.employeeName().toLowerCase()) || null; }
 
@@ -2086,7 +2087,9 @@ if(!session){
     const stop = blockedFromLeaving();
     if(stop){
       el('empName').value = targetName;   // put the previous name back
-      alert(stop);
+      const now = Date.now();
+      if(now - lastWarn > 4000){ lastWarn = now; alert(stop); }
+      else setState(stop, 'dirty');
       return;
     }
     target = id;
@@ -2255,14 +2258,25 @@ if(!session){
 
   el('empName').addEventListener('change', onEmployeeChange);
   el('empName').addEventListener('blur', onEmployeeChange);
-  setInterval(onEmployeeChange, 900);   // catches autocomplete picks
+  // The autocomplete sets the value without firing 'change', so poll — but
+  // silently. Only act once the typed text is an exact roster match, and never
+  // interrupt while the field has focus.
+  setInterval(() => {
+    if(document.activeElement === el('empName')) return;
+    const typed = api.employeeName().toLowerCase();
+    if(typed && !idByName.has(typed)) return;
+    onEmployeeChange();
+  }, 900);
 
   // ---- 4. sign out ------------------------------------------------------
   document.getElementById('signOut').addEventListener('click', async () => {
     const b = document.getElementById('signOut');
+    if(dirty && !confirm('You have unsaved scores. Sign out anyway?')) return;
+    dirty = false;              // deliberate exit — skip the leave prompt
     b.disabled = true;
     const label = b.querySelector('span'); if(label) label.textContent = 'Signing out…';
-    await supabase.auth.signOut();
+    try{ await supabase.auth.signOut(); }
+    catch(err){ console.warn('Sign out error', err); }
     window.location.replace('login.html');
   });
 
