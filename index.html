@@ -532,6 +532,32 @@
     border-radius:13px;background:#fdf3e6;border:1.5px solid #e8d3b2;color:#7a4d13;
     font-size:12.5px;font-weight:600}
   .archived-note svg{flex:0 0 auto}
+
+  /* ================= RESET SUBMISSIONS DIALOG ================= */
+  .rm-scrim{position:fixed;inset:0;z-index:80;background:rgba(5,30,45,.45);
+    backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px}
+  .rm-box{width:100%;max-width:400px;background:#fff;border-radius:18px;
+    border:1.5px solid var(--edge);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
+    overflow:hidden;max-height:80vh;display:flex;flex-direction:column}
+  .rm-top{padding:16px 18px;background:#f4fafd;border-bottom:1.5px solid var(--line)}
+  .rm-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:17px}
+  .rm-sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .rm-body{padding:12px;overflow-y:auto;scrollbar-width:none}
+  .rm-body::-webkit-scrollbar{width:0}
+  .rm-item{display:flex;align-items:center;gap:10px;padding:9px 10px;margin-bottom:7px;
+    border:1.5px solid var(--line);border-radius:11px;background:#f7fbfd}
+  .rm-nm{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink)}
+  .rm-avg{flex:0 0 auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .rm-x{flex:0 0 auto;border:1.5px solid #e6c3c3;background:#fff6f6;color:#a62a2a;
+    border-radius:9px;padding:6px 11px;font:700 11.5px inherit;font-family:inherit;cursor:pointer}
+  .rm-x:hover{background:#ffe4e4;border-color:#d99a9a}
+  .rm-x:disabled{opacity:.5;cursor:not-allowed}
+  .rm-empty{font-size:12px;color:var(--muted);padding:8px 4px}
+  .rm-foot{display:flex;gap:9px;padding:12px;border-top:1.5px solid var(--line);background:#f4fafd}
+  .rm-foot button{flex:1 1 0;border-radius:11px;padding:11px;cursor:pointer;
+    font:700 13px inherit;font-family:inherit;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft)}
+  .rm-foot .all{border-color:#e6c3c3;background:#fff6f6;color:#a62a2a}
+  .rm-foot .all:hover{background:#ffe4e4}
 </style>
 </head>
 <body>
@@ -2090,6 +2116,7 @@ if(!session){
     show('pdfBtn',   !mine);
     show('exportBtn',!mine);
     show('lockBtn',  !mine);
+    el('resetBtn').textContent = mine ? 'Clear scores' : 'Reset a submission';
     show('backBar',  !mine);
     show('progWrap', !mine && !!target);
     el('whoK').textContent = mine ? 'Evaluating as' : 'Results for';
@@ -2504,6 +2531,97 @@ if(!session){
       if(el('secHistory').classList.contains('open')) loadHistory();
     });
     loadHistory();
+  }
+
+  // ---- 3f. reset a wrong submission (reviewers) ------------------------
+  // Deleting an active row lets that evaluator score the person again from
+  // scratch. Archived rounds are never touched.
+  if(isReviewer){
+    async function openResetDialog(){
+      const id = target;
+      if(!id){ alert('Open an employee first.'); return; }
+      const { data, error } = await supabase.from('evaluations')
+        .select('id, evaluator_id, average')
+        .eq('employee_id', id).eq('archived', false);
+      if(error){ alert('Could not load submissions: ' + error.message); return; }
+      const rows = data ?? [];
+
+      const scrim = document.createElement('div');
+      scrim.className = 'rm-scrim';
+      const who = api.employeeName();
+      scrim.innerHTML =
+        '<div class="rm-box">' +
+          '<div class="rm-top"><div class="rm-ttl">Reset a submission</div>' +
+          '<div class="rm-sub">Whose scores for ' + who + ' should be cleared? ' +
+          'They can then evaluate ' + who + ' again.</div></div>' +
+          '<div class="rm-body" id="rmBody"></div>' +
+          '<div class="rm-foot">' +
+            '<button type="button" id="rmClose">Close</button>' +
+            '<button type="button" class="all" id="rmAll">Clear all</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(scrim);
+      const close = () => { scrim.remove(); document.body.style.overflow = ''; };
+      document.body.style.overflow = 'hidden';
+      scrim.addEventListener('click', e => { if(e.target === scrim) close(); });
+      scrim.querySelector('#rmClose').addEventListener('click', close);
+
+      const body = scrim.querySelector('#rmBody');
+      function paint(){
+        body.innerHTML = '';
+        if(!rows.length){ body.innerHTML = '<div class="rm-empty">No submissions to clear.</div>'; return; }
+        rows.forEach(r => {
+          const name = nameById.get(r.evaluator_id) || 'Unknown';
+          const item = document.createElement('div');
+          item.className = 'rm-item';
+          item.innerHTML = '<span class="rm-nm">' + name + '</span>' +
+            '<span class="rm-avg">avg ' + (r.average ?? 0) + '</span>';
+          const x = document.createElement('button');
+          x.className = 'rm-x'; x.type = 'button'; x.textContent = 'Clear';
+          x.addEventListener('click', async () => {
+            if(!confirm('Clear ' + name + "'s scores for " + who + '?\n\n' +
+                        'They will be able to evaluate ' + who + ' again.')) return;
+            x.disabled = true; x.textContent = 'Clearing…';
+            const { error } = await supabase.from('evaluations').delete().eq('id', r.id);
+            if(error){ x.disabled = false; x.textContent = 'Clear';
+              alert('Could not clear: ' + error.message); return; }
+            rows.splice(rows.indexOf(r), 1);
+            paint();
+            await refreshAfterReset();
+          });
+          item.appendChild(x);
+          body.appendChild(item);
+        });
+      }
+      paint();
+
+      scrim.querySelector('#rmAll').addEventListener('click', async () => {
+        if(!rows.length){ close(); return; }
+        if(!confirm('Clear all ' + rows.length + ' submissions for ' + who + '?\n\n' +
+                    'Everyone will need to evaluate ' + who + ' again. This cannot be undone.')) return;
+        const { error } = await supabase.from('evaluations')
+          .delete().eq('employee_id', target).eq('archived', false);
+        if(error){ alert('Could not clear: ' + error.message); return; }
+        close();
+        await refreshAfterReset();
+      });
+    }
+
+    async function refreshAfterReset(){
+      if(window.__refreshResults) window.__refreshResults();
+      const id = target; target = null;
+      el('empName').value = nameById.get(id) || '';
+      await onEmployeeChange();
+    }
+
+    // in review the Clear button picks a submission; when scoring it still
+    // clears the form in front of you
+    el('resetBtn').addEventListener('click', e => {
+      if(!reviewing()) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      openResetDialog();
+    }, true);
   }
 
   // ---- 4. sign out ------------------------------------------------------
