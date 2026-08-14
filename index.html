@@ -517,6 +517,21 @@
     background:#fff;border-radius:11px;padding:9px 14px;cursor:pointer;font-family:inherit;
     font-size:13px;font-weight:700;color:var(--lagoon-deep);transition:.15s}
   .backbar button:hover{border-color:var(--lagoon);background:#f7fbfd}
+
+  /* ================= SIDEBAR HISTORY ================= */
+  .his-row{display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
+    padding:10px 11px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
+    margin-bottom:7px;transition:border-color .15s ease,background .15s ease,transform .12s ease}
+  .his-row:hover{border-color:var(--lagoon);background:#f7fbfd;transform:translateY(-1px)}
+  .his-row.on{border-color:#bfe4f5;background:var(--accent-soft)}
+  .his-nm{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3}
+  .his-meta{display:flex;gap:8px;align-items:baseline;margin-top:4px;font-size:10.5px;color:var(--muted)}
+  .his-meta .avg{margin-left:auto;font-weight:700;color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
+  .his-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
+  .archived-note{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 14px;
+    border-radius:13px;background:#fdf3e6;border:1.5px solid #e8d3b2;color:#7a4d13;
+    font-size:12.5px;font-weight:600}
+  .archived-note svg{flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -559,6 +574,17 @@
     </div>
     <div class="mgr" id="mgrPanel">
       <h3>Staff administration</h3>
+
+      <div class="mgr-sec hide" id="secHistory">
+        <button class="mgr-sum" id="sumHistory" aria-expanded="false" aria-controls="bodyHistory">
+          <span class="lbl">History</span>
+          <span class="cnt" id="hisCount">0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mgr-panel-body" id="bodyHistory">
+          <div id="hisList"></div>
+        </div>
+      </div>
 
       <div class="mgr-sec hide" id="secResults">
         <button class="mgr-sum" id="sumResults" aria-expanded="false" aria-controls="bodyResults">
@@ -635,6 +661,11 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       Back to my scoring
     </button>
+  </div>
+
+  <div class="archived-note hide" id="archNote">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/></svg>
+    <span id="archText">Archived record — read only. Print and export still work.</span>
   </div>
 
   <div class="whobar" id="whoBar">
@@ -1905,7 +1936,7 @@ if(!session){
 
     // Both sections start closed; opening one closes the other so the drawer
     // never becomes a long scroll.
-    const SECTIONS = [['secResults','sumResults'], ['secRoles','sumRoles'], ['secAdd','sumAdd']];
+    const SECTIONS = [['secResults','sumResults'], ['secHistory','sumHistory'], ['secRoles','sumRoles'], ['secAdd','sumAdd']];
     SECTIONS.forEach(([secId, sumId]) => {
       const sec = document.getElementById(secId);
       document.getElementById(sumId).addEventListener('click', () => {
@@ -2141,7 +2172,7 @@ if(!session){
     api.setColumns([ me?.full_name || 'You' ]);
     const { data, error } = await supabase.from('evaluations')
       .select('id, scores, comments, locked')
-      .eq('employee_id', id).eq('evaluator_id', uid).maybeSingle();
+      .eq('employee_id', id).eq('evaluator_id', uid).eq('archived', false).maybeSingle();
     if(error){ setState('Could not load your evaluation', 'locked'); return; }
     myRow = data || null;
     if(myRow){
@@ -2164,7 +2195,7 @@ if(!session){
   async function loadAll(id){
     const { data, error } = await supabase.from('evaluations')
       .select('id, evaluator_id, scores, comments, locked')
-      .eq('employee_id', id);
+      .eq('employee_id', id).eq('archived', false);
     if(error){ setState('Could not load evaluations', 'locked'); return; }
     const rows = data ?? [];
     paintProgress(id, rows);
@@ -2296,7 +2327,7 @@ if(!session){
 
     async function loadResults(){
       const { data, error } = await supabase.from('evaluations')
-        .select('employee_id, evaluator_id, locked');
+        .select('employee_id, evaluator_id, locked').eq('archived', false);
       if(error){ el('resList').innerHTML = '<div class="res-empty">Could not load results.</div>'; return; }
       const rows = data ?? [];
       const byEmployee = new Map();
@@ -2336,6 +2367,7 @@ if(!session){
       const stop = blockedFromLeaving();
       if(stop){ alert(stop); return; }
       mode = 'review';
+      if(window.__clearArchiveView) window.__clearArchiveView();
       api.setEmployee(name);
       applyMode();
       target = null;                 // force a reload for this person
@@ -2359,6 +2391,119 @@ if(!session){
     });
     window.__refreshResults = loadResults;
     loadResults();
+  }
+
+  // ---- 3e. archiving + history (reviewers only) ------------------------
+  // Printing or exporting a completed round finalises it: the rows are frozen
+  // and moved to History, which clears the way for the next round.
+  if(isReviewer){
+    el('secHistory').classList.remove('hide');
+    let viewingArchive = null;   // archived_at of the record on screen
+
+    async function archiveRound(){
+      const id = target;
+      if(!id || viewingArchive) return;
+      const name = api.employeeName();
+      if(!confirm('Finalise this evaluation for ' + name + '?\n\n' +
+                  'It moves to History and can no longer be edited. ' +
+                  'A new evaluation round opens for ' + name + '.')) return;
+      const stamp = new Date().toISOString();
+      const { error } = await supabase.from('evaluations')
+        .update({ archived: true, archived_at: stamp, archived_by: uid, locked: true })
+        .eq('employee_id', id).eq('archived', false);
+      if(error){ alert('Could not archive: ' + error.message); return; }
+      alert(name + "'s evaluation is archived. A new round is now open.");
+      await loadHistory();
+      if(window.__refreshResults) window.__refreshResults();
+      target = null;
+      await onEmployeeChange();
+    }
+
+    // print/export first, then offer to finalise
+    ['printBtn','pdfBtn','exportBtn'].forEach(bid => {
+      el(bid).addEventListener('click', () => {
+        if(!reviewing() || viewingArchive) return;
+        setTimeout(archiveRound, 1200);      // let the document render first
+      });
+    });
+
+    async function loadHistory(){
+      const { data, error } = await supabase.from('evaluations')
+        .select('employee_id, evaluator_id, scores, comments, average, archived_at, form_role')
+        .eq('archived', true).order('archived_at', { ascending: false });
+      const list = el('hisList');
+      if(error){ list.innerHTML = '<div class="his-empty">Could not load history.</div>'; return; }
+      const rows = data ?? [];
+      // group by employee + the moment it was archived
+      const groups = new Map();
+      rows.forEach(r => {
+        const key = r.employee_id + '|' + r.archived_at;
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(r);
+      });
+      list.innerHTML = '';
+      el('hisCount').textContent = groups.size;
+      if(!groups.size){ list.innerHTML = '<div class="his-empty">Nothing archived yet.</div>'; return; }
+      [...groups.entries()].forEach(([key, rs]) => {
+        const [pid, when] = key.split('|');
+        const name = nameById.get(pid) || 'Unknown';
+        const avg = rs.length
+          ? Math.round(rs.reduce((a,r) => a + (Number(r.average)||0), 0) / rs.length * 10) / 10
+          : 0;
+        const d = new Date(when);
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'his-row';
+        b.innerHTML = `<div class="his-nm">${name}</div>` +
+          `<div class="his-meta"><span>${d.toLocaleDateString()}</span>` +
+          `<span>${rs.length} evaluator${rs.length===1?'':'s'}</span>` +
+          `<span class="avg">${avg}</span></div>`;
+        b.addEventListener('click', () => openArchive(pid, name, when, rs));
+        list.appendChild(b);
+      });
+    }
+
+    function openArchive(pid, name, when, rs){
+      const stop = blockedFromLeaving();
+      if(stop){ alert(stop); return; }
+      mode = 'review';
+      viewingArchive = when;
+      api.setEmployee(name);
+      applyMode();
+      target = pid; targetName = name;
+      rs.sort((a,b) => (nameById.get(a.evaluator_id)||'').localeCompare(nameById.get(b.evaluator_id)||''));
+      api.clearScores();
+      api.setColumns(rs.map(r => nameById.get(r.evaluator_id) || 'Unknown'));
+      rs.forEach((r,i) => api.setColumnScores(i, r.scores || {}));
+      api.setComments(rs.map(r => {
+        const t = (r.comments||'').trim();
+        return t ? (nameById.get(r.evaluator_id)||'Evaluator') + ': ' + t : '';
+      }).filter(Boolean).join('\n'));
+      api.setReadOnly(true);
+      el('archNote').classList.remove('hide');
+      el('archText').textContent = 'Archived ' + new Date(when).toLocaleString() +
+        ' — read only. Print and export still work.';
+      show('progWrap', false);
+      show('lockBtn', false);
+      setState('Archived record', 'locked');
+      [...el('hisList').children].forEach(c => c.classList.remove('on'));
+      openDrawer(false);
+    }
+
+    // leaving an archived record returns to the live view
+    el('backBtn').addEventListener('click', () => {
+      viewingArchive = null;
+      el('archNote').classList.add('hide');
+    });
+    window.__clearArchiveView = () => {
+      viewingArchive = null;
+      el('archNote').classList.add('hide');
+      show('lockBtn', true);
+    };
+
+    el('sumHistory').addEventListener('click', () => {
+      if(el('secHistory').classList.contains('open')) loadHistory();
+    });
+    loadHistory();
   }
 
   // ---- 4. sign out ------------------------------------------------------
