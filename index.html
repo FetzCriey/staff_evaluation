@@ -1242,6 +1242,15 @@ window.evalApi = {
   comments(){ return document.getElementById('comment').value; },
   setComments(t){ document.getElementById('comment').value = t || ''; },
   employeeName(){ return document.getElementById('empName').value.trim(); },
+  // Set the employee programmatically: applies the right criteria form and
+  // leaves the autocomplete closed (dispatching 'input' would open it).
+  setEmployee(name){
+    const inp = document.getElementById('empName');
+    inp.value = name || '';
+    inp.classList.remove('bad');
+    document.querySelectorAll('.ac-box').forEach(b => b.classList.remove('open'));
+    if(!applyRoleFromName()){ buildHead(); buildBody(); compute(); }
+  },
   onScoreChange(fn){ window.__scoreHook = fn; },
   setReadOnly(on){
     document.querySelectorAll('.score-in').forEach(i => { i.readOnly = !!on; });
@@ -2052,7 +2061,11 @@ if(!session){
     show('lockBtn',  !mine);
     show('backBar',  !mine);
     show('progWrap', !mine && !!target);
-    el('whoK').textContent = mine ? 'Evaluating as' : 'Reviewing';
+    el('whoK').textContent = mine ? 'Evaluating as' : 'Results for';
+    // In review the bar names the employee; when scoring it names you.
+    el('whoV').textContent = mine
+      ? (me?.full_name || session.user.email)
+      : (api.employeeName() || '—');
     el('empName').readOnly = !mine;        // in review the sidebar picks the person
     const ctl = document.querySelector('.evaluator-ctl');
     if(ctl) ctl.classList.toggle('hide', mine);   // one column when scoring your own
@@ -2104,6 +2117,7 @@ if(!session){
     target = id;
     targetName = api.employeeName();
     dirty = false;
+    if(reviewing()) el('whoV').textContent = targetName || '—';
     api.clearScores();
     api.setComments('');
     myRow = null; anyLocked = false;
@@ -2322,9 +2336,8 @@ if(!session){
       const stop = blockedFromLeaving();
       if(stop){ alert(stop); return; }
       mode = 'review';
+      api.setEmployee(name);
       applyMode();
-      el('empName').value = name;
-      el('empName').dispatchEvent(new Event('input', { bubbles: true }));
       target = null;                 // force a reload for this person
       await onEmployeeChange();
       loadResults();
@@ -2335,7 +2348,7 @@ if(!session){
       mode = 'mine';
       applyMode();
       api.clearColumns();
-      el('empName').value = '';
+      api.setEmployee('');
       target = null; targetName = ''; dirty = false;
       api.clearScores(); api.setComments(''); api.setReadOnly(false);
       setState('No employee selected');
