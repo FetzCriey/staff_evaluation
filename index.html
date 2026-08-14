@@ -492,18 +492,6 @@
   .prog-chip.ok{background:#eaf7f0;border-color:#bfe3ce;color:#1f7a4d}
   .prog-chip .dot{width:6px;height:6px;border-radius:50%;background:#c9d9e4}
   .prog-chip.ok .dot{background:#27ae60}
-
-  /* ================= REVIEWER MODE TOGGLE ================= */
-  .seg{display:inline-flex;padding:3px;gap:3px;border-radius:11px;
-    background:#eef6fb;border:1.5px solid var(--line)}
-  .seg button{border:0;background:transparent;cursor:pointer;font-family:inherit;
-    font-size:11.5px;font-weight:700;letter-spacing:.03em;color:var(--muted);
-    padding:7px 13px;border-radius:8px;transition:background .15s ease,color .15s ease}
-  .seg button:hover{color:var(--ink-soft)}
-  .seg button.on{background:#fff;color:var(--lagoon-deep);
-    box-shadow:0 2px 6px -2px rgba(8,52,76,.28)}
-  .seg button:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:1px}
-  @media(max-width:560px){.seg{width:100%}.seg button{flex:1 1 0}}
 </style>
 </head>
 <body>
@@ -609,10 +597,6 @@
   <div class="whobar" id="whoBar">
     <span class="k" id="whoK">Signed in as</span>
     <span class="v" id="whoV">&mdash;</span>
-    <span class="seg hide" id="modeSeg">
-      <button type="button" id="modeMine">My scores</button>
-      <button type="button" id="modeAll" class="on">All submissions</button>
-    </span>
     <span class="pill-state" id="whoState">No employee selected</span>
   </div>
 
@@ -2012,40 +1996,15 @@ if(!session){
   el('whoV').textContent = me?.full_name || session.user.email;
   el('whoK').textContent = isReviewer ? 'Reviewing as' : 'Evaluating as';
 
-  // Reviewers are employees too: they score their colleagues in "My scores",
-  // and read everyone's submissions in "All submissions".
-  let revMode = isReviewer ? 'all' : 'mine';
-  const reviewing = () => isReviewer && revMode === 'all';
-
-  function applyMode(){
-    const mine = !reviewing();
-    show('saveBtn',   mine);
-    show('printBtn',  !mine);
-    show('pdfBtn',    !mine);
-    show('exportBtn', !mine);
-    show('lockBtn',   !mine);
-    show('progWrap',  !mine && !!target);
-    show('modeSeg',   isReviewer);
-    el('modeMine').classList.toggle('on', mine);
-    el('modeAll').classList.toggle('on', !mine);
-    el('whoK').textContent = mine ? 'Evaluating as' : 'Reviewing as';
-    // Scoring your own column means exactly one evaluator, so the count is
-    // not yours to change — hide the control rather than disabling it.
-    const ctl = document.querySelector('.evaluator-ctl');
-    if(ctl) ctl.classList.toggle('hide', mine);
-  }
-  applyMode();
-
-  if(isReviewer){
-    const switchTo = m => {
-      if(revMode === m) return;
-      revMode = m;
-      applyMode();
-      const id = target; target = null;
-      if(id) onEmployeeChange();
-    };
-    el('modeMine').addEventListener('click', () => switchTo('mine'));
-    el('modeAll').addEventListener('click',  () => switchTo('all'));
+  show('saveBtn', !isReviewer);
+  show('printBtn', isReviewer);
+  show('pdfBtn', isReviewer);
+  show('exportBtn', isReviewer);
+  show('lockBtn', isReviewer);
+  if(!isReviewer){
+    // staff see a single column: their own
+    el('evPlus').disabled = true;
+    el('evMinus').disabled = true;
   }
 
   // name -> id, so we know who is being evaluated
@@ -2058,62 +2017,30 @@ if(!session){
   await loadIds();
 
   let target = null;      // employee being evaluated
-  let targetName = '';    // the name shown in the field for that employee
   let myRow = null;       // this evaluator's saved row for that employee
   let anyLocked = false;
-  let dirty = false;      // edits made since the last save
-  let lastWarn = 0;       // throttles the finish-first warning
 
   function targetId(){ return idByName.get(api.employeeName().toLowerCase()) || null; }
-
-  function filledCount(){ return Object.keys(api.getColumnScores(0)).length; }
-
-  // While scoring your own column, one colleague must be finished and
-  // submitted before another can be started.
-  function blockedFromLeaving(){
-    if(reviewing() || !target || anyLocked) return null;
-    const filled = filledCount(), total = api.criteriaCount();
-    if(filled === 0) return null;                  // nothing started yet
-    if(filled < total)
-      return 'Finish scoring ' + targetName + ' first — ' + filled + ' of ' + total + ' criteria done.';
-    if(dirty)
-      return 'Submit your scores for ' + targetName + ' before moving on.';
-    return null;
-  }
 
   async function onEmployeeChange(){
     const id = targetId();
     if(id === target) return;
-    const stop = blockedFromLeaving();
-    if(stop){
-      el('empName').value = targetName;   // put the previous name back
-      const now = Date.now();
-      if(now - lastWarn > 4000){ lastWarn = now; alert(stop); }
-      else setState(stop, 'dirty');
-      return;
-    }
     target = id;
-    targetName = api.employeeName();
-    dirty = false;
     api.clearScores();
     api.setComments('');
     myRow = null; anyLocked = false;
     if(!id){
       api.clearColumns();
       el('progWrap').classList.add('hide');
-      show('saveBtn', !reviewing());
       setState('No employee selected');
       return;
     }
-    if(id === uid && !reviewing()){
-      api.setColumns(['You']);
+    if(id === uid && !isReviewer){
+      setState('You cannot evaluate yourself', 'locked');
       api.setReadOnly(true);
-      show('saveBtn', false);
-      setState('You cannot score yourself', 'locked');
       return;
     }
-    if(!reviewing()) show('saveBtn', true);
-    reviewing() ? await loadAll(id) : await loadMine(id);
+    isReviewer ? await loadAll(id) : await loadMine(id);
   }
 
   // ----- staff: their own single column -----
@@ -2130,12 +2057,10 @@ if(!session){
       api.setComments(myRow.comments || '');
       anyLocked = !!myRow.locked;
       api.setReadOnly(anyLocked);
-      dirty = false;
       setState(anyLocked ? 'Locked by a reviewer' : 'Saved — you can still edit',
                anyLocked ? 'locked' : 'saved');
     }else{
       api.setReadOnly(false);
-      dirty = false;
       setState('Not submitted yet');
     }
     el('saveBtn').disabled = anyLocked;
@@ -2175,7 +2100,7 @@ if(!session){
   // ----- progress: who has scored this person, who hasn't -----
   // Everyone evaluates everyone, so the expected set is all staff bar the employee.
   function paintProgress(employeeId, rows){
-    if(!reviewing()) return;
+    if(!isReviewer) return;
     el('progWrap').classList.remove('hide');
     const expected = [...nameById.entries()].filter(([pid]) => pid !== employeeId);
     const doneIds = new Set(rows.map(r => r.evaluator_id));
@@ -2225,7 +2150,6 @@ if(!session){
     }
     el('status').textContent = 'Saved.';
     setTimeout(() => { if(el('status').textContent === 'Saved.') el('status').textContent = ''; }, 2500);
-    dirty = false;
     setState(api.columnComplete(0) ? 'Saved — you can still edit' : 'Saved (incomplete)', 'saved');
   });
 
@@ -2245,38 +2169,22 @@ if(!session){
   });
 
   // mark unsaved edits
-  api.onScoreChange(() => {
-    if(reviewing() || anyLocked || !target || target === uid) return;
-    dirty = true;
-    const filled = filledCount(), total = api.criteriaCount();
-    setState(filled < total ? ('Unsaved · ' + filled + ' of ' + total + ' scored') : 'Unsaved changes', 'dirty');
-  });
-
-  window.addEventListener('beforeunload', e => {
-    if(dirty && !reviewing()){ e.preventDefault(); e.returnValue = ''; }
-  });
+  if(!isReviewer){
+    api.onScoreChange(() => {
+      if(!anyLocked && target) setState('Unsaved changes', 'dirty');
+    });
+  }
 
   el('empName').addEventListener('change', onEmployeeChange);
   el('empName').addEventListener('blur', onEmployeeChange);
-  // The autocomplete sets the value without firing 'change', so poll — but
-  // silently. Only act once the typed text is an exact roster match, and never
-  // interrupt while the field has focus.
-  setInterval(() => {
-    if(document.activeElement === el('empName')) return;
-    const typed = api.employeeName().toLowerCase();
-    if(typed && !idByName.has(typed)) return;
-    onEmployeeChange();
-  }, 900);
+  setInterval(onEmployeeChange, 900);   // catches autocomplete picks
 
   // ---- 4. sign out ------------------------------------------------------
   document.getElementById('signOut').addEventListener('click', async () => {
     const b = document.getElementById('signOut');
-    if(dirty && !confirm('You have unsaved scores. Sign out anyway?')) return;
-    dirty = false;              // deliberate exit — skip the leave prompt
     b.disabled = true;
     const label = b.querySelector('span'); if(label) label.textContent = 'Signing out…';
-    try{ await supabase.auth.signOut(); }
-    catch(err){ console.warn('Sign out error', err); }
+    await supabase.auth.signOut();
     window.location.replace('login.html');
   });
 
