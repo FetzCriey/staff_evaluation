@@ -2428,115 +2428,7 @@ if(!session){
   }
 
   // ----- saving -----
-el('saveBtn').addEventListener('click', async () => {
-  const id = targetId();
-
-  if(!id){
-    uiAlert(
-      'No employee chosen',
-      'Pick the colleague you are evaluating first.'
-    );
-    return;
-  }
-
-  if(id === uid){
-    uiAlert(
-      'Not allowed',
-      'You cannot evaluate yourself.'
-    );
-    return;
-  }
-
-  const btn = el('saveBtn');
-
-  btn.disabled = true;
-  el('status').textContent = 'Saving…';
-
-  const payload = {
-    employee_id: id,
-    evaluator_id: uid,
-    scores: api.getColumnScores(0),
-    average: api.average(),
-    comments: api.comments(),
-    form_role: api.formRole(),
-    updated_at: new Date().toISOString()
-  };
-
-  let saveError = null;
-
-  // Check for an existing ACTIVE evaluation
-  const {
-    data: existing,
-    error: findError
-  } = await supabase
-    .from('evaluations')
-    .select('id')
-    .eq('evaluator_id', uid)
-    .eq('employee_id', id)
-    .eq('archived', false)
-    .maybeSingle();
-
-  if(findError){
-
-    saveError = findError;
-
-  }else if(existing){
-
-    // Update the existing active evaluation
-    const { error } = await supabase
-      .from('evaluations')
-      .update(payload)
-      .eq('id', existing.id);
-
-    saveError = error;
-
-  }else{
-
-    // Create a new active evaluation
-    const { error } = await supabase
-      .from('evaluations')
-      .insert({
-        ...payload,
-        archived: false
-      });
-
-    saveError = error;
-  }
-
-  btn.disabled = false;
-
-  if(saveError){
-    el('status').textContent = '';
-    setState('Save failed', 'locked');
-    uiAlert('Could not save', saveError.message);
-    return;
-  }
-
-  el('status').textContent = 'Saved.';
-
-  setTimeout(() => {
-    if(el('status').textContent === 'Saved.'){
-      el('status').textContent = '';
-    }
-  }, 2500);
-
-  if(api.columnComplete(0)){
-    await goToNextColleague();
-  }
-
-  dirty = false;
-
-  setState(
-    api.columnComplete(0)
-      ? 'Saved — you can still edit'
-      : 'Saved (incomplete)',
-    'saved'
-  );
-
-  if(window.__refreshResults){
-    window.__refreshResults();
-  }
-});
+  el('saveBtn').addEventListener('click', async () => {
     const id = targetId();
     if(!id){ uiAlert('No employee chosen', 'Pick the colleague you are evaluating first.'); return; }
     if(id === uid){ uiAlert('Not allowed', 'You cannot evaluate yourself.'); return; }
@@ -2551,51 +2443,15 @@ el('saveBtn').addEventListener('click', async () => {
       form_role: api.formRole(),
       updated_at: new Date().toISOString()
     };
-let saveError = null;
-
-// Check whether an active evaluation already exists
-const {
-  data: existing,
-  error: findError
-} = await supabase
-  .from('evaluations')
-  .select('id')
-  .eq('evaluator_id', uid)
-  .eq('employee_id', id)
-  .eq('archived', false)
-  .maybeSingle();
-
-if (findError) {
-  saveError = findError;
-} else if (existing) {
-
-  // Active evaluation already exists → update it
-  const { error } = await supabase
-    .from('evaluations')
-    .update(payload)
-    .eq('id', existing.id);
-
-  saveError = error;
-
-} else {
-
-  // No active evaluation → create a new one
-  const { error } = await supabase
-    .from('evaluations')
-    .insert({
-      ...payload,
-      archived: false
-    });
-
-  saveError = error;
-}
+    const { error } = await supabase.from('evaluations')
+      .upsert(payload, { onConflict: 'evaluator_id,employee_id' });
     btn.disabled = false;
-if(saveError){
-  el('status').textContent = '';
-  setState('Save failed', 'locked');
-  uiAlert('Could not save', saveError.message);
-  return;
-}
+    if(error){
+      el('status').textContent = '';
+      setState('Save failed', 'locked');
+      uiAlert('Could not save', error.message);
+      return;
+    }
     el('status').textContent = 'Saved.';
     setTimeout(() => { if(el('status').textContent === 'Saved.') el('status').textContent = ''; }, 2500);
     if(api.columnComplete(0)) await goToNextColleague();
