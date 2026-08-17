@@ -2262,9 +2262,15 @@ if(!session){
       const form_role = document.getElementById('mgrRole').value;
       const role      = document.getElementById('mgrAccess').value;
 
-      if(!full_name){ say('Enter a name.', 'err'); return; }
-      if(!email.includes('@')){ say('Enter a valid email.', 'err'); return; }
-      if(password.length < 8){ say('Password must be at least 8 characters.', 'err'); return; }
+      if(!full_name){ uiAlert('Name needed', 'Enter the new person\'s full name.'); return; }
+      if(!email.includes('@')){ uiAlert('Email needed', 'Enter a valid email address for sign-in.'); return; }
+      if(password.length < 8){ uiAlert('Password too short', 'Use at least 8 characters for the temporary password.'); return; }
+
+      const ok = await uiConfirm('Create ' + full_name + '?',
+        full_name + ' will be able to sign in with ' + email + ' as ' +
+        (role === 'manager' ? 'a manager' : 'an employee') + ' on the ' + form_role + ' form.',
+        { ok: 'Create user' });
+      if(!ok) return;
 
       btn.disabled = true; say('Creating account…');
       try{
@@ -2272,9 +2278,13 @@ if(!session){
         document.getElementById('mgrName').value = '';
         document.getElementById('mgrEmail').value = '';
         document.getElementById('mgrPass').value = '';
-        say(full_name + ' can now sign in with ' + email + '.', 'ok');
+        say('');
         reload();
-      }catch(err){ say(err.message, 'err'); }
+        await uiAlert('User created', full_name + ' can now sign in with ' + email + '.');
+      }catch(err){
+        say('');
+        await uiAlert('Could not create user', err.message);
+      }
       btn.disabled = false;
     });
 
