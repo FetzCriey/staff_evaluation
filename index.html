@@ -608,6 +608,33 @@
   /* read-only text fields (Evaluator, Date) read visually distinct from
      fields you can actually type into */
   .field input[readonly]{background:#eef6fb;color:var(--muted);cursor:default}
+
+  /* ================= MOBILE: STACKED CRITERIA CARDS ================= */
+  /* Below 680px the grid/pinned table becomes one card per criterion, with
+     the score box directly beneath it instead of a sideways scroll. */
+  @media (max-width: 680px){
+    #grid, #grid thead, #grid tbody, #grid tr, #grid td, #grid th{ display:block; width:100% }
+    #grid thead{ display:none }
+    .pinned th.crit,.pinned td.crit{ position:static; box-shadow:none }
+    #body tr{
+      background:#fff;border:1.5px solid var(--edge);border-radius:16px;
+      margin-bottom:12px;padding:14px 14px 12px;box-shadow:var(--shadow-sm)
+    }
+    #body td{ border:0;padding:0;text-align:left }
+    #body td.crit{ padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--line) }
+    #body td:not(.crit){
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:7px 0
+    }
+    #body td:not(.crit)::before{
+      content:attr(data-label);flex:0 0 auto;font-size:11px;font-weight:700;
+      letter-spacing:.06em;text-transform:uppercase;color:var(--muted)
+    }
+    #body td:not(.crit) .score-in{ flex:0 0 84px;width:84px;margin-left:auto }
+    #body td.calc{ font-size:14px }
+    .scrollhint{ display:none }
+    .scroll{ overflow-x:visible }
+  }
 </style>
 </head>
 <body>
@@ -990,11 +1017,12 @@ function buildBody(){
   FORMS[role].rows.forEach(([name,desc],ci)=>{
     const tr=document.createElement('tr');
     let cells=`<td class="crit"><div class="crit-name">${ci+1}. ${name}</div><div class="crit-desc">${desc}</div></td>`;
+    const names=evaluatorNames();
     for(let e=0;e<evaluators;e++){
       const v=scores[role][ci][e]??'';
-      cells+=`<td><input class="score-in" inputmode="decimal" data-c="${ci}" data-e="${e}" value="${v}"></td>`;
+      cells+=`<td data-label="${esc(names[e]||('Eval '+(e+1)))}"><input class="score-in" inputmode="decimal" data-c="${ci}" data-e="${e}" value="${v}"></td>`;
     }
-    cells+=`<td class="calc" id="sc-${ci}">0</td><td class="calc dim" id="av-${ci}">0</td>`;
+    cells+=`<td class="calc" id="sc-${ci}" data-label="Score">0</td><td class="calc dim" id="av-${ci}" data-label="Average">0</td>`;
     tr.innerHTML=cells; tb.appendChild(tr);
   });
   wireInputs(tb);
