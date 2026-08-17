@@ -2219,12 +2219,12 @@ if(!session){
           try{
             await admin({ action:'set_role', id:r.id, form_role:next });
             r.form_role = next;
-            say(r.full_name + ' → ' + next, 'ok');
+            say('');
             reload();
-            await uiAlert('Role updated', r.full_name + ' is now ' + next + '.');
+            await uiAlert('Role updated', r.full_name + ' → ' + next + '.');
           }catch(err){
             sel.value = prev;
-            say('Could not save: ' + err.message, 'err');
+            say('');
             await uiAlert('Could not change the role', err.message);
           }
           sel.disabled = false;
