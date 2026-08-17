@@ -2268,7 +2268,7 @@ if(!session){
 
       const ok = await uiConfirm('Create ' + full_name + '?',
         full_name + ' will be able to sign in with ' + email + ' as ' +
-        (role === 'manager' ? 'a manager' : 'an employee') + ' on the ' + form_role + ' form.',
+        (role === 'manager' ? 'a manager' : 'an employee') + '.',
         { ok: 'Create user' });
       if(!ok) return;
 
