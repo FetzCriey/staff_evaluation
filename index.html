@@ -604,6 +604,10 @@
     box-shadow:0 10px 22px -10px rgba(166,42,42,.55)}
   .rm-foot .all:hover{filter:brightness(1.06);background:linear-gradient(180deg,#d2554f,#a62a2a)}
   .rm-scrim{z-index:88}
+
+  /* read-only text fields (Evaluator, Date) read visually distinct from
+     fields you can actually type into */
+  .field input[readonly]{background:#eef6fb;color:var(--muted);cursor:default}
 </style>
 </head>
 <body>
@@ -1167,14 +1171,18 @@ function render(){
   document.getElementById('position').value=FORMS[role].position;
   const mField=document.getElementById('managerField');
   const mInput=document.getElementById('manager');
-  // remember the value the user had for the previous field type
-  mField.querySelector('label').textContent=FORMS[role].senior?"Department":"Manager / Evaluator";
   if(FORMS[role].senior){
+    // Department is a place, not a person — free text is correct here.
+    mField.querySelector('label').textContent="Department";
+    mInput.readOnly=false;
     if(managerSaved.senior===undefined) managerSaved.senior="CRO";
     mInput.value=managerSaved.senior;
   }else{
-    if(managerSaved.normal===undefined) managerSaved.normal="Aiko Yasuda";
-    mInput.value=managerSaved.normal;
+    // The evaluator is whoever is signed in — the database already enforces
+    // this via evaluator_id, so the field must not be able to say otherwise.
+    mField.querySelector('label').textContent="Evaluator";
+    mInput.readOnly=true;
+    mInput.value = window.__currentUserName || managerSaved.normal || '';
   }
   document.getElementById('evVal').textContent=evaluators;
   compute();
@@ -1280,6 +1288,13 @@ function requireName(){
     return false;
   }
   name=toProperCase(name);
+  // Reject anything that isn't an exact roster match — no self-invented names.
+  if(window.__isRosterName && !window.__isRosterName(name)){
+    inp.classList.add('bad');
+    inp.focus();
+    uiAlert("Not on the roster", "\"" + name + "\" doesn't match anyone on the staff list. Pick a name from the suggestions.");
+    return false;
+  }
   inp.value=name;
   inp.classList.remove('bad');
   return true;
@@ -1897,10 +1912,9 @@ empNameEl.addEventListener('keydown',e=>{
 
 // remember edits to the Manager/Department field per role type
 document.getElementById('manager').addEventListener('input',e=>{
-  e.target.dataset.touched='1';
-  if(FORMS[role].senior) managerSaved.senior=e.target.value;
-  else managerSaved.normal=e.target.value;
-  buildHead();
+  // Read-only on every form except Senior (Department), so this only ever
+  // fires for a genuine department edit.
+  if(FORMS[role].senior){ managerSaved.senior=e.target.value; buildHead(); }
 });
 
 // ---- Employee name autocomplete (predictive suggestions) ----
@@ -2027,7 +2041,8 @@ if(!session){
 
   // default the Manager / Evaluator field to whoever is signed in
   const mgr = document.getElementById('manager');
-  if(me?.full_name && mgr && !mgr.dataset.touched) mgr.value = me.full_name;
+  window.__currentUserName = me?.full_name || session.user.email || '';
+  if(mgr && !FORMS[role].senior){ mgr.readOnly = true; mgr.value = window.__currentUserName; }
 
   // ---- 3. roster from the database ------------------------------------
   try{
@@ -2540,6 +2555,17 @@ if(!session){
       api.setColumns([ me?.full_name || 'You' ]);
   });
 
+  window.__isRosterName = name => idByName.has((name||'').trim().toLowerCase());
+  el('empName').addEventListener('blur', () => {
+    const inp = el('empName');
+    const v = inp.value.trim();
+    if(v && !window.__isRosterName(v)){
+      inp.classList.add('bad');
+      uiAlert('Not on the roster', '"' + v + '" doesn\'t match anyone on the staff list. Pick a name from the suggestions.');
+      inp.value = targetName || '';
+      inp.classList.remove('bad');
+    }
+  });
   el('empName').addEventListener('change', onEmployeeChange);
   el('empName').addEventListener('blur', onEmployeeChange);
   // The autocomplete sets the value without firing 'change', so poll — but
