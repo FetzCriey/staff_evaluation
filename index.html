@@ -2443,8 +2443,19 @@ if(!session){
       form_role: api.formRole(),
       updated_at: new Date().toISOString()
     };
-    const { error } = await supabase.from('evaluations')
-      .upsert(payload, { onConflict: 'evaluator_id,employee_id' });
+    // No plain upsert here: the uniqueness rule is a *partial* index
+    // (one active row per pair, but unlimited archived ones — see the
+    // archiving feature), and Postgres can't match ON CONFLICT to a partial
+    // index without repeating its WHERE clause, which supabase-js doesn't
+    // expose. So: find the active row for this pair, update it if it exists,
+    // insert if it doesn't.
+    const { data: existing, error: findErr } = await supabase.from('evaluations')
+      .select('id').eq('evaluator_id', uid).eq('employee_id', id)
+      .eq('archived', false).maybeSingle();
+    const { error } = findErr ? { message: findErr.message }
+      : existing
+        ? await supabase.from('evaluations').update(payload).eq('id', existing.id)
+        : await supabase.from('evaluations').insert(payload);
     btn.disabled = false;
     if(error){
       el('status').textContent = '';
