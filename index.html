@@ -616,7 +616,12 @@
      by the panel's overflow:hidden, which is what made the box disappear. A
      full-width input below the label can never overflow, whatever the name. */
   @media (max-width: 680px){
-    #grid, #grid thead, #grid tbody, #grid tr, #grid td, #grid th{ display:block; width:100% }
+    /* The desktop table has min-width:720px so it never over-squeezes with
+       many evaluator columns — that floor is still active here since setting
+       display:block doesn't clear it, which is what was clipping the score
+       box on narrow screens. Cancel it explicitly. */
+    #grid{ min-width:0 }
+    #grid, #grid thead, #grid tbody, #grid tr, #grid td, #grid th{ display:block; width:100%; min-width:0 }
     #grid thead{ display:none }
     .pinned th.crit,.pinned td.crit{ position:static; box-shadow:none }
     #body tr{
