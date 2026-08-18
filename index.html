@@ -8,10 +8,155 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/index.css">
+<link rel="stylesheet" href="css/dashboard.css">
 </head>
-<body>
+<body class="dash-mode">
 <div class="gate" id="gate">Checking your session&hellip;</div>
 <div class="wrap hide" id="wrap">
+
+  <!-- ================= INITIAL DASHBOARD ================= -->
+  <section class="dashboard-view" id="dashboardView" aria-label="Staff evaluation dashboard">
+    <aside class="dash-side">
+      <div class="dash-brand">
+        <img class="dash-logo" id="dashLogo" alt="Company logo">
+        <div>
+          <strong>Staff Evaluation</strong>
+          <span>System</span>
+        </div>
+      </div>
+
+      <nav class="dash-nav" aria-label="Dashboard navigation">
+        <button class="active" type="button" data-dash-target="dashboard">
+          <span class="dash-nav-icon">⌂</span><span>Dashboard</span>
+        </button>
+        <button type="button" id="navEvaluationBtn">
+          <span class="dash-nav-icon">▣</span><span>Evaluations</span>
+        </button>
+        <button type="button" id="navResultsBtn">
+          <span class="dash-nav-icon">▥</span><span>Results</span>
+        </button>
+        <button type="button" id="navHistoryBtn">
+          <span class="dash-nav-icon">◷</span><span>History</span>
+        </button>
+      </nav>
+
+      <div class="dash-side-user">
+        <div class="dash-avatar" id="dashUserInitials">—</div>
+        <div class="dash-side-user-copy">
+          <strong id="dashUserName">Signed in</strong>
+          <span id="dashUserRole">Loading account…</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <header class="dash-head">
+        <div>
+          <div class="dash-kicker">Employee Assessment</div>
+          <h2>Staff Evaluation Dashboard</h2>
+          <p id="dashWelcome">A quick view of the latest and overall team performance.</p>
+        </div>
+        <div class="dash-head-actions">
+          <span class="dash-date" id="dashDate"></span>
+          <button class="dash-primary" id="startEvaluationBtn" type="button">+ Start Evaluation</button>
+        </div>
+      </header>
+
+      <div class="dash-alert hide" id="dashAlert"></div>
+
+      <section class="dash-cards" aria-label="Summary metrics">
+        <article class="dash-stat">
+          <div class="dash-stat-icon">🏆</div>
+          <div>
+            <span>Top Performer · Last Evaluation</span>
+            <strong id="latestTopName">—</strong>
+            <b id="latestTopScore">—</b>
+            <small id="latestTopMeta">Latest finalized result</small>
+          </div>
+        </article>
+        <article class="dash-stat">
+          <div class="dash-stat-icon">★</div>
+          <div>
+            <span>Best Overall Performer</span>
+            <strong id="overallTopName">—</strong>
+            <b id="overallTopScore">—</b>
+            <small>Average across finalized evaluations</small>
+          </div>
+        </article>
+        <article class="dash-stat">
+          <div class="dash-stat-icon">↗</div>
+          <div>
+            <span>Team Average Score</span>
+            <strong id="teamAverage">—</strong>
+            <small>Across finalized evaluation rounds</small>
+          </div>
+        </article>
+        <article class="dash-stat dash-stat-green">
+          <div class="dash-stat-icon">✓</div>
+          <div class="dash-stat-progress-copy">
+            <span>Current Evaluations</span>
+            <strong id="completionText">0 / 0</strong>
+            <small>Submitted peer evaluations</small>
+            <div class="dash-progress"><span id="completionBar"></span></div>
+            <em id="completionPercent">0%</em>
+          </div>
+        </article>
+      </section>
+
+      <section class="dash-grid-two">
+        <article class="dash-panel">
+          <div class="dash-panel-head">
+            <div>
+              <h3>Last Evaluation Ranking</h3>
+              <p>Each employee's most recent finalized evaluation</p>
+            </div>
+            <span class="dash-badge" id="latestRankingDate">Latest</span>
+          </div>
+          <div class="rank-list" id="latestRanking"></div>
+        </article>
+
+        <article class="dash-panel">
+          <div class="dash-panel-head">
+            <div>
+              <h3>Overall Ranking</h3>
+              <p>Average performance across finalized history</p>
+            </div>
+            <span class="dash-badge">All Evaluations</span>
+          </div>
+          <div class="rank-list" id="overallRanking"></div>
+        </article>
+      </section>
+
+      <section class="dash-grid-two dash-bottom-grid">
+        <article class="dash-panel">
+          <div class="dash-panel-head">
+            <div>
+              <h3>Overall Performance Trend</h3>
+              <p>Team average from finalized evaluations</p>
+            </div>
+            <span class="dash-badge">Recent Periods</span>
+          </div>
+          <div class="trend-wrap" id="trendWrap">
+            <svg id="trendChart" viewBox="0 0 720 260" role="img" aria-label="Team performance trend"></svg>
+            <div class="trend-empty hide" id="trendEmpty">No finalized trend data yet.</div>
+          </div>
+        </article>
+
+        <article class="dash-panel">
+          <div class="dash-panel-head">
+            <div>
+              <h3>Recent Evaluation Activity</h3>
+              <p>Latest finalized and submitted evaluation activity</p>
+            </div>
+          </div>
+          <div class="activity-list" id="recentActivity"></div>
+        </article>
+      </section>
+    </main>
+  </section>
+
+  <!-- ================= EXISTING EVALUATION VIEW ================= -->
+  <section class="evaluation-view" id="evaluationView">
   <header class="top">
     <button class="burger" id="burger" aria-label="Open layout menu" aria-expanded="false" aria-controls="drawer">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -22,12 +167,10 @@
       <h1>Performance Evaluation</h1>
       <div class="laynow" id="layNow"></div>
     </div>
+    <button class="dash-return" id="returnDashboardBtn" type="button">Dashboard</button>
   </header>
 
-
   <div class="shell">
-
-  <!-- ================= LAYOUT DRAWER ================= -->
   <div class="scrim" id="scrim" hidden></div>
   <aside class="drawer" id="drawer" aria-label="Form layout" aria-hidden="true">
     <div class="drawer-top">
@@ -49,38 +192,26 @@
     </div>
     <div class="mgr" id="mgrPanel">
       <h3>Staff administration</h3>
-
       <div class="mgr-sec hide" id="secHistory">
         <button class="mgr-sum" id="sumHistory" aria-expanded="false" aria-controls="bodyHistory">
-          <span class="lbl">History</span>
-          <span class="cnt" id="hisCount">0</span>
+          <span class="lbl">History</span><span class="cnt" id="hisCount">0</span>
           <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <div class="mgr-panel-body" id="bodyHistory">
-          <div id="hisList"></div>
-        </div>
+        <div class="mgr-panel-body" id="bodyHistory"><div id="hisList"></div></div>
       </div>
-
       <div class="mgr-sec hide" id="secResults">
         <button class="mgr-sum" id="sumResults" aria-expanded="false" aria-controls="bodyResults">
-          <span class="lbl">Evaluation results</span>
-          <span class="cnt" id="resDone">0/0</span>
+          <span class="lbl">Evaluation results</span><span class="cnt" id="resDone">0/0</span>
           <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <div class="mgr-panel-body" id="bodyResults">
-          <div class="res-list" id="resList"></div>
-        </div>
+        <div class="mgr-panel-body" id="bodyResults"><div class="res-list" id="resList"></div></div>
       </div>
-
       <div class="mgr-sec" id="secRoles">
         <button class="mgr-sum" id="sumRoles" aria-expanded="false" aria-controls="bodyRoles">
-          <span class="lbl">Form roles</span>
-          <span class="cnt" id="rolesCount">0</span>
+          <span class="lbl">Form roles</span><span class="cnt" id="rolesCount">0</span>
           <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <div class="mgr-panel-body" id="bodyRoles">
-          <div class="mgr-list" id="mgrList"></div>
-        </div>
+        <div class="mgr-panel-body" id="bodyRoles"><div class="mgr-list" id="mgrList"></div></div>
       </div>
       <div class="mgr-sec" id="secAdd">
         <button class="mgr-sum" id="sumAdd" aria-expanded="false" aria-controls="bodyAdd">
@@ -94,138 +225,49 @@
             <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
             <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
             <div class="mgr-lbl">Evaluation form</div>
-            <select id="mgrRole">
-              <option value="Probationary">Probationary</option>
-              <option value="Junior Staff">Junior Staff</option>
-              <option value="Senior Staff">Senior Staff</option>
-            </select>
+            <select id="mgrRole"><option value="Probationary">Probationary</option><option value="Junior Staff">Junior Staff</option><option value="Senior Staff">Senior Staff</option></select>
             <div class="mgr-lbl">Access level</div>
-            <select id="mgrAccess">
-              <option value="employee">Employee access</option>
-              <option value="manager">Manager access</option>
-            </select>
-            <button class="btn-add" id="mgrAdd">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-              <span>Create user</span>
-            </button>
+            <select id="mgrAccess"><option value="employee">Employee access</option><option value="manager">Manager access</option></select>
+            <button class="btn-add" id="mgrAdd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Create user</span></button>
           </div>
         </div>
       </div>
       <div class="mgr-msg" id="mgrMsg"></div>
     </div>
-
     <div class="acct" id="acct">
-      <div class="acct-row">
-        <div class="avatar" id="acctInitials">&mdash;</div>
-        <div class="acct-txt">
-          <div class="acct-nm" id="acctName">Signed in</div>
-          <div class="acct-rl" id="acctRole">Loading account&hellip;</div>
-        </div>
-      </div>
-      <button class="signout" id="signOut">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5"/></svg>
-        <span>Sign out</span>
-      </button>
+      <div class="acct-row"><div class="avatar" id="acctInitials">&mdash;</div><div class="acct-txt"><div class="acct-nm" id="acctName">Signed in</div><div class="acct-rl" id="acctRole">Loading account&hellip;</div></div></div>
+      <button class="signout" id="signOut"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5"/></svg><span>Sign out</span></button>
     </div>
   </aside>
 
-  <!-- ================= FORM ================= -->
   <main class="main">
-  <div class="backbar hide" id="backBar">
-    <button type="button" id="backBtn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      Back to my scoring
-    </button>
-  </div>
-
-  <div class="archived-note hide" id="archNote">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/></svg>
-    <span id="archText">Archived record — read only. Print and export still work.</span>
-  </div>
-
-  <div class="whobar" id="whoBar">
-    <span class="k" id="whoK">Signed in as</span>
-    <span class="v" id="whoV">&mdash;</span>
-    <span class="pill-state" id="whoState">No employee selected</span>
-  </div>
-
-  <div class="prog-wrap hide" id="progWrap">
-    <div class="prog-head">
-      <span class="prog-ttl">Scoring progress</span>
-      <span class="prog-num" id="progNum">0 / 0</span>
-    </div>
-    <div class="prog-bar" id="progBar"><span id="progFill"></span></div>
-    <div class="prog-list" id="progList"></div>
-  </div>
-
+  <div class="backbar hide" id="backBar"><button type="button" id="backBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back to my scoring</button></div>
+  <div class="archived-note hide" id="archNote"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/></svg><span id="archText">Archived record — read only. Print and export still work.</span></div>
+  <div class="whobar" id="whoBar"><span class="k" id="whoK">Signed in as</span><span class="v" id="whoV">&mdash;</span><span class="pill-state" id="whoState">No employee selected</span></div>
+  <div class="prog-wrap hide" id="progWrap"><div class="prog-head"><span class="prog-ttl">Scoring progress</span><span class="prog-num" id="progNum">0 / 0</span></div><div class="prog-bar" id="progBar"><span id="progFill"></span></div><div class="prog-list" id="progList"></div></div>
   <div class="meta">
     <div class="field"><label>Employee name</label><input id="empName" placeholder="Full name" autocomplete="off"></div>
     <div class="field"><label>Position</label><input id="position" class="ro" readonly></div>
     <div class="field" id="managerField"><label>Manager / Evaluator</label><input id="manager" value="Aiko Yasuda"></div>
     <div class="field"><label>Date</label><input id="date" class="ro" readonly></div>
   </div>
-
-  <div class="evaluator-ctl hide">
-    <span>Evaluators</span>
-    <div class="stepper">
-      <button id="evMinus" aria-label="Remove evaluator">&minus;</button>
-      <div class="val" id="evVal">6</div>
-      <button id="evPlus" aria-label="Add evaluator">+</button>
-    </div>
-  </div>
-
-  <!-- layout: one evaluator at a time -->
+  <div class="evaluator-ctl hide"><span>Evaluators</span><div class="stepper"><button id="evMinus" aria-label="Remove evaluator">&minus;</button><div class="val" id="evVal">6</div><button id="evPlus" aria-label="Add evaluator">+</button></div></div>
   <div class="evtabs" id="evtabs" hidden></div>
-
   <div class="panel" id="panel">
-    <!-- layout: grid / pinned -->
-    <div class="scroll" id="gridWrap">
-      <table id="grid"><thead><tr id="headRow"></tr></thead><tbody id="body"></tbody></table>
-    </div>
-
-    <!-- layout: one evaluator at a time -->
-    <div id="singleWrap" hidden>
-      <div class="evhead">
-        <div><div class="evlbl">Now scoring as</div><div class="evwho" id="evWho"></div></div>
-        <div class="evprog" id="evProg"></div>
-      </div>
-      <div id="rows"></div>
-      <div class="evnav">
-        <button class="btn ghost" id="evPrev">&larr; Previous</button>
-        <button class="btn ghost" id="evNext">Next evaluator &rarr;</button>
-      </div>
-    </div>
-
-    <!-- layout: criterion cards -->
+    <div class="scroll" id="gridWrap"><table id="grid"><thead><tr id="headRow"></tr></thead><tbody id="body"></tbody></table></div>
+    <div id="singleWrap" hidden><div class="evhead"><div><div class="evlbl">Now scoring as</div><div class="evwho" id="evWho"></div></div><div class="evprog" id="evProg"></div></div><div id="rows"></div><div class="evnav"><button class="btn ghost" id="evPrev">&larr; Previous</button><button class="btn ghost" id="evNext">Next evaluator &rarr;</button></div></div>
     <div class="cards" id="cards" hidden></div>
-
-    <div class="totals">
-      <div class="interp" id="interp"></div>
-      <div class="tcard"><div class="k">Total Score</div><div class="v" id="totalScore">0</div></div>
-      <div class="tcard"><div class="k">Average Score</div><div class="v" id="totalAvg">0</div></div>
-    </div>
+    <div class="totals"><div class="interp" id="interp"></div><div class="tcard"><div class="k">Total Score</div><div class="v" id="totalScore">0</div></div><div class="tcard"><div class="k">Average Score</div><div class="v" id="totalAvg">0</div></div></div>
   </div>
-
-  <div class="comment">
-    <label>Evaluator's overall comments</label>
-    <textarea id="comment" placeholder="Overall remarks..."></textarea>
-  </div>
-
-  <div class="actions">
-    <button class="btn save hide" id="saveBtn">Submit my scores</button>
-    <button class="btn hide" id="printBtn">Print</button>
-    <button class="btn hide" id="pdfBtn">Export to PDF</button>
-    <button class="btn ghost hide" id="exportBtn">Export to Word</button>
-    <button class="btn save hide" id="fixBtn">Save corrections</button>
-    <button class="btn ghost" id="resetBtn">Clear scores</button>
-    <span class="status" id="status"></span>
-  </div>
+  <div class="comment"><label>Evaluator's overall comments</label><textarea id="comment" placeholder="Overall remarks..."></textarea></div>
+  <div class="actions"><button class="btn save hide" id="saveBtn">Submit my scores</button><button class="btn hide" id="printBtn">Print</button><button class="btn hide" id="pdfBtn">Export to PDF</button><button class="btn ghost hide" id="exportBtn">Export to Word</button><button class="btn save hide" id="fixBtn">Save corrections</button><button class="btn ghost" id="resetBtn">Clear scores</button><span class="status" id="status"></span></div>
   </main>
   </div>
-
+  </section>
 </div>
 
 <script src="js/evaluation.js"></script>
 <script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/dashboard.js"></script>
 </body>
 </html>
