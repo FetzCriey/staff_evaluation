@@ -511,6 +511,48 @@
   .prog-chip.ok .dot{background:#27ae60}
   .prog-chip.ok .prog-chip-count{color:#1f7a4d}
 
+
+  /* ================= PREVIEW REMARKS EDITOR ================= */
+  .review-remarks-source{display:none !important}
+  .review-remarks{display:flex;flex-direction:column;gap:10px}
+  .review-remark-card{
+    border:1.5px solid var(--line);border-radius:13px;background:#f7fbfd;
+    padding:11px 12px
+  }
+  .review-remark-head{
+    display:flex;align-items:center;gap:9px;margin-bottom:8px
+  }
+  .review-remark-name{
+    flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:800;color:var(--ink);
+    line-height:1.3
+  }
+  .review-remark-state{
+    flex:0 0 auto;font-size:9.5px;font-weight:800;letter-spacing:.05em;
+    text-transform:uppercase;padding:3px 7px;border-radius:999px
+  }
+  .review-remark-state.progress{
+    color:var(--lagoon-deep);background:var(--accent-soft);border:1px solid #bfe4f5
+  }
+  .review-remark-state.submitted{
+    color:#1f7a4d;background:#eaf7f0;border:1px solid #bfe3ce
+  }
+  .review-remark-input{
+    display:block;width:100%;min-height:76px;resize:vertical;padding:10px 11px;
+    border:1.5px solid #bcd8ea;border-radius:10px;background:#fff;color:var(--ink);
+    font:13.5px/1.45 inherit;outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease
+  }
+  .review-remark-input:focus{
+    border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)
+  }
+  .review-remark-input[readonly]{
+    background:#eef6fb;color:var(--muted);cursor:default
+  }
+  .review-remark-empty{
+    padding:11px 12px;border:1.5px dashed var(--line);border-radius:12px;
+    color:var(--muted);font-size:12px;background:#f7fbfd
+  }
+
   /* ================= SIDEBAR RESULTS ================= */
   .res-list{display:flex;flex-direction:column;gap:7px}
   .res-row{display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
