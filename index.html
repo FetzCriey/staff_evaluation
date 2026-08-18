@@ -519,11 +519,17 @@
   .backbar button:hover{border-color:var(--lagoon);background:#f7fbfd}
 
   /* ================= SIDEBAR HISTORY ================= */
-  .his-row{display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
-    padding:10px 11px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
+  .his-row{display:flex;align-items:center;gap:4px;width:100%;
+    padding:5px 6px 5px 9px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
     margin-bottom:7px;transition:border-color .15s ease,background .15s ease,transform .12s ease}
   .his-row:hover{border-color:var(--lagoon);background:#f7fbfd;transform:translateY(-1px)}
   .his-row.on{border-color:#bfe4f5;background:var(--accent-soft)}
+  .his-main{flex:1 1 auto;min-width:0;text-align:left;cursor:pointer;font-family:inherit;
+    background:none;border:0;padding:5px 2px;color:inherit}
+  .his-del{flex:0 0 auto;display:grid;place-items:center;width:30px;height:30px;cursor:pointer;
+    border:1.5px solid transparent;border-radius:9px;background:none;color:#b57070;transition:.15s}
+  .his-del:hover{background:#fff6f6;border-color:#e6c3c3;color:#a62a2a}
+  .his-del:disabled{opacity:.45;cursor:not-allowed}
   .his-nm{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3}
   .his-meta{display:flex;gap:8px;align-items:baseline;margin-top:4px;font-size:10.5px;color:var(--muted)}
   .his-meta .avg{margin-left:auto;font-weight:700;color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
@@ -2327,7 +2333,8 @@ if(!session){
     show('exportBtn',!mine && isAdmin);
     show('lockBtn',  !mine && isAdmin);
     show('resetBtn', mine || isAdmin);      // viewers get no destructive controls
-    el('resetBtn').textContent = mine ? 'Clear scores' : 'Reset a submission';
+    el('resetBtn').textContent = mine ? 'Clear scores'
+      : (archiveCtx ? 'Delete history' : 'Reset a submission');
     show('backBar',  !mine);
     show('progWrap', !mine && !!target);
     el('whoK').textContent = mine ? 'Evaluating as' : 'Results for';
@@ -2351,6 +2358,8 @@ if(!session){
 
   let target = null;      // employee being evaluated
   let targetName = '';    // the name shown in the field for that employee
+  let viewingArchive = null;  // archived_at of the record on screen (null = live view)
+  let archiveCtx = null;      // { pid, name, when } for that archived record
   let myRow = null;       // this evaluator's saved row for that employee
   let anyLocked = false;
   let dirty = false;      // edits made since the last save
@@ -2702,7 +2711,6 @@ if(!session){
   // and moved to History, which clears the way for the next round.
   if(isReviewer){
     el('secHistory').classList.remove('hide');
-    let viewingArchive = null;   // archived_at of the record on screen
 
     async function archiveRound(){
       const id = target;
@@ -2757,22 +2765,58 @@ if(!session){
           ? Math.round(rs.reduce((a,r) => a + (Number(r.average)||0), 0) / rs.length * 10) / 10
           : 0;
         const d = new Date(when);
+        const row = document.createElement('div');
+        row.className = 'his-row';
         const b = document.createElement('button');
-        b.type = 'button'; b.className = 'his-row';
+        b.type = 'button'; b.className = 'his-main';
         b.innerHTML = `<div class="his-nm">${name}</div>` +
           `<div class="his-meta"><span>${d.toLocaleDateString()}</span>` +
           `<span>${rs.length} evaluator${rs.length===1?'':'s'}</span>` +
           `<span class="avg">${avg}</span></div>`;
-        b.addEventListener('click', () => openArchive(pid, name, when, rs));
-        list.appendChild(b);
+        b.addEventListener('click', () => openArchive(pid, name, when, rs, row));
+        row.appendChild(b);
+        // only admins may remove a finalised round
+        if(isAdmin){
+          const del = document.createElement('button');
+          del.type = 'button'; del.className = 'his-del';
+          del.title = 'Delete this history record';
+          del.setAttribute('aria-label', 'Delete ' + name + "'s archived evaluation");
+          del.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+            'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg>';
+          del.addEventListener('click', e => {
+            e.stopPropagation();
+            deleteArchiveRecord({ pid, name, when });
+          });
+          row.appendChild(del);
+        }
+        list.appendChild(row);
       });
     }
 
-    function openArchive(pid, name, when, rs){
+    // Removing a history record wipes that whole finalised round for good.
+    async function deleteArchiveRecord(ctx){
+      if(!isAdmin || !ctx) return;
+      if(!await uiConfirm('Delete this history record?',
+          ctx.name + "'s archived evaluation from " + new Date(ctx.when).toLocaleString() +
+          ' will be permanently removed. This cannot be undone.',
+          { ok: 'Delete history', danger: true })) return;
+      const { error } = await supabase.from('evaluations')
+        .delete().eq('employee_id', ctx.pid).eq('archived', true).eq('archived_at', ctx.when);
+      if(error){ uiAlert('Could not delete', error.message); return; }
+      const wasOpen = viewingArchive === ctx.when && target === ctx.pid;
+      await loadHistory();
+      if(wasOpen) el('backBtn').click();
+      await uiAlert('Deleted', ctx.name + "'s history record has been removed.");
+    }
+    window.__deleteArchive = deleteArchiveRecord;
+
+    function openArchive(pid, name, when, rs, rowEl){
       const stop = blockedFromLeaving();
       if(stop){ uiAlert('Not finished yet', stop); return; }
       mode = 'review';
       viewingArchive = when;
+      archiveCtx = { pid, name, when };
       api.setEmployee(name);
       applyMode();
       target = pid; targetName = name;
@@ -2792,17 +2836,21 @@ if(!session){
       show('lockBtn', false);
       setState('Archived record', 'locked');
       [...el('hisList').children].forEach(c => c.classList.remove('on'));
+      if(rowEl) rowEl.classList.add('on');
       openDrawer(false);
     }
 
     // leaving an archived record returns to the live view
     el('backBtn').addEventListener('click', () => {
-      viewingArchive = null;
+      viewingArchive = null; archiveCtx = null;
       el('archNote').classList.add('hide');
+      el('resetBtn').textContent = reviewing() ? 'Reset a submission' : 'Clear scores';
+      [...el('hisList').children].forEach(c => c.classList.remove('on'));
     });
     window.__clearArchiveView = () => {
-      viewingArchive = null;
+      viewingArchive = null; archiveCtx = null;
       el('archNote').classList.add('hide');
+      el('resetBtn').textContent = reviewing() ? 'Reset a submission' : 'Clear scores';
       show('lockBtn', true);
     };
 
@@ -2902,6 +2950,8 @@ if(!session){
       if(!reviewing()) return;
       e.stopImmediatePropagation();
       e.preventDefault();
+      // viewing a finalised round: the same button deletes that record instead
+      if(archiveCtx && window.__deleteArchive){ window.__deleteArchive(archiveCtx); return; }
       openResetDialog();
     }, true);
   }
