@@ -1014,6 +1014,16 @@ if(!session){
         table: 'evaluations'
       },
       async payload => {
+        // The sidebar summarizes ALL active evaluations, so refresh it for
+        // every realtime evaluations event before filtering for the employee
+        // currently open in Preview. This keeps sidebar submission bars and
+        // counts synced even when another employee is being evaluated.
+        if(typeof window.__refreshResults === 'function'){
+          window.__refreshResults();
+        }
+
+        // The main Preview only needs a full redraw when the event belongs to
+        // the employee currently open on screen.
         if(!reviewing() || !target || viewingArchive) return;
 
         const changedEmployee =
@@ -1035,10 +1045,6 @@ if(!session){
         }
 
         await loadAll(target);
-
-        if(typeof window.__refreshResults === 'function'){
-          window.__refreshResults();
-        }
       }
     )
     .subscribe((status, err) => {
