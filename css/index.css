@@ -447,8 +447,6 @@
   /* ================= SAVE BAR / MODES ================= */
   .btn.save{background:linear-gradient(180deg,#2fa96b,#1f7a4d);
     box-shadow:0 10px 24px -8px rgba(31,122,77,.55)}
-  .btn.lock{background:#fff;color:#96601a;border:1.5px solid #e8d3b2;box-shadow:none}
-  .btn.lock:hover{background:#fdf3e6;filter:none}
   .whobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 18px;
     padding:11px 14px;border-radius:13px;background:#fff;border:1.5px solid var(--edge)}
   .whobar .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
