@@ -865,6 +865,7 @@
     <button class="btn hide" id="printBtn">Print</button>
     <button class="btn hide" id="pdfBtn">Export to PDF</button>
     <button class="btn ghost hide" id="exportBtn">Export to Word</button>
+    <button class="btn save hide" id="fixBtn">Save corrections</button>
     <button class="btn lock hide" id="lockBtn">Lock evaluations</button>
     <button class="btn ghost" id="resetBtn">Clear scores</button>
     <span class="status" id="status"></span>
@@ -1030,10 +1031,17 @@ function wireInputs(host){
   });
 }
 
+// Read-only is a persistent state, not a one-off: every rebuild (layout
+// switch, score reload) has to re-apply it or the grid silently unlocks.
+let RO_SCORES=false, RO_COMMENTS=false;
+function applyRO(){
+  document.querySelectorAll('.score-in').forEach(i=>{ i.readOnly=RO_SCORES; });
+  const c=document.getElementById('comment'); if(c) c.readOnly=RO_COMMENTS;
+}
 function buildBody(){
   ensureStore();
-  if(layout==='single')      return buildSingle();
-  if(layout==='cards')       return buildCards();
+  if(layout==='single')      { buildSingle(); applyRO(); return; }
+  if(layout==='cards')       { buildCards();  applyRO(); return; }
   const tb=document.getElementById('body'); tb.innerHTML='';
   FORMS[role].rows.forEach(([name,desc],ci)=>{
     const tr=document.createElement('tr');
@@ -1047,6 +1055,7 @@ function buildBody(){
     tr.innerHTML=cells; tb.appendChild(tr);
   });
   wireInputs(tb);
+  applyRO();
 }
 
 function buildSingle(){
@@ -1408,6 +1417,17 @@ window.evalApi = {
     return FORMS[role].rows.every((_, ci) => scores[role][ci][idx] !== undefined);
   },
   average(){ return Number(document.getElementById('totalAvg').textContent) || 0; },
+  // the mean for ONE column — reviewers save each evaluator's row separately,
+  // so the whole-grid average above is the wrong number for that
+  columnAverage(idx){
+    ensureStore();
+    const vals=[];
+    FORMS[role].rows.forEach((_, ci) => {
+      const v = scores[role][ci][idx];
+      if(v !== undefined && v !== null && v !== '') vals.push(Number(v));
+    });
+    return vals.length ? round1(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+  },
   comments(){ return document.getElementById('comment').value; },
   setComments(t){ document.getElementById('comment').value = t || ''; },
   employeeName(){ return document.getElementById('empName').value.trim(); },
@@ -1421,9 +1441,13 @@ window.evalApi = {
     if(!applyRoleFromName()){ buildHead(); buildBody(); compute(); }
   },
   onScoreChange(fn){ window.__scoreHook = fn; },
-  setReadOnly(on){
-    document.querySelectorAll('.score-in').forEach(i => { i.readOnly = !!on; });
-    document.getElementById('comment').readOnly = !!on;
+  // commentsOn defaults to the score setting; reviewers editing scores still
+  // get a locked comment box, because in review it holds every evaluator's
+  // notes merged into one blob and saving it back would corrupt them
+  setReadOnly(on, commentsOn){
+    RO_SCORES = !!on;
+    RO_COMMENTS = commentsOn === undefined ? !!on : !!commentsOn;
+    applyRO();
   }
 };
 
@@ -2338,6 +2362,8 @@ if(!session){
     show('pdfBtn',   !mine && isAdmin);
     show('exportBtn',!mine && isAdmin);
     show('lockBtn',  !mine && isAdmin);
+    // corrections only on a live round — archived history stays frozen
+    show('fixBtn',   !mine && isAdmin && !archiveCtx);
     show('resetBtn', mine || isAdmin);      // viewers get no destructive controls
     el('resetBtn').textContent = mine ? 'Clear scores'
       : (archiveCtx ? 'Delete history' : 'Reset a submission');
@@ -2364,6 +2390,8 @@ if(!session){
 
   let target = null;      // employee being evaluated
   let targetName = '';    // the name shown in the field for that employee
+  let reviewRows = [];        // rows behind the reviewer's columns, in column order
+  let fixDirty = false;       // reviewer has edited scores that aren't saved yet
   let viewingArchive = null;  // archived_at of the record on screen (null = live view)
   let archiveCtx = null;      // { pid, name, when } for that archived record
   let myRow = null;       // this evaluator's saved row for that employee
@@ -2444,7 +2472,8 @@ if(!session){
       anyLocked = !!myRow.locked;
       api.setReadOnly(anyLocked);
       dirty = false;
-      setState(anyLocked ? 'Locked by a reviewer' : 'Saved — you can still edit',
+      setState(anyLocked ? 'Submitted — locked until this round is archived'
+                         : 'Draft saved — you can still edit',
                anyLocked ? 'locked' : 'saved');
     }else{
       api.setReadOnly(false);
@@ -2467,6 +2496,8 @@ if(!session){
       api.setColumns(['No submissions yet']);
       setState('Nobody has evaluated this person', '');
       el('lockBtn').disabled = true;
+      reviewRows = []; fixDirty = false;
+      el('fixBtn').disabled = true;
       return;
     }
     rows.sort((a,b) => (nameById.get(a.evaluator_id)||'').localeCompare(nameById.get(b.evaluator_id)||''));
@@ -2480,7 +2511,12 @@ if(!session){
     anyLocked = rows.every(r => r.locked);
     el('lockBtn').disabled = false;
     el('lockBtn').textContent = anyLocked ? 'Unlock evaluations' : 'Lock evaluations';
-    api.setReadOnly(true);
+    // column order must match reviewRows so a correction lands on the right row
+    reviewRows = rows.map(r => ({ id: r.id, evaluator_id: r.evaluator_id }));
+    fixDirty = false;
+    el('fixBtn').disabled = true;
+    // admins may correct an evaluator's mistake in place; comments stay locked
+    api.setReadOnly(!isAdmin, true);
     setState(rows.length + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
              anyLocked ? 'locked' : 'saved');
   }
@@ -2516,6 +2552,13 @@ if(!session){
     const id = targetId();
     if(!id){ uiAlert('No employee chosen', 'Pick the colleague you are evaluating first.'); return; }
     if(id === uid){ uiAlert('Not allowed', 'You cannot evaluate yourself.'); return; }
+    // A complete column is a final submission: it locks, and only reopens when
+    // a reviewer archives the round (or resets this submission). An incomplete
+    // one saves as an editable draft.
+    const complete = api.columnComplete(0);
+    if(complete && !await uiConfirm('Submit your evaluation of ' + targetName + '?',
+        'Your scores are final once submitted — you will not be able to change them. ' +
+        'A reviewer can reopen them if something is wrong.', { ok: 'Submit' })) return;
     const btn = el('saveBtn');
     btn.disabled = true; el('status').textContent = 'Saving…';
     const payload = {
@@ -2525,6 +2568,7 @@ if(!session){
       average: api.average(),
       comments: api.comments(),
       form_role: api.formRole(),
+      locked: complete,
       updated_at: new Date().toISOString()
     };
     // No plain upsert here: the uniqueness rule is a *partial* index
@@ -2549,9 +2593,16 @@ if(!session){
     }
     el('status').textContent = 'Saved.';
     setTimeout(() => { if(el('status').textContent === 'Saved.') el('status').textContent = ''; }, 2500);
-    if(api.columnComplete(0)) await goToNextColleague();
     dirty = false;
-    setState(api.columnComplete(0) ? 'Saved — you can still edit' : 'Saved (incomplete)', 'saved');
+    if(complete){
+      anyLocked = true;
+      api.setReadOnly(true);
+      el('saveBtn').disabled = true;
+      setState('Submitted — locked', 'locked');
+      await goToNextColleague();
+    }else{
+      setState('Draft saved (incomplete)', 'saved');
+    }
     if(window.__refreshResults) window.__refreshResults();
   });
 
@@ -2582,6 +2633,41 @@ if(!session){
     document.querySelector('.score-in')?.focus();
   }
 
+  // ----- reviewer corrections -----
+  // Each column belongs to a different evaluator, so this writes one row per
+  // column rather than a single payload.
+  el('fixBtn').addEventListener('click', async () => {
+    if(!reviewing() || archiveCtx || !isAdmin || !reviewRows.length) return;
+    const who = api.employeeName();
+    if(!await uiConfirm('Save corrections?',
+        'The edited scores replace what those evaluators submitted for ' + who + '. ' +
+        'Their own comments are left untouched.', { ok: 'Save corrections' })) return;
+    const btn = el('fixBtn');
+    btn.disabled = true; el('status').textContent = 'Saving…';
+    const failed = [];
+    for(let i = 0; i < reviewRows.length; i++){
+      const r = reviewRows[i];
+      const { data, error } = await supabase.from('evaluations').update({
+        scores: api.getColumnScores(i),
+        average: api.columnAverage(i),
+        updated_at: new Date().toISOString()
+      }).eq('id', r.id).select('id');
+      // an RLS block returns no error and no rows — treat that as a failure
+      if(error || !data || !data.length){
+        failed.push(nameById.get(r.evaluator_id) || 'Unknown');
+      }
+    }
+    el('status').textContent = '';
+    if(failed.length){
+      uiAlert('Some corrections did not save',
+        'These columns were rejected by the database: ' + failed.join(', ') + '.');
+    }
+    fixDirty = false;
+    await loadAll(target);
+    if(window.__refreshResults) window.__refreshResults();
+    if(!failed.length) uiAlert('Corrections saved', who + "'s scores have been updated.");
+  });
+
   // ----- locking -----
   el('lockBtn').addEventListener('click', async () => {
     const id = targetId();
@@ -2592,7 +2678,8 @@ if(!session){
              : 'Evaluators will be able to change their scores again.',
         { ok: next ? 'Lock' : 'Unlock' })) return;
     const btn = el('lockBtn'); btn.disabled = true;
-    const { error } = await supabase.from('evaluations').update({ locked: next }).eq('employee_id', id);
+    const { error } = await supabase.from('evaluations')
+      .update({ locked: next }).eq('employee_id', id).eq('archived', false);
     btn.disabled = false;
     if(error){ uiAlert('Could not change the lock', error.message); return; }
     await loadAll(id);
@@ -2601,7 +2688,16 @@ if(!session){
   // mark unsaved edits
   {
     api.onScoreChange(() => {
-      if(anyLocked || !target || reviewing()) return;
+      if(reviewing()){
+        // an admin correcting someone else's column
+        if(isAdmin && !archiveCtx && reviewRows.length){
+          fixDirty = true;
+          el('fixBtn').disabled = false;
+          setState('Unsaved corrections', 'dirty');
+        }
+        return;
+      }
+      if(anyLocked || !target) return;
       dirty = true;
       const filled = filledCount(), total = api.criteriaCount();
       setState(filled < total ? ('Unsaved · ' + filled + ' of ' + total + ' scored') : 'Unsaved changes', 'dirty');
@@ -2849,6 +2945,8 @@ if(!session){
         return t ? (nameById.get(r.evaluator_id)||'Evaluator') + ': ' + t : '';
       }).filter(Boolean).join('\n'));
       api.setReadOnly(true);
+      reviewRows = []; fixDirty = false;
+      show('fixBtn', false);
       el('archNote').classList.remove('hide');
       el('archText').textContent = 'Archived ' + new Date(when).toLocaleString() +
         ' — read only. Print and export still work.';
@@ -2863,6 +2961,7 @@ if(!session){
     // leaving an archived record returns to the live view
     el('backBtn').addEventListener('click', () => {
       viewingArchive = null; archiveCtx = null;
+      fixDirty = false;
       el('archNote').classList.add('hide');
       el('resetBtn').textContent = reviewing() ? 'Reset a submission' : 'Clear scores';
       [...el('hisList').children].forEach(c => c.classList.remove('on'));
