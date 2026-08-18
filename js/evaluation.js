@@ -667,6 +667,7 @@ function formHTML(){
   const manager=document.getElementById('manager').value.trim();
   const dateStr=document.getElementById('date').value;
   const comment=document.getElementById('comment').value.trim();
+  const commentLines=comment ? comment.split(/\r?\n/).map(s=>s.trim()).filter(Boolean) : [];
   const cur=interpret(data.avgScore);
   const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   const bold=!f.senior;
@@ -711,6 +712,8 @@ function formHTML(){
     .hl{color:#0e7fab;font-weight:bold}
     ul.guide-list{margin:4px 0 12px 0;padding-left:20px}
     ul.guide-list li{margin:2px 0}
+    .overall-comments{margin-top:2px}
+    .comment-line{display:block;margin:0 0 4px 0;white-space:pre-wrap}
   </style></head><body>
     <img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="logo">
     <h1>${esc(f.title)}</h1>
@@ -728,7 +731,9 @@ function formHTML(){
       <p style="margin-top:8px"><b>Performance Interpretation:</b></p>
       ${bands}
       <p style="margin-top:10px"><b>Evaluator's Overall Comments:</b></p>
-      <p>${comment?esc(comment):"&nbsp;"}</p>
+      <div class="overall-comments">${commentLines.length
+        ? commentLines.map(line=>`<div class="comment-line">${esc(line)}</div>`).join("")
+        : "&nbsp;"}</div>
       ${sign}
       ${dateEnd}
     </div>
@@ -809,6 +814,7 @@ function buildDocx(){
   const manager=document.getElementById('manager').value.trim();
   const dateStr=document.getElementById('date').value;
   const comment=document.getElementById('comment').value.trim();
+  const commentLines=comment ? comment.split(/\r?\n/).map(s=>s.trim()).filter(Boolean) : [];
 
   const COLS=[760,2900,3980,1660], TW=COLS.reduce((a,b)=>a+b,0);
   let tb=`<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblBorders>`;
@@ -869,7 +875,13 @@ function buildDocx(){
     body+=para([run(t,{bold:!f.senior||isCur,color:isCur?"0E7FAB":null})],{after:0});
   });
   body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:50,after:40});
-  body+=para([run(comment||"\u00a0")],{after:120});
+  if(commentLines.length){
+    commentLines.forEach((line,i)=>{
+      body+=para([run(line)],{after:i===commentLines.length-1?120:30});
+    });
+  }else{
+    body+=para([run("\u00a0")],{after:120});
+  }
   if(!f.senior){
     body+=para([run("Evaluator's Signature: "+"_______________________",{bold:true})]);
     body+=para([run("Date: "+(dateStr||"_______________"),{bold:true})]);
@@ -961,6 +973,7 @@ function buildPDF(){
   const manager=document.getElementById('manager').value.trim();
   const dateStr=document.getElementById('date').value;
   const comment=document.getElementById('comment').value.trim();
+  const commentLines=comment ? comment.split(/\r?\n/).map(s=>s.trim()).filter(Boolean) : [];
   const cur=interpret(data.avgScore);
 
   const W=612,H=936,M=54;
@@ -1038,7 +1051,14 @@ function buildPDF(){
   });
   y-=8;
   T(M,y,"Evaluator's Overall Comments:",10,true); y-=14;
-  wrapF(comment||" ",10,tableW,false).forEach(ln=>{ T(M,y,ln,10,false); y-=13; });
+  if(commentLines.length){
+    commentLines.forEach((raw,idx)=>{
+      wrapF(raw,10,tableW,false).forEach(ln=>{ T(M,y,ln,10,false); y-=13; });
+      if(idx < commentLines.length-1) y-=2;
+    });
+  }else{
+    T(M,y," ",10,false); y-=13;
+  }
   if(!f.senior){
     y-=6;
     KVB(M,y,"Evaluator's Signature:","_______________________"); y-=13;
