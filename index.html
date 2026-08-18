@@ -1,676 +1,232 @@
-:root{
-    --ink:#0a2233;
-    --ink-soft:#28455c;
-    --muted:#5b7080;
-    --lagoon:#15ACE3;
-    --lagoon-deep:#0b7fb0;
-    --lagoon-dark:#08344c;
-    --mist:#d5e7f3;
-    --mist-deep:#c3dcec;
-    --panel:#ffffff;
-    --line:#c9dfee;
-    --error-bg:#fff0f0;
-    --error-ink:#a62a2a;
-    --error-line:#f1caca;
-    --shadow:0 24px 70px -20px rgba(8,52,76,.35);
-    --shadow-sm:0 2px 4px rgba(8,52,76,.06),0 14px 34px -16px rgba(8,52,76,.42);
-    /* legacy aliases so existing rules keep resolving */
-    --paper:var(--mist); --accent:var(--lagoon); --accent-deep:var(--lagoon-deep);
-    --accent-soft:#e2f4fc; --sky:#77D0F0; --gold:var(--lagoon-deep);
-  }
-  *{box-sizing:border-box} html,body{margin:0;min-height:100%}
-  body{
-    font-family:"Inter","Segoe UI",system-ui,sans-serif;
-    background:linear-gradient(180deg,var(--mist) 0%,var(--mist-deep) 100%)
-      fixed no-repeat var(--mist);
-    color:var(--ink);
-    -webkit-font-smoothing:antialiased;line-height:1.5;
-  }
-  .wrap{max-width:1040px;margin:0 auto;padding:34px 20px 80px}
-
-  /* ================= BRAND HEADER — mirrors the login brand panel ================= */
-  header.top{
-    position:relative;display:flex;align-items:center;gap:16px;
-    padding:26px 30px;margin-bottom:28px;border:0;
-    border-radius:22px;color:#f2fafe;overflow:hidden;
-    box-shadow:var(--shadow);
-    background:
-      radial-gradient(120% 90% at 85% -10%, rgba(21,172,227,.55), transparent 55%),
-      radial-gradient(100% 80% at -10% 110%, rgba(21,172,227,.30), transparent 50%),
-      linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 55%,#051e2d 100%);
-  }
-  header.top .logo{
-    width:52px;height:52px;flex:0 0 auto;object-fit:cover;
-    border-radius:14px;background:#fff;padding:6px;border:0;
-    box-shadow:0 6px 18px rgba(0,0,0,.35);
-  }
-  header.top .htext{flex:1 1 auto;min-width:0}
-  .eyebrow{
-    font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;
-    color:rgba(180,224,245,.85);font-weight:600;margin-bottom:6px;
-  }
-  h1{
-    font-family:"Bricolage Grotesque","Inter",sans-serif;
-    font-weight:800;font-size:30px;line-height:1.1;
-    letter-spacing:-.01em;margin:0;color:#f2fafe;
-  }
-  .sub{color:rgba(210,236,248,.82);font-size:13.5px;margin-top:7px;max-width:62ch}
-
-  /* ================= FIELDS ================= */
-  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:26px}
-  .field label,.comment label{
-    display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.08em;color:var(--ink-soft);margin:0 0 7px;
-  }
-  .field input{
-    width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;
-    font-size:14.5px;background:#f2f8fc;font-family:inherit;color:var(--ink);outline:none;
-    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
-  }
-  .field input:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
-  .field .ro{background:#eef6fb;color:var(--muted)}
-  .field input.bad{border-color:var(--error-line);background:var(--error-bg);color:var(--error-ink)}
-
-  .evaluator-ctl{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-  .evaluator-ctl span{
-    font-size:11.5px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.08em;color:var(--ink-soft);
-  }
-  .stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel)}
-  .stepper button{border:0;background:transparent;width:36px;height:36px;font-size:18px;cursor:pointer;color:var(--lagoon-deep);font-weight:700}
-  .stepper button:hover{background:var(--accent-soft)}
-  .stepper .val{width:38px;text-align:center;font-weight:700;font-size:14px;border-left:1.5px solid var(--line);border-right:1.5px solid var(--line);line-height:36px}
-
-  /* ================= SCORE PANEL ================= */
-  .panel{background:var(--panel);border:1.5px solid var(--line);border-radius:20px;box-shadow:var(--shadow-sm);overflow:hidden}
-  .scroll{overflow-x:auto}
-  table{border-collapse:collapse;width:100%;min-width:720px}
-  thead th{
-    font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);
-    font-weight:700;text-align:center;padding:15px 8px;border-bottom:1.5px solid var(--line);background:#f4fafd;
-  }
-  thead th.crit{text-align:left;min-width:260px;padding-left:22px}
-  thead th.evh{min-width:96px;max-width:120px;letter-spacing:.04em;line-height:1.3;word-break:break-word;text-transform:none;font-size:11.5px}
-  thead th.tot{color:var(--lagoon-deep)}
-  tbody td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
-  tbody tr:hover td{background:#fbfdff}
-  tbody td.crit{text-align:left;font-size:13.5px;padding-left:22px;color:var(--ink);max-width:340px;vertical-align:top}
-  .crit-name{font-weight:700;color:var(--ink);margin-bottom:2px;font-size:14px}
-  .crit-desc{font-weight:400;font-size:12px;color:var(--muted);line-height:1.4}
-  tbody tr:last-child td{border-bottom:0}
-  .score-in{
-    width:58px;padding:8px 4px;text-align:center;border:1.5px solid var(--line);
-    border-radius:9px;font-size:13.5px;font-family:inherit;color:var(--ink);background:#f2f8fc;outline:none;
-    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
-  }
-  .score-in:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
-  .score-in.bad{border-color:var(--error-line);background:var(--error-bg);color:var(--error-ink)}
-  td.calc{font-variant-numeric:tabular-nums;font-weight:700;color:var(--lagoon-deep);font-size:14px}
-  td.calc.dim{color:var(--muted);font-weight:500}
-
-  .totals{display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap;padding:18px 20px;background:#f4fafd;border-top:1.5px solid var(--line)}
-  .tcard{border:1.5px solid var(--line);border-radius:14px;background:var(--panel);padding:12px 18px;min-width:144px;text-align:right}
-  .tcard .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .tcard .v{
-    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;
-    font-size:26px;font-variant-numeric:tabular-nums;color:var(--lagoon-deep);letter-spacing:-.01em;
-  }
-  .interp{margin-left:auto;align-self:center;font-size:13px;color:var(--muted)}
-  .interp b{color:var(--lagoon-deep);font-weight:700}
-
-  /* ================= COMMENTS ================= */
-  .comment{margin-top:26px}
-  .comment textarea{
-    width:100%;min-height:100px;padding:13px 14px;border:1.5px solid var(--line);border-radius:13px;
-    font-family:inherit;font-size:14.5px;resize:vertical;background:#f2f8fc;color:var(--ink);outline:none;
-    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
-  }
-  .comment textarea:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
-
-  /* ================= ACTIONS ================= */
-  .actions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;align-items:center;justify-content:center}
-  .btn{
-    border:0;border-radius:11px;font-family:inherit;font-size:15px;font-weight:700;
-    padding:14px 28px;cursor:pointer;color:#fff;
-    background:linear-gradient(180deg,var(--lagoon) 0%,var(--lagoon-deep) 100%);
-    box-shadow:0 10px 24px -8px rgba(21,172,227,.55);
-    transition:transform .12s ease,box-shadow .12s ease,filter .12s ease;
-  }
-  .btn:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 14px 28px -8px rgba(21,172,227,.6)}
-  .btn:active{transform:translateY(0)}
-  .btn:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
-  .btn:disabled{opacity:.65;cursor:not-allowed;transform:none;filter:none}
-  .btn.ghost{
-    background:var(--panel);color:var(--lagoon-deep);
-    border:1.5px solid var(--line);box-shadow:none;
-  }
-  .btn.ghost:hover{background:var(--accent-soft);border-color:var(--lagoon);filter:none}
-  .status{font-size:13px;color:var(--muted);flex-basis:100%;text-align:center;margin-top:4px}
-  .hint{font-size:12px;color:var(--muted);margin-top:10px}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Evaluation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+<div class="gate" id="gate">Checking your session&hellip;</div>
+<div class="wrap hide" id="wrap">
+  <header class="top">
+    <button class="burger" id="burger" aria-label="Open layout menu" aria-expanded="false" aria-controls="drawer">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <img class="logo" id="logoImg" alt="Company logo">
+    <div class="htext">
+      <div class="eyebrow">Employee Assessment</div>
+      <h1>Performance Evaluation</h1>
+      <div class="laynow" id="layNow"></div>
+    </div>
+  </header>
 
 
-  /* ================= DRAWER (hamburger) ================= */
-  .burger{flex:0 0 auto;width:42px;height:42px;border-radius:12px;cursor:pointer;
-    display:grid;place-items:center;color:#f2fafe;
-    background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.22);
-    transition:background .15s ease,transform .12s ease}
-  .burger:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
-  .burger:focus-visible{outline:3px solid #fff;outline-offset:2px}
-  .scrim{position:fixed;inset:0;background:rgba(5,30,45,.45);backdrop-filter:blur(2px);
-    opacity:0;visibility:hidden;transition:opacity .22s ease,visibility .22s ease;z-index:60}
-  .scrim.open{opacity:1;visibility:visible}
-  .drawer{position:fixed;top:0;left:0;bottom:0;width:290px;max-width:86vw;z-index:61;
-    background:var(--panel);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
-    transform:translateX(-100%);transition:transform .24s cubic-bezier(.4,0,.2,1);
-    display:flex;flex-direction:column;overflow-y:auto}
-  .drawer.open{transform:translateX(0)}
-  .drawer-top{display:flex;align-items:center;justify-content:space-between;gap:12px;
-    padding:20px 18px;color:#f2fafe;
-    background:radial-gradient(120% 90% at 85% -10%,rgba(21,172,227,.55),transparent 55%),
-      linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 55%,#051e2d 100%)}
-  .drawer-top .t{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:16px}
-  .drawer-top .s{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
-    color:rgba(180,224,245,.85);font-weight:600;margin-top:3px}
-  .x{width:34px;height:34px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);
-    background:rgba(255,255,255,.10);color:#f2fafe;cursor:pointer;display:grid;place-items:center}
-  .x:hover{background:rgba(255,255,255,.2)}
-  /* ---- manager staff panel ---- */
-  .mgr{display:none;border-top:1.5px solid var(--line);margin-top:12px;padding:14px 12px 4px}
-  .mgr.on{display:block}
-  .mgr h3{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
-    font-weight:700;margin:0 0 10px 2px}
-  .mgr-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-  .mgr-row{display:flex;align-items:center;gap:8px;padding:8px 9px;border:1.5px solid var(--line);
-    border-radius:11px;background:#f7fbfd}
-  .mgr-nm{flex:1 1 auto;min-width:0;font-size:12px;font-weight:600;line-height:1.25;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .mgr-sel{flex:0 0 92px;font-family:inherit;font-size:11px;font-weight:600;color:var(--ink-soft);
-    border:1.5px solid #bcd8ea;border-radius:8px;padding:5px 6px;background:#fff;cursor:pointer}
-  .mgr-sel:focus{outline:none;border-color:var(--lagoon);box-shadow:0 0 0 3px rgba(21,172,227,.14)}
-  .mgr-add{display:flex;flex-direction:column;gap:8px;padding:11px;border-radius:12px;
-    background:#f2f9fc;border:1.5px solid var(--edge)}
-  .mgr-add input,.mgr-add select{width:100%;font-family:inherit;font-size:12.5px;color:var(--ink);
-    border:1.5px solid #bcd8ea;border-radius:9px;padding:9px 10px;background:#fff}
-  .mgr-add input:focus,.mgr-add select:focus{outline:none;border-color:var(--lagoon);
-    box-shadow:0 0 0 3px rgba(21,172,227,.14)}
-  .mgr-add .btn-add{display:flex;align-items:center;justify-content:center;gap:8px;border:0;
-    border-radius:10px;padding:10px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:700;
-    font-family:inherit;background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
-    box-shadow:0 8px 18px -8px rgba(21,172,227,.55);transition:transform .12s ease,filter .12s ease}
-  .mgr-add .btn-add:hover{filter:brightness(1.06);transform:translateY(-1px)}
-  .mgr-add .btn-add:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
-  .mgr-msg{font-size:11px;line-height:1.4;color:var(--muted);min-height:15px}
-  .mgr-msg.err{color:#a62a2a}
-  .mgr-msg.ok{color:#1f7a4d}
-  .mgr-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:9px;padding-top:9px;
-    border-top:1px solid var(--line)}
+  <div class="shell">
 
-  /* ---- account block in the drawer ---- */
-  .acct{margin:auto 12px 14px;padding:13px;border-radius:14px;background:#f2f9fc;border:1.5px solid var(--edge)}
-  .acct-row{display:flex;align-items:center;gap:11px}
-  .avatar{flex:0 0 38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;
-    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:14px;
-    background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep))}
-  .acct-txt{flex:1 1 auto;min-width:0}
-  .acct-nm{font-size:13px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .acct-rl{font-size:11px;color:var(--muted);margin-top:1px}
-  .signout{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:12px;
-    border:0;border-radius:12px;padding:12px;cursor:pointer;color:#fff;
-    font-size:13.5px;font-weight:700;font-family:inherit;letter-spacing:.01em;
-    background:linear-gradient(180deg,#5b7a8d 0%,#3b596c 100%);
-    box-shadow:0 8px 18px -8px rgba(20,52,70,.55);
-    transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
-  .signout:hover{filter:brightness(1.07);transform:translateY(-1px);
-    box-shadow:0 12px 24px -8px rgba(20,52,70,.6)}
-  .signout:active{transform:translateY(0)}
-  .signout:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
-  .signout:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
-  .signout svg{flex:0 0 auto;opacity:.9}
-  .gate{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:var(--page-top);
-    color:var(--muted);font-size:13.5px;font-weight:600}
-  .side-note{display:none;margin:0 12px 16px;padding:11px 12px;border-radius:12px;background:#f4fafd;
-    border:1.5px solid var(--line);font-size:11px;color:var(--muted);line-height:1.45}
-  .laynow{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-    color:rgba(180,224,245,.9);margin-left:2px}
+  <!-- ================= LAYOUT DRAWER ================= -->
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" aria-label="Form layout" aria-hidden="true">
+    <div class="drawer-top">
+      <div><div class="t">Form layout</div><div class="s">Choose a view</div></div>
+      <button class="x" id="drawerClose" aria-label="Close menu">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="lay">
+      <div class="lay-lbl" id="layLbl">Criteria view</div>
+      <div class="lay-wrap" id="layWrap">
+        <button class="lay-tr" id="layTrigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="ico" id="layIco"></span>
+          <span class="cur" id="layCur">Full grid</span>
+          <svg class="lay-chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="lay-menu" id="layMenu" role="listbox" aria-labelledby="layLbl"></div>
+      </div>
+    </div>
+    <div class="mgr" id="mgrPanel">
+      <h3>Staff administration</h3>
 
-  /* ================= LAYOUT: PINNED CRITERIA ================= */
-  .pinned table{border-collapse:separate;border-spacing:0}
-  .pinned thead th{position:sticky;top:0;z-index:2}
-  .pinned th.crit,.pinned td.crit{position:sticky;left:0;z-index:3;background:var(--panel);
-    box-shadow:6px 0 12px -8px rgba(8,52,76,.35)}
-  .pinned thead th.crit{z-index:4;background:#f4fafd}
-  .pinned tbody tr:hover td.crit{background:#fbfdff}
+      <div class="mgr-sec hide" id="secHistory">
+        <button class="mgr-sum" id="sumHistory" aria-expanded="false" aria-controls="bodyHistory">
+          <span class="lbl">History</span>
+          <span class="cnt" id="hisCount">0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mgr-panel-body" id="bodyHistory">
+          <div id="hisList"></div>
+        </div>
+      </div>
 
-  /* ================= LAYOUT: ONE EVALUATOR ================= */
-  .evtabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 14px}
-  .evtab{flex:0 0 auto;border:1.5px solid var(--line);background:var(--panel);border-radius:999px;
-    padding:9px 16px;font-size:13.5px;font-weight:600;font-family:inherit;color:var(--ink-soft);
-    cursor:pointer;display:flex;align-items:center;gap:8px;
-    transition:border-color .15s ease,transform .12s ease,box-shadow .15s ease}
-  .evtab:hover{border-color:var(--lagoon);transform:translateY(-1px)}
-  .evtab.active{background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));color:#fff;
-    border-color:transparent;box-shadow:0 10px 22px -10px rgba(21,172,227,.65)}
-  .evtab:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
-  .evdot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:0 0 auto}
-  .evtab.done .evdot{background:#27ae60}
-  .evtab.active .evdot{background:rgba(255,255,255,.85)}
-  .evhead{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
-    padding:18px 24px;background:#f4fafd;border-bottom:1.5px solid var(--line)}
-  .evlbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:3px}
-  .evwho{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:20px}
-  .evprog{font-size:12.5px;color:var(--muted);font-weight:600}
-  .crow{display:flex;align-items:center;gap:18px;padding:13px 24px;border-bottom:1px solid var(--line)}
-  .crow:last-child{border-bottom:0}
-  .crow:hover{background:#fbfdff}
-  .cnum{flex:0 0 28px;height:28px;border-radius:9px;background:var(--accent-soft);color:var(--lagoon-deep);
-    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:12.5px;display:grid;place-items:center}
-  .ctext{flex:1 1 auto;min-width:0}
-  .rowavg{flex:0 0 74px;text-align:right;font-size:11px;color:var(--muted);
-    letter-spacing:.1em;text-transform:uppercase;font-weight:700}
-  .rowavg b{display:block;font-size:15px;color:var(--lagoon-deep);letter-spacing:0;font-variant-numeric:tabular-nums}
-  .evnav{display:flex;gap:12px;justify-content:space-between;padding:15px 24px;
-    background:#f4fafd;border-top:1.5px solid var(--line)}
-  .evnav .btn{padding:11px 20px;font-size:14px}
+      <div class="mgr-sec hide" id="secResults">
+        <button class="mgr-sum" id="sumResults" aria-expanded="false" aria-controls="bodyResults">
+          <span class="lbl">Evaluation results</span>
+          <span class="cnt" id="resDone">0/0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mgr-panel-body" id="bodyResults">
+          <div class="res-list" id="resList"></div>
+        </div>
+      </div>
 
-  /* ================= LAYOUT: CRITERION CARDS ================= */
-  .cards{display:flex;flex-direction:column;gap:14px}
-  .card{background:var(--panel);border:1.5px solid #c3dced;border-radius:18px;
-    box-shadow:0 1px 2px rgba(8,52,76,.06),0 14px 34px -18px rgba(8,52,76,.42);overflow:hidden}
-  .card.filled{border-color:#bfe4f5}
-  .chead{display:flex;gap:14px;align-items:flex-start;padding:15px 20px 11px}
-  .cpill{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-    padding:5px 11px;border-radius:999px;background:#f4fafd;color:var(--muted);
-    border:1.5px solid var(--line);white-space:nowrap}
-  .card.filled .cpill{background:var(--accent-soft);color:var(--lagoon-deep);border-color:#bfe4f5}
-  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-    gap:12px 18px;padding:2px 20px 16px}
-  .cell{border:0;border-radius:0;padding:2px 0;display:flex;align-items:center;gap:10px;background:transparent}
-  .cell .nm{flex:1 1 auto;min-width:0;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.25;
-    overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .cell .score-in{flex:0 0 46px;width:46px;padding:6px 2px;font-size:13.5px}
-  @media(max-width:560px){
-    .cgrid{grid-template-columns:1fr 1fr;padding:0 14px 14px;gap:8px}
-    .chead{padding:14px 14px 10px}
-    .crow{gap:12px;padding:12px 15px}.rowavg{display:none}
-    .evhead{padding:15px}.evnav{padding:13px 15px}.evnav .btn{flex:1 1 0}
-  }
+      <div class="mgr-sec" id="secRoles">
+        <button class="mgr-sum" id="sumRoles" aria-expanded="false" aria-controls="bodyRoles">
+          <span class="lbl">Form roles</span>
+          <span class="cnt" id="rolesCount">0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mgr-panel-body" id="bodyRoles">
+          <div class="mgr-list" id="mgrList"></div>
+        </div>
+      </div>
+      <div class="mgr-sec" id="secAdd">
+        <button class="mgr-sum" id="sumAdd" aria-expanded="false" aria-controls="bodyAdd">
+          <span class="lbl">Add staff</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mgr-panel-body" id="bodyAdd">
+          <div class="mgr-add">
+            <div class="mgr-lbl">Person</div>
+            <input id="mgrName" placeholder="Full name" autocomplete="off">
+            <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
+            <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
+            <div class="mgr-lbl">Evaluation form</div>
+            <select id="mgrRole">
+              <option value="Probationary">Probationary</option>
+              <option value="Junior Staff">Junior Staff</option>
+              <option value="Senior Staff">Senior Staff</option>
+            </select>
+            <div class="mgr-lbl">Access level</div>
+            <select id="mgrAccess">
+              <option value="employee">Employee access</option>
+              <option value="manager">Manager access</option>
+            </select>
+            <button class="btn-add" id="mgrAdd">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Create user</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="mgr-msg" id="mgrMsg"></div>
+    </div>
 
-  /* --- employee name autocomplete --- */
-  .ac-box{position:absolute;top:100%;left:0;right:0;z-index:50;margin-top:6px;
-    background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
-    box-shadow:var(--shadow-sm);overflow:hidden;display:none}
-  .ac-box.open{display:block}
-  .ac-item{padding:10px 13px;font-size:14px;cursor:pointer}
-  .ac-item:hover,.ac-item.sel{background:var(--accent-soft);color:var(--lagoon-deep)}
+    <div class="acct" id="acct">
+      <div class="acct-row">
+        <div class="avatar" id="acctInitials">&mdash;</div>
+        <div class="acct-txt">
+          <div class="acct-nm" id="acctName">Signed in</div>
+          <div class="acct-rl" id="acctRole">Loading account&hellip;</div>
+        </div>
+      </div>
+      <button class="signout" id="signOut">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5"/></svg>
+        <span>Sign out</span>
+      </button>
+    </div>
+  </aside>
 
-  @media (prefers-reduced-motion: reduce){
-    *{animation:none !important;transition:none !important}
-  }
+  <!-- ================= FORM ================= -->
+  <main class="main">
+  <div class="backbar hide" id="backBar">
+    <button type="button" id="backBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Back to my scoring
+    </button>
+  </div>
 
-  @media (max-width:560px){
-    .wrap{padding:16px 14px 60px}
-    header.top{padding:22px 20px;border-radius:18px;gap:13px}
-    h1{font-size:23px}
-    .sub{display:none}
-    .btn{flex:1 1 100%}
-  }
+  <div class="archived-note hide" id="archNote">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/></svg>
+    <span id="archText">Archived record — read only. Print and export still work.</span>
+  </div>
 
-  /* ================= SURFACE CONTRAST ================= */
-  :root{
-    --page-top:#cfe3f1;
-    --page-bottom:#b9d5e8;
-    --edge:#a9cbe2;
-  }
-  body{
-    background:linear-gradient(180deg,var(--page-top) 0%,var(--page-bottom) 100%)
-      fixed no-repeat var(--page-top);
-  }
-  .panel,.card{
-    background:#fff;
-    border:1.5px solid var(--edge);
-    box-shadow:0 1px 2px rgba(8,52,76,.07),0 20px 46px -22px rgba(8,52,76,.50);
-  }
-  .side,.drawer{border-color:var(--edge)}
-  .field input,.comment textarea,.score-in,.stepper{
-    background:#fff;border-color:#bcd8ea;
-  }
-  .field .ro{background:#eef5fa}
-  .evtab{border-color:#bcd8ea}
-  .totals,.evhead,.evnav,thead th{background:#f2f9fc}
-  thead th.crit,.pinned thead th.crit{background:#f2f9fc}
+  <div class="whobar" id="whoBar">
+    <span class="k" id="whoK">Signed in as</span>
+    <span class="v" id="whoV">&mdash;</span>
+    <span class="pill-state" id="whoState">No employee selected</span>
+  </div>
 
-  /* ================= MANAGER PANEL — ACCORDION ================= */
-  #mgrPanel h3{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
-    font-weight:700;margin:0 0 10px 2px}
-  .mgr-sec{border:1.5px solid var(--line);border-radius:13px;background:#fff;
-    margin-bottom:9px;overflow:hidden}
-  .mgr-sum{display:flex;align-items:center;gap:9px;width:100%;padding:11px 12px;cursor:pointer;
-    background:#f7fbfd;border:0;font-family:inherit;color:var(--ink-soft);text-align:left;
-    font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-    transition:background .15s ease}
-  .mgr-sum:hover{background:#eef6fb}
-  .mgr-sum:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:-3px}
-  .mgr-sum .lbl{flex:1 1 auto;min-width:0}
-  .mgr-sum .cnt{flex:0 0 auto;font-size:10px;letter-spacing:.04em;font-weight:700;
-    padding:2px 7px;border-radius:999px;background:var(--accent-soft);
-    color:var(--lagoon-deep);text-transform:none}
-  .mgr-sum .chev{flex:0 0 auto;transition:transform .2s ease;opacity:.65}
-  .mgr-sec.open .mgr-sum{background:var(--accent-soft);color:var(--lagoon-deep)}
-  .mgr-sec.open .mgr-sum .chev{transform:rotate(180deg)}
-  .mgr-panel-body{display:none;padding:11px}
-  .mgr-sec.open .mgr-panel-body{display:block}
-  .mgr-list{display:flex;flex-direction:column;gap:6px;margin:0}
-  .mgr-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
-  .mgr-add{display:flex;flex-direction:column;gap:8px;padding:0;background:none;border:0}
-  .mgr-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
-    font-weight:700;margin:5px 0 -2px 2px}
-  .mgr-lbl:first-child{margin-top:0}
-  .mgr-row{align-items:center}
-  .mgr-nm{font-size:12px}
-  #mgrMsg{margin-top:4px}
-  .mgr-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:10px;
-    padding-top:9px;border-top:1px solid var(--line)}
+  <div class="prog-wrap hide" id="progWrap">
+    <div class="prog-head">
+      <span class="prog-ttl">Scoring progress</span>
+      <span class="prog-num" id="progNum">0 / 0</span>
+    </div>
+    <div class="prog-bar" id="progBar"><span id="progFill"></span></div>
+    <div class="prog-list" id="progList"></div>
+  </div>
 
-  /* ================= CRITERIA VIEW PICKER ================= */
-  /* Custom listbox — a native <select> renders its list through the OS, which
-     can't be styled to match anything else on the page. */
-  .lay{display:block;padding:14px 12px 0}
-  .lay-lbl{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.08em;color:var(--ink-soft);margin:0 0 7px 1px}
-  .lay-wrap{position:relative}
-  .lay-tr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;
-    padding:11px 12px;border:1.5px solid #bcd8ea;border-radius:11px;background:#fff;
-    font-family:inherit;font-size:14px;color:var(--ink);outline:none;
-    transition:border-color .15s ease,box-shadow .15s ease}
-  .lay-tr:hover{border-color:var(--lagoon)}
-  .lay-tr:focus-visible,.lay-wrap.open .lay-tr{border-color:var(--lagoon);
-    box-shadow:0 0 0 4px rgba(21,172,227,.14)}
-  .lay-tr .ico{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;
-    background:var(--accent-soft);color:var(--lagoon-deep)}
-  .lay-tr .cur{flex:1 1 auto;min-width:0;font-weight:600;overflow:hidden;
-    text-overflow:ellipsis;white-space:nowrap}
-  .lay-chev{flex:0 0 auto;color:var(--lagoon-deep);opacity:.8;transition:transform .2s ease}
-  .lay-wrap.open .lay-chev{transform:rotate(180deg)}
+  <div class="meta">
+    <div class="field"><label>Employee name</label><input id="empName" placeholder="Full name" autocomplete="off"></div>
+    <div class="field"><label>Position</label><input id="position" class="ro" readonly></div>
+    <div class="field" id="managerField"><label>Manager / Evaluator</label><input id="manager" value="Aiko Yasuda"></div>
+    <div class="field"><label>Date</label><input id="date" class="ro" readonly></div>
+  </div>
 
-  .lay-menu{position:absolute;z-index:70;top:calc(100% + 6px);left:0;right:0;
-    background:#fff;border:1.5px solid #bcd8ea;border-radius:13px;padding:5px;
-    box-shadow:0 20px 44px -18px rgba(8,52,76,.55);
-    opacity:0;visibility:hidden;transform:translateY(-4px);
-    transition:opacity .16s ease,transform .16s ease,visibility .16s ease}
-  .lay-wrap.open .lay-menu{opacity:1;visibility:visible;transform:translateY(0)}
-  .lay-opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;cursor:pointer;
-    padding:9px 10px;border:0;border-radius:9px;background:transparent;font-family:inherit;
-    color:var(--ink-soft);transition:background .13s ease}
-  .lay-opt:hover,.lay-opt.cursor{background:#f2f9fc}
-  .lay-opt[aria-selected="true"]{background:var(--accent-soft);color:var(--lagoon-deep)}
-  .lay-opt .ico{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;
-    background:#f0f8fc;color:var(--lagoon-deep);border:1.5px solid var(--line)}
-  .lay-opt[aria-selected="true"] .ico{background:#fff;border-color:#bfe4f5}
-  .lay-opt .txt{flex:1 1 auto;min-width:0}
-  .lay-opt .nm{display:block;font-size:13px;font-weight:700;line-height:1.25}
-  .lay-opt .ds{display:block;font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
-  .lay-opt .tick{flex:0 0 auto;color:var(--lagoon-deep);opacity:0;margin-top:5px}
-  .lay-opt[aria-selected="true"] .tick{opacity:1}
+  <div class="evaluator-ctl hide">
+    <span>Evaluators</span>
+    <div class="stepper">
+      <button id="evMinus" aria-label="Remove evaluator">&minus;</button>
+      <div class="val" id="evVal">6</div>
+      <button id="evPlus" aria-label="Add evaluator">+</button>
+    </div>
+  </div>
 
-  /* ================= HIDE DRAWER SCROLLBARS ================= */
-  /* The drawer still scrolls — only the bar itself is hidden, so opening
-     Form roles or Add staff doesn't put a track down the side of the panel. */
-  .drawer{scrollbar-width:none;-ms-overflow-style:none}
-  .drawer::-webkit-scrollbar{width:0;height:0}
-  .mgr-list,.lay-menu,.evtabs{scrollbar-width:none;-ms-overflow-style:none}
-  .mgr-list::-webkit-scrollbar,.lay-menu::-webkit-scrollbar,
-  .evtabs::-webkit-scrollbar{width:0;height:0}
+  <!-- layout: one evaluator at a time -->
+  <div class="evtabs" id="evtabs" hidden></div>
 
-  /* ================= ROSTER ROW — STACKED ================= */
-  /* Name on its own line so long names are readable in full,
-     with the form-role picker and remove button beneath it. */
-  .mgr-row{display:block;padding:9px 10px}
-  .mgr-nm{display:block;width:100%;font-size:12.5px;font-weight:700;line-height:1.3;
-    white-space:normal;overflow:visible;text-overflow:clip;color:var(--ink);margin-bottom:7px}
-  .mgr-nm .tag{vertical-align:1px}
-  .mgr-ctl{display:flex;align-items:center;gap:8px}
-  .mgr-sel{flex:1 1 auto;width:auto;min-width:0;font-size:11.5px}
-  .mgr-del{flex:0 0 28px;height:28px}
+  <div class="panel" id="panel">
+    <!-- layout: grid / pinned -->
+    <div class="scroll" id="gridWrap">
+      <table id="grid"><thead><tr id="headRow"></tr></thead><tbody id="body"></tbody></table>
+    </div>
 
-  /* ================= ROSTER TAGS + REMOVE BUTTON ================= */
-  .mgr-nm .tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;
-    font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-    line-height:1.6;vertical-align:1px;white-space:nowrap}
-  .tag.mg{background:var(--accent-soft);color:var(--lagoon-deep)}
-  .tag.no{background:#fdf3e6;color:#96601a}
-  .mgr-del{flex:0 0 28px;height:28px;padding:0;border-radius:8px;cursor:pointer;
-    display:grid;place-items:center;border:1.5px solid #e6c3c3;background:#fff6f6;
-    color:#a62a2a;transition:background .15s ease,border-color .15s ease}
-  .mgr-del:hover{background:#ffe4e4;border-color:#d99a9a}
-  .mgr-del:disabled{opacity:.45;cursor:not-allowed}
+    <!-- layout: one evaluator at a time -->
+    <div id="singleWrap" hidden>
+      <div class="evhead">
+        <div><div class="evlbl">Now scoring as</div><div class="evwho" id="evWho"></div></div>
+        <div class="evprog" id="evProg"></div>
+      </div>
+      <div id="rows"></div>
+      <div class="evnav">
+        <button class="btn ghost" id="evPrev">&larr; Previous</button>
+        <button class="btn ghost" id="evNext">Next evaluator &rarr;</button>
+      </div>
+    </div>
 
-  /* ================= SAVE BAR / MODES ================= */
-  .btn.save{background:linear-gradient(180deg,#2fa96b,#1f7a4d);
-    box-shadow:0 10px 24px -8px rgba(31,122,77,.55)}
-  .btn.lock{background:#fff;color:#96601a;border:1.5px solid #e8d3b2;box-shadow:none}
-  .btn.lock:hover{background:#fdf3e6;filter:none}
-  .whobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 18px;
-    padding:11px 14px;border-radius:13px;background:#fff;border:1.5px solid var(--edge)}
-  .whobar .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--muted);font-weight:700}
-  .whobar .v{font-size:13.5px;font-weight:700;color:var(--ink)}
-  .pill-state{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.05em;
-    text-transform:uppercase;padding:4px 10px;border-radius:999px;
-    background:#f4fafd;color:var(--muted);border:1.5px solid var(--line)}
-  .pill-state.saved{background:#eaf7f0;color:#1f7a4d;border-color:#bfe3ce}
-  .pill-state.locked{background:#fdf3e6;color:#96601a;border-color:#e8d3b2}
-  .pill-state.dirty{background:var(--accent-soft);color:var(--lagoon-deep);border-color:#bfe4f5}
-  .hide{display:none !important}
+    <!-- layout: criterion cards -->
+    <div class="cards" id="cards" hidden></div>
 
-  /* ================= REVIEWER PROGRESS ================= */
-  .prog-wrap{margin:0 0 20px;padding:14px 16px;border-radius:14px;background:#fff;
-    border:1.5px solid var(--edge);box-shadow:var(--shadow-sm)}
-  .prog-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-  .prog-ttl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--muted);font-weight:700}
-  .prog-num{margin-left:auto;font-family:"Bricolage Grotesque","Inter",sans-serif;
-    font-weight:800;font-size:15px;color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
-  .prog-bar{height:9px;border-radius:999px;background:#e4eff6;overflow:hidden}
-  .prog-bar span{display:block;height:100%;width:0;border-radius:999px;
-    background:linear-gradient(90deg,var(--lagoon),var(--lagoon-deep));
-    transition:width .35s cubic-bezier(.4,0,.2,1)}
-  .prog-bar.done span{background:linear-gradient(90deg,#33b877,#1f7a4d)}
-  .prog-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+    <div class="totals">
+      <div class="interp" id="interp"></div>
+      <div class="tcard"><div class="k">Total Score</div><div class="v" id="totalScore">0</div></div>
+      <div class="tcard"><div class="k">Average Score</div><div class="v" id="totalAvg">0</div></div>
+    </div>
+  </div>
 
-  /* Individual evaluator progress fills behind each name in real time. */
-  .prog-chip{
-    position:relative;display:flex;align-items:center;gap:6px;overflow:hidden;isolation:isolate;
-    min-height:28px;padding:5px 9px;border-radius:999px;border:1.5px solid var(--line);
-    background:#f7fbfd;color:var(--muted);font-size:11.5px;font-weight:600;
-    transition:border-color .25s ease,color .25s ease,background .25s ease
-  }
-  .prog-chip-fill{
-    position:absolute;z-index:-1;top:0;bottom:0;left:0;width:var(--person-progress,0%);
-    border-radius:999px;
-    background:linear-gradient(90deg,rgba(21,172,227,.18),rgba(11,127,176,.25));
-    transition:width .4s cubic-bezier(.4,0,.2,1),background .3s ease
-  }
-  .prog-chip.active{color:var(--lagoon-deep);border-color:#a9d9ed}
-  .prog-chip .dot{
-    position:relative;z-index:1;flex:0 0 auto;width:6px;height:6px;border-radius:50%;
-    background:#c9d9e4
-  }
-  .prog-chip.active .dot{background:var(--lagoon)}
-  .prog-chip-name{position:relative;z-index:1;white-space:nowrap}
-  .prog-chip-count{
-    position:relative;z-index:1;margin-left:2px;font-size:9.5px;font-weight:800;
-    color:var(--lagoon-deep);font-variant-numeric:tabular-nums
-  }
-  .prog-chip.ok{
-    color:#17643f;border-color:#95d2ae;background:#eaf7f0
-  }
-  .prog-chip.ok .prog-chip-fill{
-    width:100%;
-    background:linear-gradient(90deg,rgba(51,184,119,.25),rgba(31,122,77,.32))
-  }
-  .prog-chip.ok .dot{background:#27ae60}
-  .prog-chip.ok .prog-chip-count{color:#1f7a4d}
+  <div class="comment">
+    <label>Evaluator's overall comments</label>
+    <textarea id="comment" placeholder="Overall remarks..."></textarea>
+  </div>
 
-  /* ================= SIDEBAR RESULTS ================= */
-  .res-list{display:flex;flex-direction:column;gap:7px}
-  .res-row{display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
-    padding:10px 11px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
-    transition:border-color .15s ease,background .15s ease,transform .12s ease}
-  .res-row:hover{border-color:var(--lagoon);background:#f7fbfd;transform:translateY(-1px)}
-  .res-row.on{border-color:#bfe4f5;background:var(--accent-soft)}
-  .res-row:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
-  .res-top{display:flex;align-items:baseline;gap:8px;margin-bottom:7px}
-  .res-nm{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink);
-    line-height:1.3;white-space:normal}
-  .res-ct{flex:0 0 auto;font-size:10.5px;font-weight:700;color:var(--muted);
-    font-variant-numeric:tabular-nums}
-  .res-row.full .res-ct{color:#1f7a4d}
-  .res-bar{height:6px;border-radius:999px;background:#e4eff6;overflow:hidden}
-  .res-bar span{display:block;height:100%;width:0;border-radius:999px;
-    background:linear-gradient(90deg,var(--lagoon),var(--lagoon-deep));transition:width .3s ease}
-  .res-row.full .res-bar span{background:linear-gradient(90deg,#33b877,#1f7a4d)}
-  .res-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
-  .backbar{display:flex;align-items:center;gap:10px;margin:0 0 16px}
-  .backbar button{display:flex;align-items:center;gap:7px;border:1.5px solid var(--line);
-    background:#fff;border-radius:11px;padding:9px 14px;cursor:pointer;font-family:inherit;
-    font-size:13px;font-weight:700;color:var(--lagoon-deep);transition:.15s}
-  .backbar button:hover{border-color:var(--lagoon);background:#f7fbfd}
+  <div class="actions">
+    <button class="btn save hide" id="saveBtn">Submit my scores</button>
+    <button class="btn hide" id="printBtn">Print</button>
+    <button class="btn hide" id="pdfBtn">Export to PDF</button>
+    <button class="btn ghost hide" id="exportBtn">Export to Word</button>
+    <button class="btn save hide" id="fixBtn">Save corrections</button>
+    <button class="btn lock hide" id="lockBtn">Lock evaluations</button>
+    <button class="btn ghost" id="resetBtn">Clear scores</button>
+    <span class="status" id="status"></span>
+  </div>
+  </main>
+  </div>
 
-  /* ================= SIDEBAR HISTORY ================= */
-  .his-row{display:flex;align-items:center;gap:7px;width:100%;
-    padding:7px 8px 7px 11px;border:1.5px solid var(--line);border-radius:13px;background:#fff;
-    margin-bottom:7px;transition:border-color .15s ease,background .15s ease,transform .12s ease}
-  .his-row:hover{border-color:var(--lagoon);background:#f7fbfd;transform:translateY(-1px)}
-  .his-row.on{border-color:#bfe4f5;background:var(--accent-soft)}
-  .his-main{flex:1 1 auto;min-width:0;text-align:left;cursor:pointer;font-family:inherit;
-    background:none;border:0;padding:1px 0;color:inherit}
-  .his-avg{flex:0 0 auto;display:grid;place-items:center;min-width:36px;height:32px;padding:0 8px;
-    border-radius:10px;background:var(--accent-soft);border:1.5px solid #d9edf8;
-    font-family:inherit;font-size:13.5px;font-weight:800;line-height:1;
-    color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
-  .his-row.on .his-avg{background:#fff;border-color:#bfe4f5}
-  .his-del{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;cursor:pointer;
-    border:1.5px solid transparent;border-radius:10px;background:none;color:#c08a8a;transition:.15s}
-  .his-del:hover{background:#fff6f6;border-color:#e6c3c3;color:#a62a2a}
-  .his-del:disabled{opacity:.45;cursor:not-allowed}
-  .his-nm{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .his-meta{display:flex;gap:5px;align-items:center;margin-top:3px;font-size:10.5px;color:var(--muted)}
-  .his-meta .dot{opacity:.45}
-  .his-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
-  .archived-note{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 14px;
-    border-radius:13px;background:#fdf3e6;border:1.5px solid #e8d3b2;color:#7a4d13;
-    font-size:12.5px;font-weight:600}
-  .archived-note svg{flex:0 0 auto}
+</div>
 
-  /* ================= RESET SUBMISSIONS DIALOG ================= */
-  .rm-scrim{position:fixed;inset:0;z-index:80;background:rgba(5,30,45,.45);
-    backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px}
-  .rm-box{width:100%;max-width:400px;background:#fff;border-radius:18px;
-    border:1.5px solid var(--edge);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
-    overflow:hidden;max-height:80vh;display:flex;flex-direction:column}
-  .rm-top{padding:16px 18px;background:#f4fafd;border-bottom:1.5px solid var(--line)}
-  .rm-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:17px}
-  .rm-sub{font-size:12px;color:var(--muted);margin-top:3px}
-  .rm-body{padding:12px;overflow-y:auto;scrollbar-width:none}
-  .rm-body::-webkit-scrollbar{width:0}
-  .rm-item{display:flex;align-items:center;gap:10px;padding:9px 10px;margin-bottom:7px;
-    border:1.5px solid var(--line);border-radius:11px;background:#f7fbfd}
-  .rm-nm{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink)}
-  .rm-avg{flex:0 0 auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-  .rm-x{flex:0 0 auto;border:1.5px solid #e6c3c3;background:#fff6f6;color:#a62a2a;
-    border-radius:9px;padding:6px 11px;font:700 11.5px inherit;font-family:inherit;cursor:pointer}
-  .rm-x:hover{background:#ffe4e4;border-color:#d99a9a}
-  .rm-x:disabled{opacity:.5;cursor:not-allowed}
-  .rm-empty{font-size:12px;color:var(--muted);padding:8px 4px}
-  .rm-foot{display:flex;gap:9px;padding:12px;border-top:1.5px solid var(--line);background:#f4fafd}
-  .rm-foot button{flex:1 1 0;border-radius:11px;padding:11px;cursor:pointer;
-    font:700 13px inherit;font-family:inherit;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft)}
-  .rm-foot .all{border-color:#e6c3c3;background:#fff6f6;color:#a62a2a}
-  .rm-foot .all:hover{background:#ffe4e4}
-
-  /* ================= IN-PAGE DIALOGS ================= */
-  .dlg-scrim{position:fixed;inset:0;z-index:95;background:rgba(5,30,45,.45);
-    backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px;
-    opacity:0;transition:opacity .16s ease}
-  .dlg-scrim.in{opacity:1}
-  .dlg{width:100%;max-width:400px;background:#fff;border-radius:18px;
-    border:1.5px solid var(--edge);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
-    overflow:hidden;transform:translateY(-6px) scale(.99);transition:transform .18s ease}
-  .dlg-scrim.in .dlg{transform:none}
-  .dlg-top{padding:18px 20px 14px}
-  .dlg-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;
-    font-size:17px;line-height:1.25;color:var(--ink)}
-  .dlg-msg{font-size:13px;line-height:1.5;color:var(--ink-soft);margin-top:8px;white-space:pre-line}
-  .dlg-foot{display:flex;gap:9px;padding:14px;background:#f4fafd;border-top:1.5px solid var(--line)}
-  .dlg-foot button{flex:1 1 0;border-radius:11px;padding:12px;cursor:pointer;
-    font-family:inherit;font-size:13.5px;font-weight:700;transition:transform .12s ease,filter .12s ease}
-  .dlg-foot button:hover{transform:translateY(-1px)}
-  .dlg-foot .cancel{border:1.5px solid var(--line);background:#fff;color:var(--ink-soft)}
-  .dlg-foot .cancel:hover{border-color:var(--lagoon);background:#f7fbfd}
-  .dlg-foot .ok{border:0;color:#fff;
-    background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
-    box-shadow:0 10px 22px -10px rgba(21,172,227,.6)}
-  .dlg-foot .ok:hover{filter:brightness(1.06)}
-  .dlg-foot .ok.danger{background:linear-gradient(180deg,#d2554f,#a62a2a);
-    box-shadow:0 10px 22px -10px rgba(166,42,42,.55)}
-  .dlg-foot button:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
-
-  /* reset-submission dialog inherits the shared dialog chrome */
-  .rm-box{max-width:400px}
-  .rm-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:17px}
-  .rm-sub{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
-  .rm-top{padding:18px 20px 14px;background:#fff;border-bottom:0}
-  .rm-body{padding:0 14px 4px}
-  .rm-item{background:#f7fbfd;border-color:var(--line);border-radius:12px;padding:10px 11px}
-  .rm-nm{font-size:13px}
-  .rm-x{border-radius:9px;padding:7px 12px;font-size:12px}
-  .rm-foot{padding:14px;background:#f4fafd}
-  .rm-foot button{border-radius:11px;padding:12px;font-size:13.5px;font-weight:700;
-    transition:transform .12s ease,filter .12s ease}
-  .rm-foot button:hover{transform:translateY(-1px)}
-  .rm-foot .all{border:0;color:#fff;
-    background:linear-gradient(180deg,#d2554f,#a62a2a);
-    box-shadow:0 10px 22px -10px rgba(166,42,42,.55)}
-  .rm-foot .all:hover{filter:brightness(1.06);background:linear-gradient(180deg,#d2554f,#a62a2a)}
-  .rm-scrim{z-index:88}
-
-  /* read-only text fields (Evaluator, Date) read visually distinct from
-     fields you can actually type into */
-  .field input[readonly]{background:#eef6fb;color:var(--muted);cursor:default}
-
-  /* ================= MOBILE: STACKED CRITERIA CARDS ================= */
-  /* Below 680px the grid/pinned table becomes one card per criterion. Label
-     stacks ABOVE its input rather than beside it — a side-by-side row with a
-     fixed-width box could overflow past a long evaluator name and get clipped
-     by the panel's overflow:hidden, which is what made the box disappear. A
-     full-width input below the label can never overflow, whatever the name. */
-  @media (max-width: 680px){
-    /* The desktop table has min-width:720px so it never over-squeezes with
-       many evaluator columns — that floor is still active here since setting
-       display:block doesn't clear it, which is what was clipping the score
-       box on narrow screens. Cancel it explicitly. */
-    #grid{ min-width:0 }
-    #grid, #grid thead, #grid tbody, #grid tr, #grid td, #grid th{ display:block; width:100%; min-width:0 }
-    #grid thead{ display:none }
-    .pinned th.crit,.pinned td.crit{ position:static; box-shadow:none }
-    #body tr{
-      background:#fff;border:1.5px solid var(--edge);border-radius:16px;
-      margin-bottom:12px;padding:14px;box-shadow:var(--shadow-sm)
-    }
-    #body td{ border:0;padding:0;text-align:left }
-    #body td.crit{ padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--line) }
-    #body td:not(.crit){ margin-bottom:12px }
-    #body td:not(.crit):last-of-type{ margin-bottom:0 }
-    #body td:not(.crit)::before{
-      display:block;content:attr(data-label);margin-bottom:6px;font-size:11px;
-      font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)
-    }
-    #body td:not(.crit) .score-in{
-      display:block;width:100%;max-width:100%;box-sizing:border-box;
-      padding:12px 14px;font-size:16px   /* 16px stops iOS auto-zooming on focus */
-    }
-    #body td.calc{ font-size:17px;font-weight:700 }
-    .scrollhint{ display:none }
-    .scroll{ overflow-x:visible }
-  }
+<script src="js/evaluation.js"></script>
+<script type="module" src="js/supabase.js"></script>
+</body>
+</html>
