@@ -1,0 +1,20 @@
+name: Supabase Autosave Load Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run Supabase autosave load test
+        uses: grafana/run-k6-action@v1
+        with:
+          path: tests/supabase-autosave-load-test.js
