@@ -645,11 +645,13 @@ if(!session){
       .select('id, evaluator_id, scores, comments, manager_summary, locked, updated_at')
       .eq('employee_id', id).eq('archived', false);
     if(error){ setState('Could not load evaluations', 'locked'); return; }
-    // An unlocked row with zero scores is only an empty autosaved draft.
-    // Treat it as "not started" in Manager/Senior Preview: do not create an
-    // evaluator score column or show its remark until at least one score exists.
+    // Show an evaluator in Manager/Senior Preview as soon as they have either
+    // started scoring OR entered a comment. This keeps comment-first workflows
+    // realtime too. A completely empty unlocked draft remains "not started".
     const rows = (data ?? []).filter(r =>
-      r.locked || Object.keys(r.scores || {}).length > 0
+      r.locked ||
+      Object.keys(r.scores || {}).length > 0 ||
+      (r.comments || '').trim().length > 0
     );
 
     paintProgress(id, rows);
