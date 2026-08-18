@@ -860,7 +860,7 @@ if(!session){
 
   function queueLiveSave(){
     clearTimeout(liveSaveTimer);
-    liveSaveTimer = setTimeout(saveLiveDraft, 500);
+    liveSaveTimer = setTimeout(saveLiveDraft, 650);
   }
 
   // ----- live remarks saving -----
