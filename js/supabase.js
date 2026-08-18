@@ -336,6 +336,7 @@ if(!session){
   let dirty = false;      // edits made since the last save
   let lastWarn = 0;       // throttles the finish-first warning
   let reviewRemarkDrafts = new Map();
+  let reviewSummaryDraft = '';
 
   // Preview-mode remarks editor. The normal comment textarea stays as the
   // merged source used by Print/PDF/Word, while reviewers get one editable
@@ -359,11 +360,12 @@ if(!session){
     if(!on){
       host.innerHTML = '';
       reviewRemarkDrafts.clear();
+      reviewSummaryDraft = '';
     }
   }
 
-  function syncMergedReviewRemarks(rows){
-    const notes = rows.map(r => {
+  function evaluatorRemarksText(rows){
+    return rows.map(r => {
       const name = nameById.get(r.evaluator_id) || 'Evaluator';
       const raw = reviewRemarkDrafts.has(r.evaluator_id)
         ? reviewRemarkDrafts.get(r.evaluator_id)
@@ -371,9 +373,13 @@ if(!session){
       const text = (raw || '').trim();
       return text ? name + ': ' + text : '';
     }).filter(Boolean).join('\n');
+  }
 
-    // Keep this updated for Print, PDF and Word export.
-    api.setComments(notes);
+  function syncReviewExportComment(rows){
+    // The manager/senior summary wins when present. If it is blank, exports
+    // fall back to every evaluator remark, one evaluator per line.
+    const summary = (reviewSummaryDraft || '').trim();
+    api.setComments(summary || evaluatorRemarksText(rows));
   }
 
   function renderReviewRemarks(rows, forceReadOnly = false){
@@ -388,12 +394,59 @@ if(!session){
       rows.map(r => [r.evaluator_id, r.comments || ''])
     );
 
+    // All rows in one live/archive round carry the same manager summary.
+    // Pick the first non-empty one in case an older round has mixed nulls.
+    reviewSummaryDraft =
+      rows.map(r => r.manager_summary || '').find(v => v.trim()) || '';
+
+    // Main summary box: editable for Manager/Senior in live Preview.
+    // In History it is read-only. If no summary is entered, export falls back
+    // to the individual evaluator remarks below.
+    if(isAdmin || (forceReadOnly && reviewSummaryDraft.trim())){
+      const summaryCard = document.createElement('div');
+      summaryCard.className = 'review-summary-card';
+
+      const label = document.createElement('label');
+      label.className = 'review-summary-label';
+      label.textContent = 'Main Overall Comment';
+
+      const hint = document.createElement('div');
+      hint.className = 'review-summary-hint';
+      hint.textContent =
+        'This comment is used in Print, PDF, and Word. Leave it blank to print all evaluator comments instead.';
+
+      const summaryBox = document.createElement('textarea');
+      summaryBox.className = 'review-summary-input';
+      summaryBox.placeholder = 'Summarize the evaluators’ comments here…';
+      summaryBox.value = reviewSummaryDraft;
+      summaryBox.readOnly = forceReadOnly || !isAdmin;
+
+      if(!summaryBox.readOnly){
+        summaryBox.addEventListener('input', () => {
+          reviewSummaryDraft = summaryBox.value;
+          syncReviewExportComment(rows);
+
+          fixDirty = true;
+          el('fixBtn').disabled = false;
+          setState('Unsaved corrections', 'dirty');
+        });
+      }
+
+      summaryCard.append(label, hint, summaryBox);
+      host.appendChild(summaryCard);
+    }
+
+    const sectionTitle = document.createElement('div');
+    sectionTitle.className = 'review-remarks-title';
+    sectionTitle.textContent = 'Evaluator Comments';
+    host.appendChild(sectionTitle);
+
     if(!rows.length){
       const empty = document.createElement('div');
       empty.className = 'review-remark-empty';
       empty.textContent = 'No evaluator remarks yet.';
       host.appendChild(empty);
-      api.setComments('');
+      syncReviewExportComment(rows);
       return;
     }
 
@@ -425,7 +478,7 @@ if(!session){
       if(!box.readOnly){
         box.addEventListener('input', () => {
           reviewRemarkDrafts.set(r.evaluator_id, box.value);
-          syncMergedReviewRemarks(rows);
+          syncReviewExportComment(rows);
 
           fixDirty = true;
           el('fixBtn').disabled = false;
@@ -437,7 +490,7 @@ if(!session){
       host.appendChild(card);
     });
 
-    syncMergedReviewRemarks(rows);
+    syncReviewExportComment(rows);
   }
 
   applyMode();
@@ -527,7 +580,7 @@ if(!session){
   // ----- reviewer: every submitted column -----
   async function loadAll(id){
     const { data, error } = await supabase.from('evaluations')
-      .select('id, evaluator_id, scores, comments, locked, updated_at')
+      .select('id, evaluator_id, scores, comments, manager_summary, locked, updated_at')
       .eq('employee_id', id).eq('archived', false);
     if(error){ setState('Could not load evaluations', 'locked'); return; }
     const rows = data ?? [];
@@ -840,7 +893,7 @@ if(!session){
     if(!reviewing() || archiveCtx || !isAdmin || !reviewRows.length) return;
     const who = api.employeeName();
     if(!await uiConfirm('Save corrections?',
-        'The edited scores and remarks will replace the current Preview values for ' + who + '.',
+        'The edited scores, evaluator remarks, and main overall comment will replace the current Preview values for ' + who + '.',
         { ok: 'Save corrections' })) return;
     const btn = el('fixBtn');
     btn.disabled = true; el('status').textContent = 'Saving…';
@@ -853,6 +906,7 @@ if(!session){
         comments: reviewRemarkDrafts.has(r.evaluator_id)
           ? reviewRemarkDrafts.get(r.evaluator_id)
           : '',
+        manager_summary: (reviewSummaryDraft || '').trim() || null,
         updated_at: new Date().toISOString()
       }).eq('id', r.id).select('id');
       // an RLS block returns no error and no rows — treat that as a failure
@@ -868,7 +922,7 @@ if(!session){
     fixDirty = false;
     await loadAll(target);
     if(window.__refreshResults) window.__refreshResults();
-    if(!failed.length) uiAlert('Corrections saved', who + "'s scores and remarks have been updated.");
+    if(!failed.length) uiAlert('Corrections saved', who + "'s scores, remarks, and overall comment have been updated.");
   });
 
   // ----- Supabase Realtime: refresh review progress automatically -----
@@ -1084,7 +1138,7 @@ if(!session){
 
     async function loadHistory(){
       const { data, error } = await supabase.from('evaluations')
-        .select('employee_id, evaluator_id, scores, comments, average, archived_at, form_role')
+        .select('employee_id, evaluator_id, scores, comments, manager_summary, average, archived_at, form_role')
         .eq('archived', true).order('archived_at', { ascending: false });
       const list = el('hisList');
       if(error){ list.innerHTML = '<div class="his-empty">Could not load history.</div>'; return; }
