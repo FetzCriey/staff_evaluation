@@ -507,6 +507,68 @@ if(!session){
 
   function filledCount(){ return Object.keys(api.getColumnScores(0)).length; }
 
+  function expectedEvaluatorIds(employeeId){
+    return [...nameById.keys()].filter(pid => pid !== employeeId);
+  }
+
+  async function currentRoundSubmissionState(employeeId){
+    const { data, error } = await supabase.from('evaluations')
+      .select('evaluator_id, locked')
+      .eq('employee_id', employeeId)
+      .eq('archived', false);
+
+    if(error) return { error, expected: [], submitted: new Set(), missing: [] };
+
+    const expected = expectedEvaluatorIds(employeeId);
+    const submitted = new Set(
+      (data ?? []).filter(r => r.locked).map(r => r.evaluator_id)
+    );
+    const missing = expected.filter(pid => !submitted.has(pid));
+
+    return { error: null, expected, submitted, missing };
+  }
+
+  async function canFinaliseCurrentRound({ showMessage = true } = {}){
+    if(!reviewing() || viewingArchive) return true;
+
+    if(fixDirty){
+      if(showMessage){
+        await uiAlert(
+          'Save corrections first',
+          'Save the score, remark, or Main Overall Comment changes before printing or exporting.'
+        );
+      }
+      return false;
+    }
+
+    const id = target;
+    if(!id) return false;
+
+    const state = await currentRoundSubmissionState(id);
+    if(state.error){
+      if(showMessage) await uiAlert('Could not verify submissions', state.error.message);
+      return false;
+    }
+
+    if(state.missing.length){
+      if(showMessage){
+        const names = state.missing
+          .map(pid => nameById.get(pid) || 'Unknown evaluator')
+          .sort((a,b) => a.localeCompare(b));
+
+        await uiAlert(
+          'Evaluation is still in progress',
+          names.length === 1
+            ? names[0] + ' has not submitted yet. Final documents are available after everyone submits.'
+            : names.length + ' evaluators have not submitted yet: ' + names.join(', ') + '.'
+        );
+      }
+      return false;
+    }
+
+    return state.expected.length > 0;
+  }
+
   // Staff must finish and submit one colleague before starting another.
   function blockedFromLeaving(){
     if(reviewing() || !target || anyLocked) return null;
@@ -603,7 +665,13 @@ if(!session){
     // in the same overall scores, progress and remarks as every other evaluator.
     renderReviewRemarks(rows);
 
-    anyLocked = rows.every(r => r.locked);
+    const expectedCount = Math.max(idByName.size - 1, 0);
+    const submittedCount = rows.filter(r => r.locked).length;
+
+    // Complete means every expected evaluator submitted, not merely that every
+    // row currently present happens to be locked.
+    anyLocked = expectedCount > 0 && submittedCount >= expectedCount;
+
     // column order must match reviewRows so a correction lands on the right row
     reviewRows = rows.map(r => ({ id: r.id, evaluator_id: r.evaluator_id }));
     fixDirty = false;
@@ -611,9 +679,11 @@ if(!session){
     // Admins may correct scores in place. The merged source comment box stays
     // locked because remarks are edited safely in the per-evaluator editor.
     api.setReadOnly(!isAdmin, true);
-    const submittedCount = rows.filter(r => r.locked).length;
-    setState(submittedCount + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
-             anyLocked ? 'locked' : 'saved');
+
+    setState(
+      submittedCount + ' of ' + expectedCount + ' submitted' + (anyLocked ? ' · complete' : ''),
+      anyLocked ? 'locked' : 'saved'
+    );
   }
 
   // ----- live progress: every score moves the bar, no page refresh -----
@@ -864,7 +934,13 @@ if(!session){
   // scored yet, in roster order. Nobody left means the round is finished.
   async function goToNextColleague(){
     const { data } = await supabase.from('evaluations')
-      .select('employee_id').eq('evaluator_id', uid).eq('archived', false);
+      .select('employee_id')
+      .eq('evaluator_id', uid)
+      .eq('archived', false)
+      .eq('locked', true);
+
+    // Only a final submission counts as completed. An autosaved draft remains
+    // in the queue until the evaluator presses Submit.
     const done = new Set((data ?? []).map(r => r.employee_id));
     const queue = [...nameById.entries()]
       .filter(([pid]) => pid !== uid && !done.has(pid))
@@ -998,7 +1074,13 @@ if(!session){
   }
 
   window.addEventListener('beforeunload', e => {
-    if(dirty && !reviewing()){ e.preventDefault(); e.returnValue = ''; }
+    const evaluatorUnsaved = dirty && !reviewing();
+    const reviewerUnsaved = fixDirty && reviewing() && !archiveCtx;
+
+    if(evaluatorUnsaved || reviewerUnsaved){
+      e.preventDefault();
+      e.returnValue = '';
+    }
   });
 
   el('empName').addEventListener('input', () => {
@@ -1039,7 +1121,11 @@ if(!session){
       if(error){ el('resList').innerHTML = '<div class="res-empty">Could not load results.</div>'; return; }
       const rows = data ?? [];
       const byEmployee = new Map();
+
+      // The sidebar is a submission counter, not a draft counter.
+      // Live autosave rows (locked=false) must not increase n/total.
       rows.forEach(r => {
+        if(!r.locked) return;
         if(!byEmployee.has(r.employee_id)) byEmployee.set(r.employee_id, new Set());
         byEmployee.get(r.employee_id).add(r.evaluator_id);
       });
@@ -1074,6 +1160,15 @@ if(!session){
     async function openResults(pid, name){
       const stop = blockedFromLeaving();
       if(stop){ uiAlert('Not finished yet', stop); return; }
+
+      if(reviewing() && fixDirty && !archiveCtx){
+        uiAlert(
+          'Save corrections first',
+          'Save or finish the current Preview corrections before opening another employee.'
+        );
+        return;
+      }
+
       mode = 'review';
       if(window.__clearArchiveView) window.__clearArchiveView();
       api.setEmployee(name);
@@ -1110,6 +1205,10 @@ if(!session){
     async function archiveRound(){
       const id = target;
       if(!id || viewingArchive) return;
+
+      // Never archive drafts or unsaved reviewer corrections.
+      if(!await canFinaliseCurrentRound()) return;
+
       const name = api.employeeName();
       if(!await uiConfirm('Finalise this evaluation?',
           name + "'s evaluation moves to History and can no longer be edited. " +
@@ -1117,7 +1216,7 @@ if(!session){
       const stamp = new Date().toISOString();
       const { error } = await supabase.from('evaluations')
         .update({ archived: true, archived_at: stamp, archived_by: uid, locked: true })
-        .eq('employee_id', id).eq('archived', false);
+        .eq('employee_id', id).eq('archived', false).eq('locked', true);
       if(error){ uiAlert('Could not archive', error.message); return; }
       await uiAlert('Archived', name + "'s evaluation is in History. A new round is now open.");
       await loadHistory();
@@ -1128,10 +1227,35 @@ if(!session){
 
     // Only admins finalise a round; viewers never see these buttons anyway.
     if(isAdmin){
+      let exportReplay = false;
+
       ['printBtn','pdfBtn','exportBtn'].forEach(bid => {
-        el(bid).addEventListener('click', () => {
-          if(!reviewing() || viewingArchive) return;
-          setTimeout(archiveRound, 1200);    // let the document render first
+        const button = el(bid);
+
+        // evaluation.js owns the actual Print/PDF/Word action. This capture
+        // listener runs first so incomplete rounds and unsaved corrections
+        // cannot generate a final document accidentally.
+        button.addEventListener('click', async e => {
+          if(exportReplay || !reviewing() || viewingArchive) return;
+
+          e.preventDefault();
+          e.stopImmediatePropagation();
+
+          if(!await canFinaliseCurrentRound()) return;
+
+          exportReplay = true;
+          try{
+            button.click();
+          }finally{
+            exportReplay = false;
+          }
+        }, true);
+
+        // The replayed click generates the document. Then the verified,
+        // completed live round is offered for finalization.
+        button.addEventListener('click', () => {
+          if(!reviewing() || viewingArchive || !exportReplay) return;
+          setTimeout(archiveRound, 1200);
         });
       });
     }
