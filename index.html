@@ -1522,7 +1522,7 @@ function formHTML(){
   const dateStr=document.getElementById('date').value;
   const comment=document.getElementById('comment').value.trim();
   const cur=interpret(data.avgScore);
-  const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   const bold=!f.senior;
   let metaHTML;
   if(f.senior){
@@ -2505,7 +2505,7 @@ if(!session){
         const c = document.createElement('span');
         const ok = doneIds.has(pid);
         c.className = 'prog-chip' + (ok ? ' ok' : '');
-        c.innerHTML = '<span class="dot"></span>' + name;
+        c.innerHTML = '<span class="dot"></span>' + esc(name);
         c.title = ok ? name + ' has submitted' : name + ' has not submitted yet';
         list.appendChild(c);
       });
@@ -2669,7 +2669,7 @@ if(!session){
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'res-row' + (full ? ' full' : '') + (pid === target && reviewing() ? ' on' : '');
-        b.innerHTML = `<div class="res-top"><span class="res-nm">${name}</span>` +
+        b.innerHTML = `<div class="res-top"><span class="res-nm">${esc(name)}</span>` +
                       `<span class="res-ct">${n}/${total}</span></div>` +
                       `<div class="res-bar"><span style="width:${total ? (n/total*100) : 0}%"></span></div>`;
         b.title = full ? 'Everyone has scored ' + name : (total - n) + ' still to score ' + name;
@@ -2775,7 +2775,7 @@ if(!session){
         row.className = 'his-row';
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'his-main';
-        b.innerHTML = `<div class="his-nm">${name}</div>` +
+        b.innerHTML = `<div class="his-nm">${esc(name)}</div>` +
           `<div class="his-meta"><span>${d.toLocaleDateString()}</span>` +
           `<span class="dot">·</span>` +
           `<span>${rs.length} evaluator${rs.length===1?'':'s'}</span></div>`;
@@ -2813,9 +2813,17 @@ if(!session){
           ctx.name + "'s archived evaluation from " + new Date(ctx.when).toLocaleString() +
           ' will be permanently removed. This cannot be undone.',
           { ok: 'Delete history', danger: true })) return;
-      const { error } = await supabase.from('evaluations')
-        .delete().eq('employee_id', ctx.pid).eq('archived', true).eq('archived_at', ctx.when);
+      const { data: gone, error } = await supabase.from('evaluations')
+        .delete().eq('employee_id', ctx.pid).eq('archived', true).eq('archived_at', ctx.when)
+        .select('id');
       if(error){ uiAlert('Could not delete', error.message); return; }
+      // RLS removes rows silently when a policy blocks them — nothing back means nothing went
+      if(!gone || !gone.length){
+        uiAlert('Nothing was deleted',
+          'The database refused to remove that record. Your account may not have permission to ' +
+          'delete archived evaluations.');
+        return;
+      }
       const wasOpen = viewingArchive === ctx.when && target === ctx.pid;
       await loadHistory();
       if(wasOpen) el('backBtn').click();
@@ -2913,7 +2921,7 @@ if(!session){
           const name = nameById.get(r.evaluator_id) || 'Unknown';
           const item = document.createElement('div');
           item.className = 'rm-item';
-          item.innerHTML = '<span class="rm-nm">' + name + '</span>' +
+          item.innerHTML = '<span class="rm-nm">' + esc(name) + '</span>' +
             '<span class="rm-avg">avg ' + (r.average ?? 0) + '</span>';
           const x = document.createElement('button');
           x.className = 'rm-x'; x.type = 'button'; x.textContent = 'Clear';
