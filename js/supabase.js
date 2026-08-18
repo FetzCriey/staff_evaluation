@@ -474,11 +474,13 @@ if(!session){
       if(!row) return;
 
       const scores = row.scores || {};
-      scoredCells += Math.min(Object.keys(scores).length, totalCriteria);
+      const count = Math.min(Object.keys(scores).length, totalCriteria);
+      scoredCells += count;
 
       if(row.locked) submitted++;
     });
 
+    // Overall progress across all evaluators.
     const totalCells = totalEvaluators * totalCriteria;
     const percent = totalCells ? (scoredCells / totalCells) * 100 : 0;
 
@@ -490,6 +492,7 @@ if(!session){
       totalEvaluators > 0 && submitted === totalEvaluators
     );
 
+    // Individual progress for every evaluator.
     const list = el('progList');
     list.innerHTML = '';
 
@@ -497,22 +500,53 @@ if(!session){
       .sort((a,b) => a[1].localeCompare(b[1]))
       .forEach(([pid, name]) => {
         const row = rowByEvaluator.get(pid);
-        const count = row ? Object.keys(row.scores || {}).length : 0;
+
+        const count = row
+          ? Math.min(Object.keys(row.scores || {}).length, totalCriteria)
+          : 0;
+
         const isSubmitted = !!row?.locked;
 
-        const c = document.createElement('span');
-        c.className = 'prog-chip' + (isSubmitted ? ' ok' : '');
-        c.innerHTML = '<span class="dot"></span>' + esc(name);
+        const personPercent = isSubmitted
+          ? 100
+          : totalCriteria
+            ? Math.min(100, (count / totalCriteria) * 100)
+            : 0;
+
+        const chip = document.createElement('span');
+        chip.className =
+          'prog-chip' +
+          (count > 0 && !isSubmitted ? ' active' : '') +
+          (isSubmitted ? ' ok' : '');
+
+        chip.style.setProperty('--person-progress', personPercent + '%');
+
+        const fill = document.createElement('span');
+        fill.className = 'prog-chip-fill';
+
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'prog-chip-name';
+        nameEl.textContent = name;
+
+        const countEl = document.createElement('span');
+        countEl.className = 'prog-chip-count';
+        countEl.textContent = isSubmitted ? '✓' : count + '/' + totalCriteria;
+
+        chip.append(fill, dot, nameEl, countEl);
 
         if(isSubmitted){
-          c.title = name + ' has submitted';
+          chip.title = name + ' has submitted';
         }else if(count > 0){
-          c.title = name + ' is evaluating · ' + count + ' of ' + totalCriteria + ' scored';
+          chip.title =
+            name + ' is evaluating · ' + count + ' of ' + totalCriteria + ' scored';
         }else{
-          c.title = name + ' has not started yet';
+          chip.title = name + ' has not started yet';
         }
 
-        list.appendChild(c);
+        list.appendChild(chip);
       });
   }
 
