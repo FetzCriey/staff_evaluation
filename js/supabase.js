@@ -357,9 +357,8 @@ if(!session){
     if(filled === 0) return null;                  // nothing started yet
     if(filled < total)
       return 'Finish scoring ' + targetName + ' first — ' + filled + ' of ' + total + ' criteria done.';
-    if(dirty)
-      return 'Submit your scores for ' + targetName + ' before moving on.';
-    return null;
+    // A complete live-saved draft is still not a final submission.
+    return 'Submit your scores for ' + targetName + ' before moving on.';
   }
 
   async function onEmployeeChange(){
@@ -423,7 +422,7 @@ if(!session){
   // ----- reviewer: every submitted column -----
   async function loadAll(id){
     const { data, error } = await supabase.from('evaluations')
-      .select('id, evaluator_id, scores, comments, locked')
+      .select('id, evaluator_id, scores, comments, locked, updated_at')
       .eq('employee_id', id).eq('archived', false);
     if(error){ setState('Could not load evaluations', 'locked'); return; }
     const rows = data ?? [];
@@ -454,34 +453,144 @@ if(!session){
     el('fixBtn').disabled = true;
     // admins may correct an evaluator's mistake in place; comments stay locked
     api.setReadOnly(!isAdmin, true);
-    setState(rows.length + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
+    const submittedCount = rows.filter(r => r.locked).length;
+    setState(submittedCount + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
              anyLocked ? 'locked' : 'saved');
   }
 
-  // ----- progress: who has scored this person, who hasn't -----
-  // Everyone evaluates everyone, so the expected set is all staff bar the employee.
+  // ----- live progress: every score moves the bar, no page refresh -----
+  // Each evaluator can have an incomplete draft row. The bar is based on how
+  // many criteria are currently scored across all expected evaluators.
   function paintProgress(employeeId, rows){
     if(!reviewing()) return;
     el('progWrap').classList.remove('hide');
+
     const expected = [...nameById.entries()].filter(([pid]) => pid !== employeeId);
-    const doneIds = new Set(rows.map(r => r.evaluator_id));
-    const n = expected.filter(([pid]) => doneIds.has(pid)).length;
-    const total = expected.length;
-    el('progNum').textContent = n + ' / ' + total;
-    el('progFill').style.width = total ? (n / total * 100) + '%' : '0%';
-    el('progBar').classList.toggle('done', total > 0 && n === total);
+    const totalEvaluators = expected.length;
+    const totalCriteria = api.criteriaCount();
+    const rowByEvaluator = new Map(rows.map(r => [r.evaluator_id, r]));
+
+    let scoredCells = 0;
+    let submitted = 0;
+
+    expected.forEach(([pid]) => {
+      const row = rowByEvaluator.get(pid);
+      if(!row) return;
+
+      const scores = row.scores || {};
+      scoredCells += Math.min(Object.keys(scores).length, totalCriteria);
+
+      if(row.locked) submitted++;
+    });
+
+    const totalCells = totalEvaluators * totalCriteria;
+    const percent = totalCells ? (scoredCells / totalCells) * 100 : 0;
+
+    el('progNum').textContent =
+      Math.round(percent) + '% · ' + submitted + '/' + totalEvaluators + ' submitted';
+    el('progFill').style.width = percent + '%';
+    el('progBar').classList.toggle(
+      'done',
+      totalEvaluators > 0 && submitted === totalEvaluators
+    );
+
     const list = el('progList');
     list.innerHTML = '';
+
     expected
       .sort((a,b) => a[1].localeCompare(b[1]))
       .forEach(([pid, name]) => {
+        const row = rowByEvaluator.get(pid);
+        const count = row ? Object.keys(row.scores || {}).length : 0;
+        const isSubmitted = !!row?.locked;
+
         const c = document.createElement('span');
-        const ok = doneIds.has(pid);
-        c.className = 'prog-chip' + (ok ? ' ok' : '');
+        c.className = 'prog-chip' + (isSubmitted ? ' ok' : '');
         c.innerHTML = '<span class="dot"></span>' + esc(name);
-        c.title = ok ? name + ' has submitted' : name + ' has not submitted yet';
+
+        if(isSubmitted){
+          c.title = name + ' has submitted';
+        }else if(count > 0){
+          c.title = name + ' is evaluating · ' + count + ' of ' + totalCriteria + ' scored';
+        }else{
+          c.title = name + ' has not started yet';
+        }
+
         list.appendChild(c);
       });
+  }
+
+  // ----- automatic draft saving -----
+  // Wait briefly after the last score change before writing the draft. This
+  // keeps the progress live without sending a database request for every keypress.
+  let liveSaveTimer = null;
+  let liveSaveRunning = false;
+  let liveSaveAgain = false;
+
+  async function saveLiveDraft(){
+    if(reviewing() || anyLocked) return;
+
+    const id = targetId();
+    if(!id || id === uid) return;
+
+    if(liveSaveRunning){
+      liveSaveAgain = true;
+      return;
+    }
+
+    liveSaveRunning = true;
+
+    try{
+      const scores = api.getColumnScores(0);
+      const payload = {
+        employee_id: id,
+        evaluator_id: uid,
+        scores,
+        average: api.columnAverage(0),
+        comments: api.comments(),
+        form_role: api.formRole(),
+        locked: false,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: existing, error: findError } = await supabase.from('evaluations')
+        .select('id')
+        .eq('evaluator_id', uid)
+        .eq('employee_id', id)
+        .eq('archived', false)
+        .maybeSingle();
+
+      if(findError) throw findError;
+
+      const { error } = existing
+        ? await supabase.from('evaluations').update(payload).eq('id', existing.id)
+        : await supabase.from('evaluations').insert(payload);
+
+      if(error) throw error;
+
+      myRow = existing ? { ...(myRow || {}), id: existing.id, ...payload } : { ...payload };
+      dirty = false;
+
+      const filled = Object.keys(scores).length;
+      const total = api.criteriaCount();
+      setState('Live saved · ' + filled + ' of ' + total + ' scored', 'saved');
+
+    }catch(err){
+      console.error('Live save failed:', err);
+      setState('Could not live-save · use Submit to retry', 'dirty');
+    }finally{
+      liveSaveRunning = false;
+
+      if(liveSaveAgain){
+        liveSaveAgain = false;
+        saveLiveDraft();
+      }
+    }
+  }
+
+  function queueLiveSave(){
+    clearTimeout(liveSaveTimer);
+    liveSaveTimer = setTimeout(saveLiveDraft, 600);
   }
 
   // ----- saving -----
@@ -605,6 +714,52 @@ if(!session){
     if(!failed.length) uiAlert('Corrections saved', who + "'s scores have been updated.");
   });
 
+  // ----- Supabase Realtime: refresh review progress automatically -----
+  // This listens for inserts, updates, and deletes in public.evaluations.
+  // Realtime must also be enabled for this table in Supabase.
+  const evaluationRealtime = supabase
+    .channel('live-evaluation-progress-' + uid)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'evaluations'
+      },
+      async payload => {
+        if(!reviewing() || !target || viewingArchive) return;
+
+        const changedEmployee =
+          payload.new?.employee_id ||
+          payload.old?.employee_id;
+
+        if(changedEmployee && changedEmployee !== target) return;
+
+        // If an admin is currently typing a correction, do not replace their
+        // unsaved grid. Update only the progress bar in that case.
+        if(fixDirty){
+          const { data, error } = await supabase.from('evaluations')
+            .select('evaluator_id, scores, locked')
+            .eq('employee_id', target)
+            .eq('archived', false);
+
+          if(!error) paintProgress(target, data ?? []);
+          return;
+        }
+
+        await loadAll(target);
+
+        if(typeof window.__refreshResults === 'function'){
+          window.__refreshResults();
+        }
+      }
+    )
+    .subscribe((status, err) => {
+      if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+        console.error('Realtime connection:', status, err);
+      }
+    });
+
   // ----- locking -----
   el('lockBtn').addEventListener('click', async () => {
     const id = targetId();
@@ -637,7 +792,13 @@ if(!session){
       if(anyLocked || !target) return;
       dirty = true;
       const filled = filledCount(), total = api.criteriaCount();
-      setState(filled < total ? ('Unsaved · ' + filled + ' of ' + total + ' scored') : 'Unsaved changes', 'dirty');
+      setState(
+        filled < total
+          ? ('Saving · ' + filled + ' of ' + total + ' scored')
+          : 'Saving changes',
+        'dirty'
+      );
+      queueLiveSave();
     });
   }
 
