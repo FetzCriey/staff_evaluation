@@ -311,6 +311,7 @@ if(!session){
       ? (me?.full_name || session.user.email)
       : (api.employeeName() || '—');
     el('empName').readOnly = !mine;        // in review the sidebar picks the person
+    if(mine) setReviewRemarksVisible(false);
     // No stepper anywhere: scoring your own shows one column, and reviewing
     // shows one column per person who actually submitted.
   }
@@ -334,6 +335,110 @@ if(!session){
   let anyLocked = false;
   let dirty = false;      // edits made since the last save
   let lastWarn = 0;       // throttles the finish-first warning
+  let reviewRemarkDrafts = new Map();
+
+  // Preview-mode remarks editor. The normal comment textarea stays as the
+  // merged source used by Print/PDF/Word, while reviewers get one editable
+  // textarea per evaluator so comments always save back to the correct row.
+  function reviewRemarksHost(){
+    let host = el('reviewRemarks');
+    if(host) return host;
+
+    host = document.createElement('div');
+    host.id = 'reviewRemarks';
+    host.className = 'review-remarks hide';
+    el('comment').insertAdjacentElement('afterend', host);
+    return host;
+  }
+
+  function setReviewRemarksVisible(on){
+    const host = reviewRemarksHost();
+    el('comment').classList.toggle('review-remarks-source', !!on);
+    host.classList.toggle('hide', !on);
+
+    if(!on){
+      host.innerHTML = '';
+      reviewRemarkDrafts.clear();
+    }
+  }
+
+  function syncMergedReviewRemarks(rows){
+    const notes = rows.map(r => {
+      const name = nameById.get(r.evaluator_id) || 'Evaluator';
+      const raw = reviewRemarkDrafts.has(r.evaluator_id)
+        ? reviewRemarkDrafts.get(r.evaluator_id)
+        : (r.comments || '');
+      const text = (raw || '').trim();
+      return text ? name + ': ' + text : '';
+    }).filter(Boolean).join('\n');
+
+    // Keep this updated for Print, PDF and Word export.
+    api.setComments(notes);
+  }
+
+  function renderReviewRemarks(rows, forceReadOnly = false){
+    const host = reviewRemarksHost();
+    const source = el('comment');
+
+    source.classList.add('review-remarks-source');
+    host.classList.remove('hide');
+    host.innerHTML = '';
+
+    reviewRemarkDrafts = new Map(
+      rows.map(r => [r.evaluator_id, r.comments || ''])
+    );
+
+    if(!rows.length){
+      const empty = document.createElement('div');
+      empty.className = 'review-remark-empty';
+      empty.textContent = 'No evaluator remarks yet.';
+      host.appendChild(empty);
+      api.setComments('');
+      return;
+    }
+
+    rows.forEach(r => {
+      const evaluatorName = nameById.get(r.evaluator_id) || 'Unknown evaluator';
+
+      const card = document.createElement('div');
+      card.className = 'review-remark-card';
+
+      const head = document.createElement('div');
+      head.className = 'review-remark-head';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'review-remark-name';
+      nameEl.textContent = evaluatorName;
+
+      const state = document.createElement('span');
+      state.className = 'review-remark-state' + (r.locked ? ' submitted' : ' progress');
+      state.textContent = r.locked ? 'Submitted' : 'In progress';
+
+      head.append(nameEl, state);
+
+      const box = document.createElement('textarea');
+      box.className = 'review-remark-input';
+      box.value = r.comments || '';
+      box.placeholder = 'No remark entered.';
+      box.readOnly = forceReadOnly || !isAdmin;
+
+      if(!box.readOnly){
+        box.addEventListener('input', () => {
+          reviewRemarkDrafts.set(r.evaluator_id, box.value);
+          syncMergedReviewRemarks(rows);
+
+          fixDirty = true;
+          el('fixBtn').disabled = false;
+          setState('Unsaved corrections', 'dirty');
+        });
+      }
+
+      card.append(head, box);
+      host.appendChild(card);
+    });
+
+    syncMergedReviewRemarks(rows);
+  }
 
   applyMode();
   // One column from the outset — the grid otherwise shows the default six
@@ -394,6 +499,7 @@ if(!session){
 
   // ----- staff: their own single column -----
   async function loadMine(id){
+    setReviewRemarksVisible(false);
     api.clearColumns();
     api.setColumns([ me?.full_name || 'You' ]);
     const { data, error } = await supabase.from('evaluations')
@@ -430,6 +536,7 @@ if(!session){
       api.clearColumns();
       api.setColumns(['No submissions yet']);
       setState('Nobody has evaluated this person', '');
+      renderReviewRemarks([]);
       reviewRows = []; fixDirty = false;
       el('fixBtn').disabled = true;
       return;
@@ -437,17 +544,19 @@ if(!session){
     rows.sort((a,b) => (nameById.get(a.evaluator_id)||'').localeCompare(nameById.get(b.evaluator_id)||''));
     api.setColumns(rows.map(r => nameById.get(r.evaluator_id) || 'Unknown'));
     rows.forEach((r,i) => api.setColumnScores(i, r.scores || {}));
-    const notes = rows.map(r => {
-      const t = (r.comments||'').trim();
-      return t ? (nameById.get(r.evaluator_id)||'Evaluator') + ': ' + t : '';
-    }).filter(Boolean).join('\n');
-    api.setComments(notes);
+
+    // Managers and Senior Staff can edit every evaluator's remark in Preview.
+    // No role is filtered out here, so manager/senior evaluations are included
+    // in the same overall scores, progress and remarks as every other evaluator.
+    renderReviewRemarks(rows);
+
     anyLocked = rows.every(r => r.locked);
     // column order must match reviewRows so a correction lands on the right row
     reviewRows = rows.map(r => ({ id: r.id, evaluator_id: r.evaluator_id }));
     fixDirty = false;
     el('fixBtn').disabled = true;
-    // admins may correct an evaluator's mistake in place; comments stay locked
+    // Admins may correct scores in place. The merged source comment box stays
+    // locked because remarks are edited safely in the per-evaluator editor.
     api.setReadOnly(!isAdmin, true);
     const submittedCount = rows.filter(r => r.locked).length;
     setState(submittedCount + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
@@ -731,8 +840,8 @@ if(!session){
     if(!reviewing() || archiveCtx || !isAdmin || !reviewRows.length) return;
     const who = api.employeeName();
     if(!await uiConfirm('Save corrections?',
-        'The edited scores replace what those evaluators submitted for ' + who + '. ' +
-        'Their own comments are left untouched.', { ok: 'Save corrections' })) return;
+        'The edited scores and remarks will replace the current Preview values for ' + who + '.',
+        { ok: 'Save corrections' })) return;
     const btn = el('fixBtn');
     btn.disabled = true; el('status').textContent = 'Saving…';
     const failed = [];
@@ -741,6 +850,9 @@ if(!session){
       const { data, error } = await supabase.from('evaluations').update({
         scores: api.getColumnScores(i),
         average: api.columnAverage(i),
+        comments: reviewRemarkDrafts.has(r.evaluator_id)
+          ? reviewRemarkDrafts.get(r.evaluator_id)
+          : '',
         updated_at: new Date().toISOString()
       }).eq('id', r.id).select('id');
       // an RLS block returns no error and no rows — treat that as a failure
@@ -756,7 +868,7 @@ if(!session){
     fixDirty = false;
     await loadAll(target);
     if(window.__refreshResults) window.__refreshResults();
-    if(!failed.length) uiAlert('Corrections saved', who + "'s scores have been updated.");
+    if(!failed.length) uiAlert('Corrections saved', who + "'s scores and remarks have been updated.");
   });
 
   // ----- Supabase Realtime: refresh review progress automatically -----
@@ -1067,10 +1179,7 @@ if(!session){
       api.clearScores();
       api.setColumns(rs.map(r => nameById.get(r.evaluator_id) || 'Unknown'));
       rs.forEach((r,i) => api.setColumnScores(i, r.scores || {}));
-      api.setComments(rs.map(r => {
-        const t = (r.comments||'').trim();
-        return t ? (nameById.get(r.evaluator_id)||'Evaluator') + ': ' + t : '';
-      }).filter(Boolean).join('\n'));
+      renderReviewRemarks(rs, true);
       api.setReadOnly(true);
       reviewRows = []; fixDirty = false;
       show('fixBtn', false);
