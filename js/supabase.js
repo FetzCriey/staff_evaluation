@@ -593,6 +593,21 @@ if(!session){
     liveSaveTimer = setTimeout(saveLiveDraft, 500);
   }
 
+  // ----- live remarks saving -----
+  const commentBox = el('comment');
+
+  if(commentBox){
+    commentBox.addEventListener('input', () => {
+      if(reviewing()) return;
+      if(anyLocked) return;
+      if(!target) return;
+
+      dirty = true;
+      setState('Saving remarks…', 'dirty');
+      queueLiveSave();
+    });
+  }
+
   // ----- saving -----
   el('saveBtn').addEventListener('click', async () => {
     const id = targetId();
