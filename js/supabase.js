@@ -645,7 +645,13 @@ if(!session){
       .select('id, evaluator_id, scores, comments, manager_summary, locked, updated_at')
       .eq('employee_id', id).eq('archived', false);
     if(error){ setState('Could not load evaluations', 'locked'); return; }
-    const rows = data ?? [];
+    // An unlocked row with zero scores is only an empty autosaved draft.
+    // Treat it as "not started" in Manager/Senior Preview: do not create an
+    // evaluator score column or show its remark until at least one score exists.
+    const rows = (data ?? []).filter(r =>
+      r.locked || Object.keys(r.scores || {}).length > 0
+    );
+
     paintProgress(id, rows);
     if(!rows.length){
       api.clearColumns();

@@ -445,17 +445,22 @@ document.getElementById('evNext').onclick=()=>gotoEv(1);
 document.getElementById('evPlus').onclick=()=>{if(evaluators<MAX_EV){evaluators++;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('evMinus').onclick=()=>{if(evaluators>MIN_EV){evaluators--;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
 document.getElementById('resetBtn').onclick=async()=>{
-  if(!await uiConfirm("Clear this form?",
-      "Scores, the employee name, and comments will all be cleared. This cannot be undone.",
-      { ok: "Clear form", danger: true })) return;
-  scores[role]={};ensureStore();buildBody();compute();
-  const empN=document.getElementById('empName');
-  empN.value=""; empN.classList.remove('bad'); buildHead();
-  document.getElementById('comment').value="";
+  if(!await uiConfirm("Clear scores?",
+      "Only the scores will be cleared. The employee name and comments will stay.",
+      { ok: "Clear scores", danger: true })) return;
+
+  scores[role]={};
+  ensureStore();
+  buildBody();
+  compute();
+
+  // Keep the selected employee and existing comments. The score hook lets the
+  // database sync the empty score state in realtime.
   if(window.__scoreHook) window.__scoreHook();
+
   const st=document.getElementById('status');
-  st.textContent="Form cleared.";
-  setTimeout(()=>st.textContent="",3000);
+  st.textContent="Scores cleared.";
+  setTimeout(()=>{ if(st.textContent==="Scores cleared.") st.textContent=""; },3000);
 };
 
 function requireName(){
