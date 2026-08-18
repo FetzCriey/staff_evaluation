@@ -519,20 +519,26 @@
   .backbar button:hover{border-color:var(--lagoon);background:#f7fbfd}
 
   /* ================= SIDEBAR HISTORY ================= */
-  .his-row{display:flex;align-items:center;gap:4px;width:100%;
-    padding:5px 6px 5px 9px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
+  .his-row{display:flex;align-items:center;gap:7px;width:100%;
+    padding:7px 8px 7px 11px;border:1.5px solid var(--line);border-radius:13px;background:#fff;
     margin-bottom:7px;transition:border-color .15s ease,background .15s ease,transform .12s ease}
   .his-row:hover{border-color:var(--lagoon);background:#f7fbfd;transform:translateY(-1px)}
   .his-row.on{border-color:#bfe4f5;background:var(--accent-soft)}
   .his-main{flex:1 1 auto;min-width:0;text-align:left;cursor:pointer;font-family:inherit;
-    background:none;border:0;padding:5px 2px;color:inherit}
-  .his-del{flex:0 0 auto;display:grid;place-items:center;width:30px;height:30px;cursor:pointer;
-    border:1.5px solid transparent;border-radius:9px;background:none;color:#b57070;transition:.15s}
+    background:none;border:0;padding:1px 0;color:inherit}
+  .his-avg{flex:0 0 auto;display:grid;place-items:center;min-width:36px;height:32px;padding:0 8px;
+    border-radius:10px;background:var(--accent-soft);border:1.5px solid #d9edf8;
+    font-family:inherit;font-size:13.5px;font-weight:800;line-height:1;
+    color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
+  .his-row.on .his-avg{background:#fff;border-color:#bfe4f5}
+  .his-del{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;cursor:pointer;
+    border:1.5px solid transparent;border-radius:10px;background:none;color:#c08a8a;transition:.15s}
   .his-del:hover{background:#fff6f6;border-color:#e6c3c3;color:#a62a2a}
   .his-del:disabled{opacity:.45;cursor:not-allowed}
-  .his-nm{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3}
-  .his-meta{display:flex;gap:8px;align-items:baseline;margin-top:4px;font-size:10.5px;color:var(--muted)}
-  .his-meta .avg{margin-left:auto;font-weight:700;color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
+  .his-nm{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .his-meta{display:flex;gap:5px;align-items:center;margin-top:3px;font-size:10.5px;color:var(--muted)}
+  .his-meta .dot{opacity:.45}
   .his-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
   .archived-note{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 14px;
     border-radius:13px;background:#fdf3e6;border:1.5px solid #e8d3b2;color:#7a4d13;
@@ -2771,10 +2777,16 @@ if(!session){
         b.type = 'button'; b.className = 'his-main';
         b.innerHTML = `<div class="his-nm">${name}</div>` +
           `<div class="his-meta"><span>${d.toLocaleDateString()}</span>` +
-          `<span>${rs.length} evaluator${rs.length===1?'':'s'}</span>` +
-          `<span class="avg">${avg}</span></div>`;
+          `<span class="dot">·</span>` +
+          `<span>${rs.length} evaluator${rs.length===1?'':'s'}</span></div>`;
         b.addEventListener('click', () => openArchive(pid, name, when, rs, row));
         row.appendChild(b);
+        // average sits on the same centre line as the delete icon
+        const avgEl = document.createElement('div');
+        avgEl.className = 'his-avg';
+        avgEl.title = 'Average score';
+        avgEl.textContent = avg;
+        row.appendChild(avgEl);
         // only admins may remove a finalised round
         if(isAdmin){
           const del = document.createElement('button');
