@@ -512,6 +512,35 @@
   .prog-chip.ok .prog-chip-count{color:#1f7a4d}
 
 
+  /* ================= PREVIEW MAIN SUMMARY ================= */
+  .review-summary-card{
+    border:1.5px solid #9ed4e9;border-radius:14px;background:#f2f9fc;
+    padding:13px 14px;margin-bottom:4px
+  }
+  .review-summary-label{
+    display:block;font-size:11.5px;font-weight:800;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--lagoon-deep);margin-bottom:3px
+  }
+  .review-summary-hint{
+    font-size:11px;line-height:1.4;color:var(--muted);margin-bottom:9px
+  }
+  .review-summary-input{
+    display:block;width:100%;min-height:96px;resize:vertical;padding:11px 12px;
+    border:1.5px solid #a9d9ed;border-radius:11px;background:#fff;color:var(--ink);
+    font:13.5px/1.5 inherit;outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease
+  }
+  .review-summary-input:focus{
+    border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)
+  }
+  .review-summary-input[readonly]{
+    background:#eef6fb;color:var(--muted);cursor:default
+  }
+  .review-remarks-title{
+    font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin:7px 2px 0
+  }
+
   /* ================= PREVIEW REMARKS EDITOR ================= */
   .review-remarks-source{display:none !important}
   .review-remarks{display:flex;flex-direction:column;gap:10px}
