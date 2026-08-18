@@ -71,7 +71,7 @@ if(!session){
   // holds an admin key — hiding this panel is convenience, not the security.
   // Three tiers of access. Everyone scores their own column; what differs is
   // what else the sidebar exposes.
-  //   full   — manager / Senior Staff: results, history, roster, export, lock, reset
+  //   full   — manager / Senior Staff: results, history, roster, export, reset
   //   viewer — Junior Staff: results and history, read only
   //   basic  — Probationary: criteria view only
   const canAdmin = (me?.role === 'manager') || (me?.form_role === 'Senior Staff');
@@ -277,7 +277,7 @@ if(!session){
   // Staff score one colleague at a time and save their own column.
   // Managers and Senior Staff see every submitted column and export the result.
   const isReviewer = canView;      // may open other people's results
-  const isAdmin    = canAdmin;     // may also export, lock, reset and archive
+  const isAdmin    = canAdmin;     // may also export, reset and archive
   const api = window.evalApi;
 
   const el = id => document.getElementById(id);
@@ -298,7 +298,6 @@ if(!session){
     show('printBtn', !mine && isAdmin);
     show('pdfBtn',   !mine && isAdmin);
     show('exportBtn',!mine && isAdmin);
-    show('lockBtn',  !mine && isAdmin);
     // corrections only on a live round — archived history stays frozen
     show('fixBtn',   !mine && isAdmin && !archiveCtx);
     show('resetBtn', mine || isAdmin);      // viewers get no destructive controls
@@ -431,7 +430,6 @@ if(!session){
       api.clearColumns();
       api.setColumns(['No submissions yet']);
       setState('Nobody has evaluated this person', '');
-      el('lockBtn').disabled = true;
       reviewRows = []; fixDirty = false;
       el('fixBtn').disabled = true;
       return;
@@ -445,15 +443,12 @@ if(!session){
     }).filter(Boolean).join('\n');
     api.setComments(notes);
     anyLocked = rows.every(r => r.locked);
-    el('lockBtn').disabled = false;
-    el('lockBtn').textContent = anyLocked ? 'Unlock evaluations' : 'Lock evaluations';
     // column order must match reviewRows so a correction lands on the right row
     reviewRows = rows.map(r => ({ id: r.id, evaluator_id: r.evaluator_id }));
     fixDirty = false;
     el('fixBtn').disabled = true;
-    // Managers / Senior Staff may correct both scores and evaluator remarks.
-    // Junior Staff remain fully read-only.
-    api.setReadOnly(!isAdmin, !isAdmin);
+    // admins may correct an evaluator's mistake in place; comments stay locked
+    api.setReadOnly(!isAdmin, true);
     const submittedCount = rows.filter(r => r.locked).length;
     setState(submittedCount + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
              anyLocked ? 'locked' : 'saved');
@@ -594,23 +589,12 @@ if(!session){
     liveSaveTimer = setTimeout(saveLiveDraft, 500);
   }
 
-  // ----- remarks changes -----
+  // ----- live remarks saving -----
   const commentBox = el('comment');
 
   if(commentBox){
     commentBox.addEventListener('input', () => {
-      // In review mode, Managers / Senior Staff edit remarks as a correction.
-      // Use the same Save corrections button as score corrections.
-      if(reviewing()){
-        if(isAdmin && !archiveCtx && reviewRows.length){
-          fixDirty = true;
-          el('fixBtn').disabled = false;
-          setState('Unsaved corrections', 'dirty');
-        }
-        return;
-      }
-
-      // Evaluator's own remark continues to live-save.
+      if(reviewing()) return;
       if(anyLocked) return;
       if(!target) return;
 
@@ -707,109 +691,38 @@ if(!session){
   }
 
   // ----- reviewer corrections -----
-  // The review textarea contains each evaluator's remark prefixed by their name:
-  // "Evaluator Name: remark". This parser maps edited remarks back to the same
-  // evaluator row, including remarks that span multiple lines.
-  function parseReviewComments(text){
-    const result = new Map();
-    const names = reviewRows.map(r => ({
-      id: r.evaluator_id,
-      name: nameById.get(r.evaluator_id) || 'Evaluator'
-    }));
-
-    let current = null;
-
-    for(const line of String(text || '').split(/\r?\n/)){
-      const match = names.find(x => line.startsWith(x.name + ':'));
-
-      if(match){
-        current = match.id;
-        result.set(
-          current,
-          line.slice(match.name.length + 1).trimStart()
-        );
-      }else if(current){
-        const prev = result.get(current) || '';
-        result.set(
-          current,
-          prev ? prev + '\n' + line : line
-        );
-      }
-    }
-
-    // Removing an evaluator's named remark clears that evaluator's comment.
-    names.forEach(x => {
-      if(!result.has(x.id)) result.set(x.id, '');
-    });
-
-    return result;
-  }
-
-  // Managers and Senior Staff can correct scores and remarks together.
   // Each column belongs to a different evaluator, so this writes one row per
-  // evaluator rather than one combined payload.
+  // column rather than a single payload.
   el('fixBtn').addEventListener('click', async () => {
     if(!reviewing() || archiveCtx || !isAdmin || !reviewRows.length) return;
-
     const who = api.employeeName();
-
-    if(!await uiConfirm(
-        'Save corrections?',
-        'The edited scores and remarks will replace the submitted values for ' +
-        who + '.',
-        { ok: 'Save corrections' })) return;
-
-    const correctedComments = parseReviewComments(api.comments());
+    if(!await uiConfirm('Save corrections?',
+        'The edited scores replace what those evaluators submitted for ' + who + '. ' +
+        'Their own comments are left untouched.', { ok: 'Save corrections' })) return;
     const btn = el('fixBtn');
-
-    btn.disabled = true;
-    el('status').textContent = 'Saving…';
-
+    btn.disabled = true; el('status').textContent = 'Saving…';
     const failed = [];
-
     for(let i = 0; i < reviewRows.length; i++){
       const r = reviewRows[i];
-
-      const { data, error } = await supabase
-        .from('evaluations')
-        .update({
-          scores: api.getColumnScores(i),
-          average: api.columnAverage(i),
-          comments: correctedComments.get(r.evaluator_id) || '',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', r.id)
-        .select('id');
-
+      const { data, error } = await supabase.from('evaluations').update({
+        scores: api.getColumnScores(i),
+        average: api.columnAverage(i),
+        updated_at: new Date().toISOString()
+      }).eq('id', r.id).select('id');
       // an RLS block returns no error and no rows — treat that as a failure
       if(error || !data || !data.length){
         failed.push(nameById.get(r.evaluator_id) || 'Unknown');
       }
     }
-
     el('status').textContent = '';
-
     if(failed.length){
-      uiAlert(
-        'Some corrections did not save',
-        'These evaluations were rejected by the database: ' +
-        failed.join(', ') + '.'
-      );
+      uiAlert('Some corrections did not save',
+        'These columns were rejected by the database: ' + failed.join(', ') + '.');
     }
-
     fixDirty = false;
     await loadAll(target);
-
-    if(window.__refreshResults){
-      window.__refreshResults();
-    }
-
-    if(!failed.length){
-      uiAlert(
-        'Corrections saved',
-        who + "'s scores and remarks have been updated."
-      );
-    }
+    if(window.__refreshResults) window.__refreshResults();
+    if(!failed.length) uiAlert('Corrections saved', who + "'s scores have been updated.");
   });
 
   // ----- Supabase Realtime: refresh review progress automatically -----
@@ -858,22 +771,6 @@ if(!session){
       }
     });
 
-  // ----- locking -----
-  el('lockBtn').addEventListener('click', async () => {
-    const id = targetId();
-    if(!id) return;
-    const next = !anyLocked;
-    if(!await uiConfirm(next ? 'Lock these evaluations?' : 'Unlock these evaluations?',
-        next ? 'Evaluators will not be able to change their scores until you unlock them.'
-             : 'Evaluators will be able to change their scores again.',
-        { ok: next ? 'Lock' : 'Unlock' })) return;
-    const btn = el('lockBtn'); btn.disabled = true;
-    const { error } = await supabase.from('evaluations')
-      .update({ locked: next }).eq('employee_id', id).eq('archived', false);
-    btn.disabled = false;
-    if(error){ uiAlert('Could not change the lock', error.message); return; }
-    await loadAll(id);
-  });
 
   // mark unsaved edits
   {
@@ -1147,7 +1044,6 @@ if(!session){
       el('archText').textContent = 'Archived ' + new Date(when).toLocaleString() +
         ' — read only. Print and export still work.';
       show('progWrap', false);
-      show('lockBtn', false);
       setState('Archived record', 'locked');
       [...el('hisList').children].forEach(c => c.classList.remove('on'));
       if(rowEl) rowEl.classList.add('on');
@@ -1166,7 +1062,6 @@ if(!session){
       viewingArchive = null; archiveCtx = null;
       el('archNote').classList.add('hide');
       el('resetBtn').textContent = reviewing() ? 'Reset a submission' : 'Clear scores';
-      show('lockBtn', true);
     };
 
     el('sumHistory').addEventListener('click', () => {
