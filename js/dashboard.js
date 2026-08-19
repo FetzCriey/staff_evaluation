@@ -8,9 +8,129 @@ const dt=v=>{const d=new Date(v);return Number.isNaN(d.getTime())?null:d};
 const short=v=>{const d=dt(v);return d?d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'—'};
 const timed=v=>{const d=dt(v);return d?d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):''};
 function closeDrawer(){el('drawer')?.classList.remove('open');el('scrim')?.classList.remove('open');el('drawer')?.setAttribute('aria-hidden','true');el('burger')?.setAttribute('aria-expanded','false')}
-function openDashboard(){el('dashboardView')?.classList.remove('hide');el('formView')?.classList.add('hide');el('layoutChooser')?.classList.add('hide');el('drawerDashboard')?.classList.add('on');el('drawerEvaluation')?.classList.remove('on');if(el('pageTitle'))el('pageTitle').textContent='Performance Dashboard';if(el('layNow'))el('layNow').textContent='Latest finalized results and current evaluation progress';if(el('headerActionBtn'))el('headerActionBtn').textContent='Start Evaluation';window.scrollTo({top:0,behavior:'smooth'});schedule(0)}
-function openForm(){el('dashboardView')?.classList.add('hide');el('formView')?.classList.remove('hide');el('layoutChooser')?.classList.remove('hide');el('drawerDashboard')?.classList.remove('on');el('drawerEvaluation')?.classList.add('on');if(el('pageTitle'))el('pageTitle').textContent='Performance Evaluation';if(el('layNow'))el('layNow').textContent='';if(el('headerActionBtn'))el('headerActionBtn').textContent='Dashboard';window.scrollTo({top:0,behavior:'smooth'})}
-el('headerActionBtn')?.addEventListener('click',()=>el('formView')?.classList.contains('hide')?openForm():openDashboard());el('dashboardStartBtn')?.addEventListener('click',openForm);el('backToDashboard')?.addEventListener('click',openDashboard);el('drawerDashboard')?.addEventListener('click',()=>{openDashboard();closeDrawer()});el('drawerEvaluation')?.addEventListener('click',()=>{openForm();closeDrawer()});
+let viewSwitching=false;
+const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+function applyViewState(mode){
+  const dashboard=el('dashboardView');
+  const form=el('formView');
+  const onDashboard=mode==='dashboard';
+
+  dashboard?.classList.toggle('hide',!onDashboard);
+  form?.classList.toggle('hide',onDashboard);
+  el('layoutChooser')?.classList.toggle('hide',onDashboard);
+  el('drawerDashboard')?.classList.toggle('on',onDashboard);
+  el('drawerEvaluation')?.classList.toggle('on',!onDashboard);
+
+  if(el('pageTitle')) el('pageTitle').textContent=onDashboard?'Performance Dashboard':'Performance Evaluation';
+  if(el('layNow')) el('layNow').textContent='';
+  if(el('headerActionBtn')) el('headerActionBtn').textContent=onDashboard?'Start Evaluation':'Dashboard';
+}
+
+async function playViewSwitch(mode){
+  const dashboard=el('dashboardView');
+  const form=el('formView');
+  const target=mode==='dashboard'?dashboard:form;
+  const current=mode==='dashboard'?form:dashboard;
+
+  if(!target || viewSwitching) return;
+
+  // If already on the requested view, only synchronize UI state.
+  if(!target.classList.contains('hide')){
+    applyViewState(mode);
+    if(mode==='dashboard') schedule(0);
+    return;
+  }
+
+  viewSwitching=true;
+  document.body.classList.add('dash-view-switching');
+
+  const header=el('pageTitle')?.closest('header.top');
+  const direction=mode==='form'?1:-1;
+
+  try{
+    if(!reduceMotion && current && !current.classList.contains('hide')){
+      const leave=current.animate(
+        [
+          {opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0)'},
+          {opacity:0,transform:`translateY(${-10*direction}px) scale(.992)`,filter:'blur(2px)'}
+        ],
+        {
+          duration:180,
+          easing:'cubic-bezier(.4,0,1,1)',
+          fill:'forwards'
+        }
+      );
+
+      const headLeave=header?.animate(
+        [
+          {transform:'translateY(0)',filter:'brightness(1)',opacity:1},
+          {transform:`translateY(${-3*direction}px)`,filter:'brightness(.96)',opacity:.9}
+        ],
+        {
+          duration:150,
+          easing:'ease-out',
+          fill:'forwards'
+        }
+      );
+
+      await Promise.allSettled([leave.finished,headLeave?.finished]);
+      current.getAnimations().forEach(a=>a.cancel());
+      header?.getAnimations().forEach(a=>a.cancel());
+    }
+
+    current?.classList.add('hide');
+    applyViewState(mode);
+
+    // Put the newly selected view at the top without a second scroll animation.
+    window.scrollTo({top:0,left:0,behavior:'auto'});
+
+    if(!reduceMotion){
+      const enter=target.animate(
+        [
+          {opacity:0,transform:`translateY(${14*direction}px) scale(.988)`,filter:'blur(3px)'},
+          {opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0)'}
+        ],
+        {
+          duration:330,
+          easing:'cubic-bezier(.16,1,.3,1)',
+          fill:'both'
+        }
+      );
+
+      const headEnter=header?.animate(
+        [
+          {transform:`translateY(${4*direction}px) scale(.998)`,opacity:.9},
+          {transform:'translateY(0) scale(1)',opacity:1}
+        ],
+        {
+          duration:280,
+          easing:'cubic-bezier(.16,1,.3,1)',
+          fill:'both'
+        }
+      );
+
+      await Promise.allSettled([enter.finished,headEnter?.finished]);
+      target.getAnimations().forEach(a=>a.cancel());
+      header?.getAnimations().forEach(a=>a.cancel());
+    }
+
+    if(mode==='dashboard') schedule(0);
+  }finally{
+    document.body.classList.remove('dash-view-switching');
+    viewSwitching=false;
+  }
+}
+
+function openDashboard(){return playViewSwitch('dashboard')}
+function openForm(){return playViewSwitch('form')}
+
+el('headerActionBtn')?.addEventListener('click',()=>{
+  el('formView')?.classList.contains('hide')?openForm():openDashboard();
+});
+el('backToDashboard')?.addEventListener('click',openDashboard);
+el('drawerDashboard')?.addEventListener('click',()=>{closeDrawer();openDashboard()});
+el('drawerEvaluation')?.addEventListener('click',()=>{closeDrawer();openForm()});
 function rounds(rows){const g=new Map();rows.filter(r=>r.archived&&r.archived_at).forEach(r=>{const k=`${r.employee_id}|${r.archived_at}`;if(!g.has(k))g.set(k,[]);g.get(k).push(r)});return[...g.entries()].map(([k,rs])=>{const i=k.indexOf('|');return{employee_id:k.slice(0,i),archived_at:k.slice(i+1),average:mean(rs.map(r=>r.average))}}).filter(r=>Number.isFinite(r.average))}
 function latest(rs){const m=new Map();rs.forEach(r=>{const p=m.get(r.employee_id);if(!p||new Date(r.archived_at)>new Date(p.archived_at))m.set(r.employee_id,r)});return[...m.values()]}
 function overall(rs){const m=new Map();rs.forEach(r=>{if(!m.has(r.employee_id))m.set(r.employee_id,[]);m.get(r.employee_id).push(r.average)});return[...m.entries()].map(([employee_id,v])=>({employee_id,average:mean(v)})).filter(r=>Number.isFinite(r.average))}
