@@ -153,8 +153,84 @@ function latest(rs){const m=new Map();rs.forEach(r=>{const p=m.get(r.employee_id
 function overall(rs){const m=new Map();rs.forEach(r=>{if(!m.has(r.employee_id))m.set(r.employee_id,[]);m.get(r.employee_id).push(r.average)});return[...m.entries()].map(([employee_id,v])=>({employee_id,average:mean(v)})).filter(r=>Number.isFinite(r.average))}
 function rank(id,rows,names){const h=el(id);if(!h)return;h.innerHTML='';if(!rows.length){h.innerHTML='<div class="dash-empty">No finalized evaluation results yet.</div>';return}rows.slice(0,7).forEach((r,i)=>{const n=names.get(r.employee_id)||'Unknown',d=document.createElement('div');d.className='dash-rank-row';d.innerHTML=`<span class="dash-rank-no">${i+1}</span><div class="dash-rank-person"><span class="dash-rank-avatar">${initials(n)}</span><span class="dash-rank-name"></span></div><div class="dash-rank-bar"><span style="width:${Math.max(0,Math.min(100,r.average/5*100))}%"></span></div><span class="dash-rank-score">${score(r.average)}</span>`;d.querySelector('.dash-rank-name').textContent=n;h.appendChild(d)})}
 function chart(rs){const s=el('trendChart'),e=el('trendEmpty');if(!s||!e)return;s.innerHTML='';const m=new Map();rs.forEach(r=>{const d=dt(r.archived_at);if(!d)return;const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if(!m.has(k))m.set(k,[]);m.get(k).push(r.average)});const p=[...m.entries()].sort((a,b)=>a[0].localeCompare(b[0])).slice(-6).map(([key,v])=>({key,value:mean(v)}));if(!p.length){e.classList.remove('hide');return}e.classList.add('hide');const W=700,H=250,L=38,R=18,T=26,B=38,x=i=>p.length===1?L+(W-L-R)/2:L+i*((W-L-R)/(p.length-1)),y=v=>T+(5-v)/4*(H-T-B);s.innerHTML='<defs><linearGradient id="dashChartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#15ACE3" stop-opacity=".26"/><stop offset="100%" stop-color="#15ACE3" stop-opacity=".02"/></linearGradient></defs>';[1,2,3,4,5].forEach(v=>{const yy=y(v);s.insertAdjacentHTML('beforeend',`<line class="dash-chart-grid" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/><text class="dash-chart-text" x="8" y="${yy+3}">${v}</text>`)});const c=p.map((q,i)=>[x(i),y(q.value)]),line=c.map((q,i)=>`${i?'L':'M'} ${q[0]} ${q[1]}`).join(' '),area=`M ${c[0][0]} ${H-B} `+c.map(q=>`L ${q[0]} ${q[1]}`).join(' ')+` L ${c.at(-1)[0]} ${H-B} Z`;s.insertAdjacentHTML('beforeend',`<path class="dash-chart-area" d="${area}"/><path class="dash-chart-line" d="${line}"/>`);p.forEach((q,i)=>{const [xx,yy]=c[i],[yr,mo]=q.key.split('-'),lab=new Date(+yr,+mo-1,1).toLocaleDateString(undefined,{month:'short',year:'2-digit'});s.insertAdjacentHTML('beforeend',`<circle class="dash-chart-dot" cx="${xx}" cy="${yy}" r="5"/><text class="dash-chart-value" x="${xx}" y="${yy-11}" text-anchor="middle">${q.value.toFixed(2)}</text><text class="dash-chart-text" x="${xx}" y="${H-13}" text-anchor="middle">${lab}</text>`)})}
-function activity(rows,names){const h=el('recentActivity');if(!h)return;h.innerHTML='';const f=rounds(rows).map(r=>({type:'final',employee_id:r.employee_id,when:r.archived_at,average:r.average})),s=rows.filter(r=>!r.archived&&r.locked).map(r=>({type:'submit',employee_id:r.employee_id,when:r.updated_at||r.created_at})),items=[...f,...s].filter(x=>x.when).sort((a,b)=>new Date(b.when)-new Date(a.when)).slice(0,6);if(!items.length){h.innerHTML='<div class="dash-empty">No recent evaluation activity yet.</div>';return}items.forEach(i=>{const n=names.get(i.employee_id)||'Unknown',d=document.createElement('div');d.className='dash-activity-row';d.innerHTML=`<span class="dash-activity-icon">${i.type==='final'?'✓':'↗'}</span><div class="dash-activity-copy"><b></b><span>${i.type==='final'?'Finalized evaluation':'Current evaluation round'}</span></div><span class="dash-activity-time">${timed(i.when)}</span>`;d.querySelector('b').textContent=i.type==='final'?`${n} finalized at ${score(i.average)} / 5`:`${n} received a submitted evaluation`;h.appendChild(d)})}
-async function load(){const{data:{session}}=await db.auth.getSession();if(!session)return;const uid=session.user.id,[a,b,c]=await Promise.all([db.from('profiles').select('id,full_name,position,role,form_role').eq('id',uid).maybeSingle(),db.from('profiles').select('id,full_name,position,role,form_role').order('full_name'),db.from('evaluations').select('employee_id,evaluator_id,average,locked,archived,archived_at,created_at,updated_at')]);const me=a.data,people=b.data||[],rows=c.data||[],names=new Map(people.map(p=>[p.id,p.full_name||'Unknown'])),full=me?.role==='manager'||me?.form_role==='Senior Staff'||me?.form_role==='Junior Staff',my=me?.full_name||session.user.email||'Signed in';if(el('dashGreeting'))el('dashGreeting').textContent=`Welcome, ${my}`;if(el('dashDateChip'))el('dashDateChip').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'long',day:'numeric',year:'numeric'});const note=el('dashAccessNote');if(note){if(b.error||c.error){note.textContent='Some dashboard data could not be loaded with this account.';note.classList.remove('hide')}else if(!full){note.textContent='Team rankings are available to Junior Staff, Senior Staff, and Manager reviewers. You can still use the dashboard to open your evaluation form.';note.classList.remove('hide')}else note.classList.add('hide')}
+function activity(rows,names){
+  const h=el('recentActivity');
+  if(!h)return;
+  h.innerHTML='';
+
+  const CURRENT_CRITERIA_TOTAL=10;
+
+  const countScores=s=>{
+    if(!s || typeof s!=='object') return 0;
+    return Object.values(s).filter(v=>v!==null&&v!==''&&Number.isFinite(Number(v))).length;
+  };
+
+  const items=rows
+    .filter(r=>!r.archived)
+    .map(r=>{
+      const filled=countScores(r.scores);
+      const total=CURRENT_CRITERIA_TOTAL;
+      const pct=Math.max(0,Math.min(100,total?filled/total*100:0));
+      const hasComment=!!String(r.comments||'').trim();
+      return{
+        ...r,
+        filled,
+        total,
+        pct,
+        hasComment,
+        when:r.updated_at||r.created_at
+      };
+    })
+    .filter(r=>r.when)
+    .sort((a,b)=>new Date(b.when)-new Date(a.when))
+    .slice(0,8);
+
+  if(!items.length){
+    h.innerHTML='<div class="dash-empty">No current evaluation activity yet.</div>';
+    return;
+  }
+
+  items.forEach(r=>{
+    const evaluator=names.get(r.evaluator_id)||'Unknown evaluator';
+    const employee=names.get(r.employee_id)||'Unknown employee';
+    const submitted=!!r.locked;
+    const status=submitted?'Submitted':'Saved draft';
+
+    const row=document.createElement('div');
+    row.className='dash-live-eval-row';
+    row.innerHTML=`
+      <div class="dash-live-eval-head">
+        <div class="dash-live-eval-people">
+          <span class="dash-live-avatar">${initials(evaluator)}</span>
+          <div class="dash-live-names">
+            <b class="dash-live-evaluator"></b>
+            <span>evaluating <strong class="dash-live-employee"></strong></span>
+          </div>
+        </div>
+        <span class="dash-live-status ${submitted?'submitted':'draft'}">${status}</span>
+      </div>
+
+      <div class="dash-live-progress-line">
+        <span>${r.filled} of ${r.total} scored</span>
+        <strong>${Math.round(r.pct)}%</strong>
+      </div>
+      <div class="dash-live-progress">
+        <span style="width:${r.pct}%"></span>
+      </div>
+
+      <div class="dash-live-meta">
+        <span class="dash-live-comment ${r.hasComment?'has-comment':'no-comment'}">
+          ${r.hasComment?'Commented':'No comment'}
+        </span>
+        <span>${timed(r.when)}</span>
+      </div>`;
+
+    row.querySelector('.dash-live-evaluator').textContent=evaluator;
+    row.querySelector('.dash-live-employee').textContent=employee;
+    h.appendChild(row);
+  });
+}
+async function load(){const{data:{session}}=await db.auth.getSession();if(!session)return;const uid=session.user.id,[a,b,c]=await Promise.all([db.from('profiles').select('id,full_name,position,role,form_role').eq('id',uid).maybeSingle(),db.from('profiles').select('id,full_name,position,role,form_role').order('full_name'),db.from('evaluations').select('employee_id,evaluator_id,scores,average,comments,form_role,locked,archived,archived_at,created_at,updated_at')]);const me=a.data,people=b.data||[],rows=c.data||[],names=new Map(people.map(p=>[p.id,p.full_name||'Unknown'])),full=me?.role==='manager'||me?.form_role==='Senior Staff'||me?.form_role==='Junior Staff',my=me?.full_name||session.user.email||'Signed in';if(el('dashGreeting'))el('dashGreeting').textContent=`Welcome, ${my}`;if(el('dashDateChip'))el('dashDateChip').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'long',day:'numeric',year:'numeric'});const note=el('dashAccessNote');if(note){if(b.error||c.error){note.textContent='Some dashboard data could not be loaded with this account.';note.classList.remove('hide')}else if(!full){note.textContent='Team rankings are available to Junior Staff, Senior Staff, and Manager reviewers. You can still use the dashboard to open your evaluation form.';note.classList.remove('hide')}else note.classList.add('hide')}
 if(full){const rs=rounds(rows),l=latest(rs).sort((x,y)=>y.average-x.average),o=overall(rs).sort((x,y)=>y.average-x.average),lt=l[0],ot=o[0];el('latestTopName').textContent=lt?names.get(lt.employee_id)||'Unknown':'—';el('latestTopScore').textContent=lt?score(lt.average):'—';el('latestTopMeta').textContent=lt?`Finalized ${short(lt.archived_at)}`:'No finalized evaluation yet';el('overallTopName').textContent=ot?names.get(ot.employee_id)||'Unknown':'—';el('overallTopScore').textContent=ot?score(ot.average):'—';el('teamAverage').textContent=score(mean(o.map(r=>r.average)));el('latestRankingDate').textContent=lt?short(lt.archived_at):'Latest';rank('latestRanking',l,names);rank('overallRanking',o,names);chart(rs);activity(rows,names)}else{el('latestTopName').textContent='Restricted';el('overallTopName').textContent='Restricted';['latestTopScore','overallTopScore','teamAverage'].forEach(id=>el(id).textContent='—');el('latestTopMeta').textContent='Reviewer access required';el('latestRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('overallRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('recentActivity').innerHTML='<div class="dash-empty">Reviewer access required for team activity.</div>';el('trendChart').innerHTML='';el('trendEmpty').classList.remove('hide')}
 const expected=Math.max(people.length*(people.length-1),0),done=new Set(rows.filter(r=>!r.archived&&r.locked).map(r=>`${r.employee_id}|${r.evaluator_id}`)).size,pct=expected?Math.min(100,done/expected*100):0;el('completionText').textContent=`${done} / ${expected}`;el('completionPercent').textContent=`${Math.round(pct)}%`;el('completionBar').style.width=`${pct}%`}
 function schedule(ms=250){clearTimeout(timer);timer=setTimeout(load,ms)}
