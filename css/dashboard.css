@@ -635,3 +635,32 @@ header.top{
     font-size:7.5px;
   }
 }
+/* =========================================================
+   RECENT EVALUATIONS — SHOW MORE MOTION
+   Only the activity card changes height. Team Performance
+   keeps its own natural height and does not stretch with it.
+   ========================================================= */
+.dash-grid-bottom{
+  align-items:start;
+}
+
+.dash-grid-bottom > .dash-panel-card{
+  align-self:start;
+  width:100%;
+}
+
+#recentActivity.dash-recent-animating{
+  overflow:hidden;
+  will-change:height;
+}
+
+.dash-live-extra{
+  transform-origin:50% 0;
+}
+
+@media (prefers-reduced-motion:reduce){
+  #recentActivity.dash-recent-animating{
+    overflow:visible;
+    will-change:auto;
+  }
+}
