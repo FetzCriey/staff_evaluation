@@ -131,6 +131,23 @@ el('headerActionBtn')?.addEventListener('click',()=>{
 el('backToDashboard')?.addEventListener('click',openDashboard);
 el('drawerDashboard')?.addEventListener('click',()=>{closeDrawer();openDashboard()});
 el('drawerEvaluation')?.addEventListener('click',()=>{closeDrawer();openForm()});
+
+/*
+  When a reviewer opens a person directly from Evaluation Results or History
+  while the dashboard is visible, Supabase loads that record into #formView.
+  Switch to the form view first so the loaded record is immediately visible.
+  Capture phase runs before the existing Results / History click handlers.
+*/
+el('resList')?.addEventListener('click', e => {
+  if(!e.target.closest('.res-row')) return;
+  if(!el('dashboardView')?.classList.contains('hide')) openForm();
+}, true);
+
+el('hisList')?.addEventListener('click', e => {
+  if(!e.target.closest('.his-main')) return;
+  if(!el('dashboardView')?.classList.contains('hide')) openForm();
+}, true);
+
 function rounds(rows){const g=new Map();rows.filter(r=>r.archived&&r.archived_at).forEach(r=>{const k=`${r.employee_id}|${r.archived_at}`;if(!g.has(k))g.set(k,[]);g.get(k).push(r)});return[...g.entries()].map(([k,rs])=>{const i=k.indexOf('|');return{employee_id:k.slice(0,i),archived_at:k.slice(i+1),average:mean(rs.map(r=>r.average))}}).filter(r=>Number.isFinite(r.average))}
 function latest(rs){const m=new Map();rs.forEach(r=>{const p=m.get(r.employee_id);if(!p||new Date(r.archived_at)>new Date(p.archived_at))m.set(r.employee_id,r)});return[...m.values()]}
 function overall(rs){const m=new Map();rs.forEach(r=>{if(!m.has(r.employee_id))m.set(r.employee_id,[]);m.get(r.employee_id).push(r.average)});return[...m.entries()].map(([employee_id,v])=>({employee_id,average:mean(v)})).filter(r=>Number.isFinite(r.average))}
