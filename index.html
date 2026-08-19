@@ -8,10 +8,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/index.css">
+<link rel="stylesheet" href="css/session-loader.css">
 <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
-<div class="gate" id="gate">Checking your session&hellip;</div>
+<div class="gate" id="gate" role="status" aria-live="polite" aria-label="Loading">
+  <div class="session-loader">
+    <div class="session-loader-mark" aria-hidden="true">
+      <span class="session-loader-ring"></span>
+      <span class="session-loader-core"></span>
+    </div>
+    <div class="session-loader-copy">
+      <div class="session-loader-title">Loading</div>
+      <div class="session-loader-dots" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="wrap hide" id="wrap">
   <header class="top">
     <button class="burger" id="burger" aria-label="Open layout menu" aria-expanded="false" aria-controls="drawer">
