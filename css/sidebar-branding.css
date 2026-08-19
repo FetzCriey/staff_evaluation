@@ -1,0 +1,44 @@
+/* =========================================================
+   SIDEBAR COMPANY BRANDING
+   Existing company logo at left, company name at right.
+   ========================================================= */
+
+.drawer-top .drawer-brand{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+  flex:1 1 auto;
+}
+
+.drawer-top .drawer-brand-logo{
+  width:44px;
+  height:44px;
+  flex:0 0 44px;
+  object-fit:cover;
+  border-radius:12px;
+  background:#fff;
+  padding:5px;
+  box-shadow:0 5px 14px rgba(0,0,0,.28);
+}
+
+.drawer-top .drawer-brand-copy{
+  min-width:0;
+  line-height:1.1;
+}
+
+.drawer-top .drawer-brand-copy .t{
+  font-size:17px;
+  white-space:nowrap;
+}
+
+.drawer-top .drawer-brand-copy .s{
+  margin-top:4px;
+  font-size:9.5px;
+  letter-spacing:.16em;
+  white-space:nowrap;
+}
+
+.drawer-top .x{
+  flex:0 0 34px;
+}
