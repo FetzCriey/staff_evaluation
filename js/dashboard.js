@@ -174,10 +174,14 @@ function activity(rows,names){
   const items=rows
     .filter(r=>!r.archived)
     .map(r=>{
-      const filled=countScores(r.scores);
+      const filled=Number.isFinite(Number(r.score_count))
+        ? Number(r.score_count)
+        : countScores(r.scores);
       const total=CURRENT_CRITERIA_TOTAL;
       const pct=Math.max(0,Math.min(100,total?filled/total*100:0));
-      const hasComment=!!String(r.comments||'').trim();
+      const hasComment=typeof r.has_comment==='boolean'
+        ? r.has_comment
+        : !!String(r.comments||'').trim();
       return{
         ...r,
         filled,
@@ -375,7 +379,7 @@ function activity(rows,names){
     h.appendChild(wrap);
   }
 }
-async function load(){const{data:{session}}=await db.auth.getSession();if(!session)return;const uid=session.user.id,[a,b,c]=await Promise.all([db.from('profiles').select('id,full_name,position,role,form_role').eq('id',uid).maybeSingle(),db.from('profiles').select('id,full_name,position,role,form_role').order('full_name'),db.from('evaluations').select('employee_id,evaluator_id,scores,average,comments,form_role,locked,archived,archived_at,created_at,updated_at')]);const me=a.data,people=b.data||[],rows=c.data||[],names=new Map(people.map(p=>[p.id,p.full_name||'Unknown'])),full=!!me,my=me?.full_name||session.user.email||'Signed in';if(el('dashGreeting'))el('dashGreeting').textContent=`Welcome, ${my}`;if(el('dashDateChip'))el('dashDateChip').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'long',day:'numeric',year:'numeric'});const note=el('dashAccessNote');if(note){if(b.error||c.error){note.textContent='Some dashboard data could not be loaded with this account.';note.classList.remove('hide')}else if(!full){note.textContent='Dashboard data is available to all staff accounts with a valid profile.';note.classList.remove('hide')}else note.classList.add('hide')}
+async function load(){const{data:{session}}=await db.auth.getSession();if(!session)return;const uid=session.user.id,[a,b,c]=await Promise.all([db.from('profiles').select('id,full_name,position,role,form_role').eq('id',uid).maybeSingle(),db.from('profiles').select('id,full_name,position,role,form_role').order('full_name'),db.rpc('get_dashboard_evaluations')]);const me=a.data,people=b.data||[],rows=c.data||[],names=new Map(people.map(p=>[p.id,p.full_name||'Unknown'])),full=!!me,my=me?.full_name||session.user.email||'Signed in';if(el('dashGreeting'))el('dashGreeting').textContent=`Welcome, ${my}`;if(el('dashDateChip'))el('dashDateChip').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'long',day:'numeric',year:'numeric'});const note=el('dashAccessNote');if(note){if(b.error||c.error){note.textContent='Some dashboard data could not be loaded with this account.';note.classList.remove('hide')}else if(!full){note.textContent='Dashboard data is available to all staff accounts with a valid profile.';note.classList.remove('hide')}else note.classList.add('hide')}
 if(full){const rs=rounds(rows),l=latest(rs).sort((x,y)=>y.average-x.average),o=overall(rs).sort((x,y)=>y.average-x.average),lt=l[0],ot=o[0];el('latestTopName').textContent=lt?names.get(lt.employee_id)||'Unknown':'—';el('latestTopScore').textContent=lt?score(lt.average):'—';el('latestTopMeta').textContent=lt?`Finalized ${short(lt.archived_at)}`:'No finalized evaluation yet';el('overallTopName').textContent=ot?names.get(ot.employee_id)||'Unknown':'—';el('overallTopScore').textContent=ot?score(ot.average):'—';el('teamAverage').textContent=score(mean(o.map(r=>r.average)));el('latestRankingDate').textContent=lt?short(lt.archived_at):'Latest';rank('latestRanking',l,names);rank('overallRanking',o,names);chart(rs);activity(rows,names)}else{el('latestTopName').textContent='Restricted';el('overallTopName').textContent='Restricted';['latestTopScore','overallTopScore','teamAverage'].forEach(id=>el(id).textContent='—');el('latestTopMeta').textContent='Reviewer access required';el('latestRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('overallRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('recentActivity').innerHTML='<div class="dash-empty">Reviewer access required for team activity.</div>';el('trendChart').innerHTML='';el('trendEmpty').classList.remove('hide')}
 const expected=Math.max(people.length*(people.length-1),0),done=new Set(rows.filter(r=>!r.archived&&r.locked).map(r=>`${r.employee_id}|${r.evaluator_id}`)).size,pct=expected?Math.min(100,done/expected*100):0;el('completionText').textContent=`${done} / ${expected}`;el('completionPercent').textContent=`${Math.round(pct)}%`;el('completionBar').style.width=`${pct}%`}
 function schedule(ms=120){
@@ -437,6 +441,15 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('focus',()=>schedule(0));
 window.addEventListener('online',()=>schedule(0));
+
+// Dashboard transparency is served through a safe RPC, not raw evaluation rows.
+// Poll only while the dashboard is visible so all staff see fresh team data
+// without changing detailed Results / History permissions.
+const dashboardTransparencyRefresh=setInterval(()=>{
+  if(document.visibilityState!=='visible') return;
+  if(el('dashboardView')?.classList.contains('hide')) return;
+  schedule(0);
+},5000);
 
 const ready=setInterval(()=>{
   if(el('wrap')&&!el('wrap').classList.contains('hide')){
