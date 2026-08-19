@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="css/dashboard.css?v=20260819-1437">
 <link rel="stylesheet" href="css/mobile-layout-tweaks.css?v=20260819-1817">
 <link rel="stylesheet" href="css/dashboard-empty-panels.css?v=20260819-2124">
+<link rel="stylesheet" href="css/sidebar-branding.css?v=20260819-2258">
 </head>
 <body>
 <div class="gate" id="gate" role="status" aria-live="polite" aria-label="Loading">
@@ -49,7 +50,13 @@
   <div class="scrim" id="scrim" hidden></div>
   <aside class="drawer" id="drawer" aria-label="Form layout" aria-hidden="true">
     <div class="drawer-top">
-      <div><div class="t">Better Practice</div><div class="s">Consulting Inc.</div></div>
+      <div class="drawer-brand">
+        <img class="drawer-brand-logo" src="Better Practice Consulting Inc.png" alt="Better Practice Consulting Inc. logo">
+        <div class="drawer-brand-copy">
+          <div class="t">Better Practice</div>
+          <div class="s">Consulting Inc.</div>
+        </div>
+      </div>
       <button class="x" id="drawerClose" aria-label="Close menu">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
