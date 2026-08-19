@@ -2,6 +2,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL="https://giosjwjhalhmwcuyzfos.supabase.co", SUPABASE_KEY="sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_";
 const db=createClient(SUPABASE_URL,SUPABASE_KEY), el=id=>document.getElementById(id); let timer=null;
 let recentExpanded=false;
+let recentAnimating=false;
 const initials=(n='')=>{const p=n.trim().split(/\s+/).filter(Boolean);return((p[0]?.[0]||'')+(p.length>1?p[p.length-1][0]:'')).toUpperCase()||'—'};
 const mean=v=>{const a=v.map(Number).filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const score=v=>Number.isFinite(v)?v.toFixed(2):'—';
@@ -157,6 +158,10 @@ function chart(rs){const s=el('trendChart'),e=el('trendEmpty');if(!s||!e)return;
 function activity(rows,names){
   const h=el('recentActivity');
   if(!h)return;
+
+  // A realtime refresh can happen during an animation. Re-rendering resets the
+  // activity view to a stable state so the next toggle always works.
+  recentAnimating=false;
   h.innerHTML='';
 
   const CURRENT_CRITERIA_TOTAL=10;
@@ -190,9 +195,13 @@ function activity(rows,names){
     return;
   }
 
-  const visibleItems=recentExpanded ? items : items.slice(0,5);
+  const list=document.createElement('div');
+  list.className='dash-recent-list';
+  h.appendChild(list);
 
-  visibleItems.forEach(r=>{
+  const rowEls=[];
+
+  items.forEach((r,index)=>{
     const evaluator=names.get(r.evaluator_id)||'Unknown evaluator';
     const employee=names.get(r.employee_id)||'Unknown employee';
     const submitted=!!r.locked;
@@ -200,7 +209,13 @@ function activity(rows,names){
 
     const row=document.createElement('div');
     row.className='dash-live-eval-row';
-    if(recentExpanded && visibleItems.indexOf(r)>=5) row.classList.add('dash-live-extra');
+    row.dataset.recentIndex=String(index);
+
+    // Five entries are visible in the compact state.
+    if(!recentExpanded && index>=5){
+      row.classList.add('dash-recent-hidden');
+    }
+
     row.innerHTML=`
       <div class="dash-live-eval-head">
         <div class="dash-live-eval-people">
@@ -230,66 +245,130 @@ function activity(rows,names){
 
     row.querySelector('.dash-live-evaluator').textContent=evaluator;
     row.querySelector('.dash-live-employee').textContent=employee;
-    h.appendChild(row);
+    rowEls.push(row);
+    list.appendChild(row);
   });
+
+  const heightFor=count=>{
+    return rowEls
+      .slice(0,Math.min(count,rowEls.length))
+      .reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
+  };
+
+  const applyRestingState=()=>{
+    list.classList.remove('dash-recent-resizing');
+    list.style.height='';
+    list.style.overflow='';
+    list.style.maxHeight='';
+    list.classList.remove('dash-recent-scrollable');
+
+    // Expanded Recent Evaluations never grows beyond seven visible rows.
+    // Extra entries remain available by touch / mouse-wheel scrolling.
+    if(recentExpanded && items.length>7){
+      list.style.maxHeight=heightFor(7)+'px';
+      list.classList.add('dash-recent-scrollable');
+    }
+  };
+
+  applyRestingState();
 
   if(items.length>5){
     const wrap=document.createElement('div');
-    wrap.style.cssText='display:flex;justify-content:center;padding:8px 0 2px';
+    wrap.className='dash-recent-toggle-wrap';
 
     const btn=document.createElement('button');
     btn.type='button';
-    btn.className='dash-back-btn';
+    btn.className='dash-back-btn dash-recent-toggle';
     btn.textContent=recentExpanded?'Show Less':'Show More';
     btn.setAttribute('aria-expanded',String(recentExpanded));
 
     btn.addEventListener('click',()=>{
-      const fromHeight=h.getBoundingClientRect().height;
+      if(recentAnimating) return;
+
       const expanding=!recentExpanded;
+      const fromHeight=list.getBoundingClientRect().height;
 
-      recentExpanded=expanding;
-      activity(rows,names);
+      recentAnimating=true;
+      btn.disabled=true;
 
-      const toHeight=h.scrollHeight;
-
-      if(reduceMotion || Math.abs(toHeight-fromHeight)<1) return;
-
-      h.classList.add('dash-recent-animating');
-      h.style.height=fromHeight+'px';
-
-      const heightAnim=h.animate(
-        [
-          {height:fromHeight+'px'},
-          {height:toHeight+'px'}
-        ],
-        {
-          duration:expanding?360:300,
-          easing:'cubic-bezier(.16,1,.3,1)',
-          fill:'forwards'
-        }
-      );
+      // Remove the resting scroll constraint while the height is transitioning.
+      list.classList.remove('dash-recent-scrollable');
+      list.style.maxHeight='';
+      list.style.height=fromHeight+'px';
+      list.style.overflow='hidden';
 
       if(expanding){
-        h.querySelectorAll('.dash-live-extra').forEach((row,index)=>{
-          row.animate(
-            [
-              {opacity:0,transform:'translateY(-7px) scale(.995)'},
-              {opacity:1,transform:'translateY(0) scale(1)'}
-            ],
-            {
-              duration:260,
-              delay:70 + Math.min(index,6)*38,
-              easing:'cubic-bezier(.16,1,.3,1)',
-              fill:'both'
-            }
-          );
-        });
+        recentExpanded=true;
+        rowEls.slice(5).forEach(row=>row.classList.remove('dash-recent-hidden'));
+      }else{
+        recentExpanded=false;
+        // Collapse from the top even if the reviewer had scrolled down.
+        list.scrollTop=0;
       }
 
-      heightAnim.finished.finally(()=>{
-        h.style.height='';
-        h.classList.remove('dash-recent-animating');
+      btn.textContent=recentExpanded?'Show Less':'Show More';
+      btn.setAttribute('aria-expanded',String(recentExpanded));
+
+      const targetCount=expanding ? Math.min(items.length,7) : 5;
+      const targetHeight=heightFor(targetCount);
+
+      // Animate the two newly revealed rows (5 → up to 7), or reverse them
+      // when collapsing. Rows beyond seven are accessed through scrolling.
+      const changingRows=rowEls.slice(5,Math.min(7,rowEls.length));
+      changingRows.forEach((row,index)=>{
+        row.getAnimations().forEach(a=>a.cancel());
+        row.animate(
+          expanding
+            ? [
+                {opacity:0,transform:'translateY(-7px) scale(.995)'},
+                {opacity:1,transform:'translateY(0) scale(1)'}
+              ]
+            : [
+                {opacity:1,transform:'translateY(0) scale(1)'},
+                {opacity:0,transform:'translateY(-7px) scale(.995)'}
+              ],
+          {
+            duration:expanding?260:220,
+            delay:expanding ? 55+index*42 : index*20,
+            easing:'cubic-bezier(.16,1,.3,1)',
+            fill:'both'
+          }
+        );
       });
+
+      // Force the starting height to commit before moving to the target.
+      void list.offsetHeight;
+      list.classList.add('dash-recent-resizing');
+
+      requestAnimationFrame(()=>{
+        list.style.height=targetHeight+'px';
+      });
+
+      let finished=false;
+      const finish=()=>{
+        if(finished) return;
+        finished=true;
+
+        if(!recentExpanded){
+          rowEls.slice(5).forEach(row=>{
+            row.getAnimations().forEach(a=>a.cancel());
+            row.classList.add('dash-recent-hidden');
+          });
+        }else{
+          changingRows.forEach(row=>row.getAnimations().forEach(a=>a.cancel()));
+        }
+
+        applyRestingState();
+        recentAnimating=false;
+        btn.disabled=false;
+      };
+
+      list.addEventListener('transitionend',event=>{
+        if(event.propertyName==='height') finish();
+      },{once:true});
+
+      // Fallback for browsers that skip transitionend after a layout interruption.
+      setTimeout(finish,430);
     });
 
     wrap.appendChild(btn);
