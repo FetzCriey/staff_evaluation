@@ -1,0 +1,85 @@
+/* =========================================================
+   MOBILE HEADER + COMPACT SCORE ENTRY
+   Presentation only. Desktop and Preview/Results stay unchanged.
+   ========================================================= */
+
+@media (max-width:620px){
+  /* Keep the navigation controls on the first row:
+     hamburger + logo on the left, Dashboard/Start Evaluation on the right.
+     The page title gets its own row below them. */
+  header.top{
+    display:grid;
+    grid-template-columns:auto auto minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    align-items:center;
+    column-gap:12px;
+    row-gap:16px;
+    flex-wrap:initial;
+  }
+
+  header.top .burger{
+    grid-column:1;
+    grid-row:1;
+  }
+
+  header.top .logo{
+    grid-column:2;
+    grid-row:1;
+  }
+
+  header.top .dash-head-btn{
+    grid-column:4;
+    grid-row:1;
+    justify-self:end;
+    align-self:center;
+    margin-left:0;
+    white-space:nowrap;
+    padding:10px 13px;
+  }
+
+  header.top .htext{
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+  }
+}
+
+@media (max-width:560px){
+  /* Normal staff scoring: one evaluator is active, so repeating their name in
+     every criterion wastes space. Use a compact "Score [box]" row instead. */
+  body.hide-criteria-average-while-scoring #cards .cpill{
+    display:none;
+  }
+
+  body.hide-criteria-average-while-scoring #cards .cgrid{
+    grid-template-columns:1fr;
+    padding:0 14px 14px;
+    gap:0;
+  }
+
+  body.hide-criteria-average-while-scoring #cards .cell{
+    justify-content:flex-end;
+    gap:9px;
+    padding:4px 0 0;
+  }
+
+  body.hide-criteria-average-while-scoring #cards .cell .nm{
+    display:none;
+  }
+
+  body.hide-criteria-average-while-scoring #cards .cell::before{
+    content:"Score";
+    color:var(--ink-soft);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+
+  body.hide-criteria-average-while-scoring #cards .cell .score-in{
+    flex:0 0 58px;
+    width:58px;
+    padding:8px 4px;
+    font-size:14px;
+  }
+}
