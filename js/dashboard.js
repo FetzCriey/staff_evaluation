@@ -200,6 +200,7 @@ function activity(rows,names){
 
     const row=document.createElement('div');
     row.className='dash-live-eval-row';
+    if(recentExpanded && visibleItems.indexOf(r)>=5) row.classList.add('dash-live-extra');
     row.innerHTML=`
       <div class="dash-live-eval-head">
         <div class="dash-live-eval-people">
@@ -243,8 +244,52 @@ function activity(rows,names){
     btn.setAttribute('aria-expanded',String(recentExpanded));
 
     btn.addEventListener('click',()=>{
-      recentExpanded=!recentExpanded;
+      const fromHeight=h.getBoundingClientRect().height;
+      const expanding=!recentExpanded;
+
+      recentExpanded=expanding;
       activity(rows,names);
+
+      const toHeight=h.scrollHeight;
+
+      if(reduceMotion || Math.abs(toHeight-fromHeight)<1) return;
+
+      h.classList.add('dash-recent-animating');
+      h.style.height=fromHeight+'px';
+
+      const heightAnim=h.animate(
+        [
+          {height:fromHeight+'px'},
+          {height:toHeight+'px'}
+        ],
+        {
+          duration:expanding?360:300,
+          easing:'cubic-bezier(.16,1,.3,1)',
+          fill:'forwards'
+        }
+      );
+
+      if(expanding){
+        h.querySelectorAll('.dash-live-extra').forEach((row,index)=>{
+          row.animate(
+            [
+              {opacity:0,transform:'translateY(-7px) scale(.995)'},
+              {opacity:1,transform:'translateY(0) scale(1)'}
+            ],
+            {
+              duration:260,
+              delay:70 + Math.min(index,6)*38,
+              easing:'cubic-bezier(.16,1,.3,1)',
+              fill:'both'
+            }
+          );
+        });
+      }
+
+      heightAnim.finished.finally(()=>{
+        h.style.height='';
+        h.classList.remove('dash-recent-animating');
+      });
     });
 
     wrap.appendChild(btn);
