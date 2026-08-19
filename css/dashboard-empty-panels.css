@@ -1,0 +1,28 @@
+/* =========================================================
+   COMPACT EMPTY DASHBOARD PANELS
+   Empty panels use the same compact body height as the empty
+   ranking cards. Panels with real data keep their normal size.
+   Applies on both desktop and mobile.
+   ========================================================= */
+
+/* In two-column dashboard rows, do not stretch an empty card
+   to match a taller neighboring card. */
+.dash-panel-card:has(.dash-empty:not(.hide)){
+  align-self:start;
+}
+
+/* Team Performance normally reserves a 250px chart canvas.
+   When there is no finalized trend data, collapse that canvas
+   and use the same body spacing as the ranking empty states. */
+.dash-chart-wrap:has(#trendEmpty:not(.hide)){
+  min-height:0;
+  padding:8px 12px 12px;
+}
+
+.dash-chart-wrap:has(#trendEmpty:not(.hide)) #trendChart{
+  display:none;
+}
+
+.dash-chart-wrap:has(#trendEmpty:not(.hide)) #trendEmpty{
+  padding:28px 16px;
+}
