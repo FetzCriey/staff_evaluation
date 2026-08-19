@@ -3,6 +3,7 @@ const SUPABASE_URL="https://giosjwjhalhmwcuyzfos.supabase.co", SUPABASE_KEY="sb_
 const db=createClient(SUPABASE_URL,SUPABASE_KEY), el=id=>document.getElementById(id); let timer=null;
 let recentExpanded=false;
 let recentAnimating=false;
+const recentProgressPct=new Map();
 const initials=(n='')=>{const p=n.trim().split(/\s+/).filter(Boolean);return((p[0]?.[0]||'')+(p.length>1?p[p.length-1][0]:'')).toUpperCase()||'—'};
 const mean=v=>{const a=v.map(Number).filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const score=v=>Number.isFinite(v)?v.toFixed(2):'—';
@@ -210,6 +211,10 @@ function activity(rows,names){
     const employee=names.get(r.employee_id)||'Unknown employee';
     const submitted=!!r.locked;
     const status=submitted?'Submitted':'Saved draft';
+    const progressKey=`${r.evaluator_id}|${r.employee_id}`;
+    const previousPct=recentProgressPct.has(progressKey)
+      ? recentProgressPct.get(progressKey)
+      : r.pct;
 
     const row=document.createElement('div');
     row.className='dash-live-eval-row';
@@ -237,7 +242,7 @@ function activity(rows,names){
         <strong>${Math.round(r.pct)}%</strong>
       </div>
       <div class="dash-live-progress">
-        <span style="width:${r.pct}%"></span>
+        <span style="width:${previousPct}%"></span>
       </div>
 
       <div class="dash-live-meta">
@@ -251,6 +256,23 @@ function activity(rows,names){
     row.querySelector('.dash-live-employee').textContent=employee;
     rowEls.push(row);
     list.appendChild(row);
+
+    const progressBar=row.querySelector('.dash-live-progress span');
+    const fromPct=Number.isFinite(Number(previousPct)) ? Number(previousPct) : r.pct;
+    recentProgressPct.set(progressKey,r.pct);
+
+    if(progressBar){
+      if(!reduceMotion && Math.abs(fromPct-r.pct)>.01){
+        progressBar.style.width=`${fromPct}%`;
+        // Two frames guarantee the previous width is painted before the new
+        // realtime value is applied, so both increases and decreases animate.
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          if(progressBar.isConnected) progressBar.style.width=`${r.pct}%`;
+        }));
+      }else{
+        progressBar.style.width=`${r.pct}%`;
+      }
+    }
   });
 
   const heightFor=count=>{
