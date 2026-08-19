@@ -10,7 +10,15 @@ const score=v=>Number.isFinite(v)?v.toFixed(2):'—';
 const dt=v=>{const d=new Date(v);return Number.isNaN(d.getTime())?null:d};
 const short=v=>{const d=dt(v);return d?d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'—'};
 const timed=v=>{const d=dt(v);return d?d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):''};
-function closeDrawer(){el('drawer')?.classList.remove('open');el('scrim')?.classList.remove('open');el('drawer')?.setAttribute('aria-hidden','true');el('burger')?.setAttribute('aria-expanded','false')}
+function closeDrawer(){
+  el('drawer')?.classList.remove('open');
+  el('scrim')?.classList.remove('open');
+  el('drawer')?.setAttribute('aria-hidden','true');
+  el('burger')?.setAttribute('aria-expanded','false');
+  // evaluation.js locks body scrolling while the mobile drawer is open.
+  // Dashboard navigation closes the drawer itself, so restore scrolling here too.
+  document.body.style.overflow='';
+}
 let viewSwitching=false;
 const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -127,6 +135,10 @@ async function playViewSwitch(mode){
 
 function openDashboard(){return playViewSwitch('dashboard')}
 function openForm(){return playViewSwitch('form')}
+
+// Establish the initial Dashboard state immediately, before the authenticated
+// wrapper becomes interactive. The delayed ready hook must never change views.
+applyViewState('dashboard');
 
 el('headerActionBtn')?.addEventListener('click',()=>{
   el('formView')?.classList.contains('hide')?openForm():openDashboard();
@@ -477,7 +489,8 @@ const ready=setInterval(()=>{
   if(el('wrap')&&!el('wrap').classList.contains('hide')){
     clearInterval(ready);
     hookAuthenticatedRealtime();
-    openDashboard();
+    // Do not call openDashboard() here. A user may already be switching to the
+    // Evaluation Form, and a delayed dashboard redirect would race that action.
     load();
   }
 },80);
@@ -486,7 +499,7 @@ setTimeout(()=>{
   clearInterval(ready);
   if(el('wrap')&&!el('wrap').classList.contains('hide')){
     hookAuthenticatedRealtime();
-    openDashboard();
+    // Same rule for the fallback: initialization refreshes data, never the view.
     load();
   }
 },5000);
