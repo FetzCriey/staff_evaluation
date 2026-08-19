@@ -47,7 +47,9 @@
      Beneath it: Score [input] value/5 on ONE line. */
   body.hide-criteria-average-while-scoring #grid #body tr{
     display:grid !important;
-    grid-template-columns:auto 72px auto 1fr;
+    /* Equal flexible space on both sides centers the whole
+       Score [input] value/5 group inside every criterion card. */
+    grid-template-columns:1fr auto auto 1fr;
     column-gap:10px;
     row-gap:0;
     align-items:center;
@@ -62,7 +64,8 @@
 
   /* Cell that contains the evaluator's editable score input. */
   body.hide-criteria-average-while-scoring #grid #body td:has(> .score-in){
-    grid-column:1 / span 2;
+    grid-column:2;
+    justify-self:end;
     display:grid !important;
     grid-template-columns:auto 72px;
     align-items:center;
@@ -99,6 +102,7 @@
      Reuse it as the live "4.6/5" display instead of placing it below. */
   body.hide-criteria-average-while-scoring #grid #body td.calc:not(.dim){
     grid-column:3;
+    justify-self:start;
     display:block !important;
     width:auto !important;
     min-width:0;
@@ -141,7 +145,7 @@
   }
 
   body.hide-criteria-average-while-scoring #cards .cell{
-    justify-content:flex-start;
+    justify-content:center;
     gap:10px;
     padding:4px 0 0;
   }
