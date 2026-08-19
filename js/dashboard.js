@@ -1,6 +1,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 const SUPABASE_URL="https://giosjwjhalhmwcuyzfos.supabase.co", SUPABASE_KEY="sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_";
 const db=createClient(SUPABASE_URL,SUPABASE_KEY), el=id=>document.getElementById(id); let timer=null;
+let recentExpanded=false;
 const initials=(n='')=>{const p=n.trim().split(/\s+/).filter(Boolean);return((p[0]?.[0]||'')+(p.length>1?p[p.length-1][0]:'')).toUpperCase()||'—'};
 const mean=v=>{const a=v.map(Number).filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const score=v=>Number.isFinite(v)?v.toFixed(2):'—';
@@ -182,15 +183,16 @@ function activity(rows,names){
       };
     })
     .filter(r=>r.when)
-    .sort((a,b)=>new Date(b.when)-new Date(a.when))
-    .slice(0,8);
+    .sort((a,b)=>new Date(b.when)-new Date(a.when));
 
   if(!items.length){
     h.innerHTML='<div class="dash-empty">No current evaluation activity yet.</div>';
     return;
   }
 
-  items.forEach(r=>{
+  const visibleItems=recentExpanded ? items : items.slice(0,5);
+
+  visibleItems.forEach(r=>{
     const evaluator=names.get(r.evaluator_id)||'Unknown evaluator';
     const employee=names.get(r.employee_id)||'Unknown employee';
     const submitted=!!r.locked;
@@ -229,6 +231,25 @@ function activity(rows,names){
     row.querySelector('.dash-live-employee').textContent=employee;
     h.appendChild(row);
   });
+
+  if(items.length>5){
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;justify-content:center;padding:8px 0 2px';
+
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className='dash-back-btn';
+    btn.textContent=recentExpanded?'Show Less':'Show More';
+    btn.setAttribute('aria-expanded',String(recentExpanded));
+
+    btn.addEventListener('click',()=>{
+      recentExpanded=!recentExpanded;
+      activity(rows,names);
+    });
+
+    wrap.appendChild(btn);
+    h.appendChild(wrap);
+  }
 }
 async function load(){const{data:{session}}=await db.auth.getSession();if(!session)return;const uid=session.user.id,[a,b,c]=await Promise.all([db.from('profiles').select('id,full_name,position,role,form_role').eq('id',uid).maybeSingle(),db.from('profiles').select('id,full_name,position,role,form_role').order('full_name'),db.from('evaluations').select('employee_id,evaluator_id,scores,average,comments,form_role,locked,archived,archived_at,created_at,updated_at')]);const me=a.data,people=b.data||[],rows=c.data||[],names=new Map(people.map(p=>[p.id,p.full_name||'Unknown'])),full=me?.role==='manager'||me?.form_role==='Senior Staff'||me?.form_role==='Junior Staff',my=me?.full_name||session.user.email||'Signed in';if(el('dashGreeting'))el('dashGreeting').textContent=`Welcome, ${my}`;if(el('dashDateChip'))el('dashDateChip').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'long',day:'numeric',year:'numeric'});const note=el('dashAccessNote');if(note){if(b.error||c.error){note.textContent='Some dashboard data could not be loaded with this account.';note.classList.remove('hide')}else if(!full){note.textContent='Team rankings are available to Junior Staff, Senior Staff, and Manager reviewers. You can still use the dashboard to open your evaluation form.';note.classList.remove('hide')}else note.classList.add('hide')}
 if(full){const rs=rounds(rows),l=latest(rs).sort((x,y)=>y.average-x.average),o=overall(rs).sort((x,y)=>y.average-x.average),lt=l[0],ot=o[0];el('latestTopName').textContent=lt?names.get(lt.employee_id)||'Unknown':'—';el('latestTopScore').textContent=lt?score(lt.average):'—';el('latestTopMeta').textContent=lt?`Finalized ${short(lt.archived_at)}`:'No finalized evaluation yet';el('overallTopName').textContent=ot?names.get(ot.employee_id)||'Unknown':'—';el('overallTopScore').textContent=ot?score(ot.average):'—';el('teamAverage').textContent=score(mean(o.map(r=>r.average)));el('latestRankingDate').textContent=lt?short(lt.archived_at):'Latest';rank('latestRanking',l,names);rank('overallRanking',o,names);chart(rs);activity(rows,names)}else{el('latestTopName').textContent='Restricted';el('overallTopName').textContent='Restricted';['latestTopScore','overallTopScore','teamAverage'].forEach(id=>el(id).textContent='—');el('latestTopMeta').textContent='Reviewer access required';el('latestRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('overallRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('recentActivity').innerHTML='<div class="dash-empty">Reviewer access required for team activity.</div>';el('trendChart').innerHTML='';el('trendEmpty').classList.remove('hide')}
