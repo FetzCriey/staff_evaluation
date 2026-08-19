@@ -233,5 +233,80 @@ function activity(rows,names){
 async function load(){const{data:{session}}=await db.auth.getSession();if(!session)return;const uid=session.user.id,[a,b,c]=await Promise.all([db.from('profiles').select('id,full_name,position,role,form_role').eq('id',uid).maybeSingle(),db.from('profiles').select('id,full_name,position,role,form_role').order('full_name'),db.from('evaluations').select('employee_id,evaluator_id,scores,average,comments,form_role,locked,archived,archived_at,created_at,updated_at')]);const me=a.data,people=b.data||[],rows=c.data||[],names=new Map(people.map(p=>[p.id,p.full_name||'Unknown'])),full=me?.role==='manager'||me?.form_role==='Senior Staff'||me?.form_role==='Junior Staff',my=me?.full_name||session.user.email||'Signed in';if(el('dashGreeting'))el('dashGreeting').textContent=`Welcome, ${my}`;if(el('dashDateChip'))el('dashDateChip').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'long',day:'numeric',year:'numeric'});const note=el('dashAccessNote');if(note){if(b.error||c.error){note.textContent='Some dashboard data could not be loaded with this account.';note.classList.remove('hide')}else if(!full){note.textContent='Team rankings are available to Junior Staff, Senior Staff, and Manager reviewers. You can still use the dashboard to open your evaluation form.';note.classList.remove('hide')}else note.classList.add('hide')}
 if(full){const rs=rounds(rows),l=latest(rs).sort((x,y)=>y.average-x.average),o=overall(rs).sort((x,y)=>y.average-x.average),lt=l[0],ot=o[0];el('latestTopName').textContent=lt?names.get(lt.employee_id)||'Unknown':'—';el('latestTopScore').textContent=lt?score(lt.average):'—';el('latestTopMeta').textContent=lt?`Finalized ${short(lt.archived_at)}`:'No finalized evaluation yet';el('overallTopName').textContent=ot?names.get(ot.employee_id)||'Unknown':'—';el('overallTopScore').textContent=ot?score(ot.average):'—';el('teamAverage').textContent=score(mean(o.map(r=>r.average)));el('latestRankingDate').textContent=lt?short(lt.archived_at):'Latest';rank('latestRanking',l,names);rank('overallRanking',o,names);chart(rs);activity(rows,names)}else{el('latestTopName').textContent='Restricted';el('overallTopName').textContent='Restricted';['latestTopScore','overallTopScore','teamAverage'].forEach(id=>el(id).textContent='—');el('latestTopMeta').textContent='Reviewer access required';el('latestRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('overallRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('recentActivity').innerHTML='<div class="dash-empty">Reviewer access required for team activity.</div>';el('trendChart').innerHTML='';el('trendEmpty').classList.remove('hide')}
 const expected=Math.max(people.length*(people.length-1),0),done=new Set(rows.filter(r=>!r.archived&&r.locked).map(r=>`${r.employee_id}|${r.evaluator_id}`)).size,pct=expected?Math.min(100,done/expected*100):0;el('completionText').textContent=`${done} / ${expected}`;el('completionPercent').textContent=`${Math.round(pct)}%`;el('completionBar').style.width=`${pct}%`}
-function schedule(ms=250){clearTimeout(timer);timer=setTimeout(load,ms)}
-const realtime=db.channel('dashboard-live-summary').on('postgres_changes',{event:'*',schema:'public',table:'evaluations'},()=>schedule()).subscribe();window.addEventListener('beforeunload',()=>{try{db.removeChannel(realtime)}catch(_){}});const ready=setInterval(()=>{if(el('wrap')&&!el('wrap').classList.contains('hide')){clearInterval(ready);openDashboard();load()}},80);setTimeout(()=>{clearInterval(ready);if(el('wrap')&&!el('wrap').classList.contains('hide')){openDashboard();load()}},5000);
+function schedule(ms=120){
+  clearTimeout(timer);
+  timer=setTimeout(load,ms);
+}
+
+/*
+  Reuse the authenticated Realtime listener already owned by js/supabase.js.
+
+  supabase.js calls window.__refreshResults() for every INSERT / UPDATE / DELETE
+  on public.evaluations. Wrapping that function lets the dashboard refresh from
+  the same authenticated event instead of opening a second Realtime channel.
+*/
+let realtimeHooked=false;
+function hookAuthenticatedRealtime(){
+  const current=window.__refreshResults;
+  if(typeof current!=='function') return false;
+
+  // If supabase.js has already been wrapped by us, do not wrap it again.
+  if(current.__dashboardRealtimeHook){
+    realtimeHooked=true;
+    return true;
+  }
+
+  const wrapped=function(...args){
+    let result;
+    try{
+      result=current.apply(this,args);
+    }finally{
+      // Small debounce so autosave bursts collapse into a single dashboard read.
+      schedule(80);
+    }
+    return result;
+  };
+
+  wrapped.__dashboardRealtimeHook=true;
+  wrapped.__dashboardRealtimeOriginal=current;
+  window.__refreshResults=wrapped;
+  realtimeHooked=true;
+  return true;
+}
+
+// supabase.js uses top-level await during session/profile setup, so dashboard.js
+// may start before __refreshResults exists. Keep checking briefly until it does.
+const realtimeHookTimer=setInterval(()=>{
+  if(hookAuthenticatedRealtime()) clearInterval(realtimeHookTimer);
+},100);
+
+setTimeout(()=>{
+  if(!realtimeHooked) hookAuthenticatedRealtime();
+  clearInterval(realtimeHookTimer);
+},8000);
+
+// If the browser was backgrounded or temporarily offline, refresh immediately
+// when the user returns so the dashboard never stays visually stale.
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') schedule(0);
+});
+window.addEventListener('focus',()=>schedule(0));
+window.addEventListener('online',()=>schedule(0));
+
+const ready=setInterval(()=>{
+  if(el('wrap')&&!el('wrap').classList.contains('hide')){
+    clearInterval(ready);
+    hookAuthenticatedRealtime();
+    openDashboard();
+    load();
+  }
+},80);
+
+setTimeout(()=>{
+  clearInterval(ready);
+  if(el('wrap')&&!el('wrap').classList.contains('hide')){
+    hookAuthenticatedRealtime();
+    openDashboard();
+    load();
+  }
+},5000);
