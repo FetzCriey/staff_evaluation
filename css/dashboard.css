@@ -12,3 +12,8 @@
 /* Dashboard spacing refinement after subtitle / bottom CTA removal */
 #dashboardView{padding-top:2px}
 #dashboardView .dash-grid-bottom{margin-bottom:0}
+
+/* Dashboard copy removal spacing */
+#dashboardView .dash-welcome h2{margin-bottom:0}
+#dashboardView .dash-welcome{align-items:center}
+#dashboardView .dash-welcome p{display:none}
