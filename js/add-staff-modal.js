@@ -92,4 +92,122 @@
       return originalAlert.call(this, title, message, ...rest);
     };
   }
+
+  /* ---------------------------------------------------------
+     Custom themed dropdowns
+     --------------------------------------------------------- */
+  function enhanceSelect(select){
+    if(!select || select.dataset.bpEnhanced === '1') return;
+    select.dataset.bpEnhanced = '1';
+    select.classList.add('bp-native-select');
+
+    const root = document.createElement('div');
+    root.className = 'bp-select';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bp-select-btn';
+    btn.setAttribute('aria-haspopup','listbox');
+    btn.setAttribute('aria-expanded','false');
+
+    const label = document.createElement('span');
+    label.className = 'bp-select-label';
+
+    const arrow = document.createElement('span');
+    arrow.className = 'bp-select-arrow';
+    arrow.setAttribute('aria-hidden','true');
+
+    btn.append(label, arrow);
+
+    const menu = document.createElement('div');
+    menu.className = 'bp-select-menu';
+    menu.setAttribute('role','listbox');
+
+    function close(){
+      root.classList.remove('open');
+      btn.setAttribute('aria-expanded','false');
+    }
+
+    function sync(){
+      label.textContent = select.options[select.selectedIndex]?.textContent || '';
+      menu.querySelectorAll('.bp-select-option').forEach(opt => {
+        const selected = opt.dataset.value === select.value;
+        opt.classList.toggle('selected', selected);
+        opt.setAttribute('aria-selected', String(selected));
+      });
+    }
+
+    Array.from(select.options).forEach(option => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'bp-select-option';
+      item.setAttribute('role','option');
+      item.dataset.value = option.value;
+      item.textContent = option.textContent;
+
+      item.addEventListener('click', () => {
+        if(select.value !== option.value){
+          select.value = option.value;
+          select.dispatchEvent(new Event('change', { bubbles:true }));
+        }
+        sync();
+        close();
+        btn.focus();
+      });
+
+      menu.appendChild(item);
+    });
+
+    btn.addEventListener('click', () => {
+      const opening = !root.classList.contains('open');
+
+      document.querySelectorAll('.bp-select.open').forEach(other => {
+        if(other !== root){
+          other.classList.remove('open');
+          other.querySelector('.bp-select-btn')?.setAttribute('aria-expanded','false');
+        }
+      });
+
+      root.classList.toggle('open', opening);
+      btn.setAttribute('aria-expanded', String(opening));
+    });
+
+    btn.addEventListener('keydown', event => {
+      const options = Array.from(menu.querySelectorAll('.bp-select-option'));
+      if(!options.length) return;
+
+      if(event.key === 'ArrowDown' || event.key === 'ArrowUp'){
+        event.preventDefault();
+        root.classList.add('open');
+        btn.setAttribute('aria-expanded','true');
+
+        let idx = options.findIndex(o => o.dataset.value === select.value);
+        idx += event.key === 'ArrowDown' ? 1 : -1;
+        idx = Math.max(0, Math.min(options.length - 1, idx));
+
+        select.value = options[idx].dataset.value;
+        select.dispatchEvent(new Event('change', { bubbles:true }));
+        sync();
+      }else if(event.key === 'Escape'){
+        close();
+      }else if(event.key === 'Enter' || event.key === ' '){
+        event.preventDefault();
+        btn.click();
+      }
+    });
+
+    document.addEventListener('click', event => {
+      if(!root.contains(event.target)) close();
+    });
+
+    select.addEventListener('change', sync);
+
+    select.insertAdjacentElement('afterend', root);
+    root.append(btn, menu);
+    sync();
+  }
+
+  enhanceSelect(document.getElementById('mgrRole'));
+  enhanceSelect(document.getElementById('mgrAccess'));
+
 })();
