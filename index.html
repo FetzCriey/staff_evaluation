@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/dashboard-empty-panels.css?v=20260819-2124">
 <link rel="stylesheet" href="css/sidebar-branding.css?v=20260819-2258">
 <link rel="stylesheet" href="css/add-staff-modal.css?v=20260820-1409">
+<link rel="stylesheet" href="css/account-settings.css?v=20260820-1420">
 </head>
 <body>
 <div class="gate" id="gate" role="status" aria-live="polite" aria-label="Loading">
@@ -105,7 +106,14 @@
     </div>
 
     <div class="acct" id="acct">
-      <div class="acct-row"><div class="avatar" id="acctInitials">&mdash;</div><div class="acct-txt"><div class="acct-nm" id="acctName">Signed in</div><div class="acct-rl" id="acctRole">Loading account&hellip;</div></div></div>
+      <div class="acct-row"><div class="avatar" id="acctInitials" data-current-user-avatar>&mdash;</div><div class="acct-txt"><div class="acct-nm" id="acctName">Signed in</div><div class="acct-rl" id="acctRole">Loading account&hellip;</div></div></div>
+      <button class="acct-settings-btn" id="openAccountSettings" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.7 1.7 0 00.34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 00-1.88-.34 1.7 1.7 0 00-1.03 1.56V21h-4v-.08A1.7 1.7 0 008.97 19.4a1.7 1.7 0 00-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 004.6 15.03 1.7 1.7 0 003.04 14H3v-4h.04A1.7 1.7 0 004.6 8.97a1.7 1.7 0 00-.34-1.88l-.06-.06L7.03 4.2l.06.06A1.7 1.7 0 008.97 4.6 1.7 1.7 0 0010 3.04V3h4v.04a1.7 1.7 0 001.03 1.56 1.7 1.7 0 001.88-.34l.06-.06 2.83 2.83-.06.06a1.7 1.7 0 00-.34 1.88A1.7 1.7 0 0020.96 10H21v4h-.04A1.7 1.7 0 0019.4 15z"/>
+        </svg>
+        <span>Settings</span>
+      </button>
       <button class="signout" id="signOut"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5"/></svg><span>Sign out</span></button>
     </div>
   </aside>
@@ -210,6 +218,64 @@
   </section>
 </div>
 
+
+<!-- ================= ACCOUNT SETTINGS MODAL ================= -->
+<div class="account-settings-modal" id="accountSettingsModal" hidden aria-hidden="true">
+  <div class="account-settings-backdrop" data-account-settings-close></div>
+  <section class="account-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="accountSettingsTitle">
+    <div class="account-settings-head">
+      <div>
+        <div class="account-settings-kicker">My account</div>
+        <h2 id="accountSettingsTitle">Settings</h2>
+      </div>
+      <button class="account-settings-close" id="closeAccountSettings" type="button" aria-label="Close settings">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="account-settings-body">
+      <section class="settings-section">
+        <div class="settings-section-title">Profile picture</div>
+        <div class="settings-photo-row">
+          <div class="settings-avatar-preview" id="settingsAvatarPreview">—</div>
+          <div class="settings-photo-copy">
+            <strong id="settingsUserName">Signed in user</strong>
+            <span>JPG, PNG or WEBP · maximum 5 MB</span>
+          </div>
+        </div>
+
+        <input id="settingsPhotoInput" class="settings-file-input" type="file" accept="image/jpeg,image/png,image/webp">
+        <div class="settings-photo-actions">
+          <button class="settings-btn settings-btn-primary" id="chooseProfilePhoto" type="button">Choose picture</button>
+          <button class="settings-btn settings-btn-ghost" id="removeProfilePhoto" type="button">Remove picture</button>
+        </div>
+        <div class="settings-status" id="photoSettingsStatus" aria-live="polite"></div>
+      </section>
+
+      <div class="settings-divider"></div>
+
+      <section class="settings-section">
+        <div class="settings-section-title">Change password</div>
+
+        <label class="settings-label" for="settingsNewPassword">New password</label>
+        <div class="settings-password-wrap">
+          <input id="settingsNewPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+          <button class="settings-password-toggle" type="button" data-password-target="settingsNewPassword" aria-label="Show password">Show</button>
+        </div>
+
+        <label class="settings-label" for="settingsConfirmPassword">Confirm new password</label>
+        <div class="settings-password-wrap">
+          <input id="settingsConfirmPassword" type="password" autocomplete="new-password" placeholder="Enter the new password again">
+          <button class="settings-password-toggle" type="button" data-password-target="settingsConfirmPassword" aria-label="Show password">Show</button>
+        </div>
+
+        <button class="settings-btn settings-btn-primary settings-password-save" id="changeOwnPassword" type="button">Change password</button>
+        <div class="settings-status" id="passwordSettingsStatus" aria-live="polite"></div>
+      </section>
+    </div>
+  </section>
+</div>
+
 <script src="js/evaluation.js"></script>
 <script src="js/logo-file-source.js?v=20260819-2314"></script>
 <script type="module" src="js/supabase.js"></script>
@@ -220,5 +286,6 @@
 <script src="js/mobile-layout-options.js?v=20260819-2130"></script>
 <script type="module" src="js/autocomplete-progress.js?v=20260819-2211"></script>
 <script src="js/hide-self-autocomplete.js?v=20260819-2234"></script>
+<script type="module" src="js/account-settings.js?v=20260820-1420"></script>
 </body>
 </html>
