@@ -232,6 +232,69 @@ input:focus{
   box-shadow:0 0 0 4px rgba(21,172,227,.14);
 }
 
+.password-wrap{
+  position:relative;
+  margin-bottom:18px;
+}
+
+.password-wrap input{
+  margin-bottom:0;
+  padding-right:50px;
+}
+
+.password-eye{
+  position:absolute;
+  top:50%;
+  right:8px;
+  transform:translateY(-50%);
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:var(--muted);
+  box-shadow:none;
+  cursor:pointer;
+}
+
+.password-eye:hover{
+  transform:translateY(-50%);
+  background:var(--mist);
+  color:var(--lagoon-deep);
+  box-shadow:none;
+  filter:none;
+}
+
+.password-eye:active{
+  transform:translateY(-50%);
+}
+
+.password-eye:focus-visible{
+  outline:3px solid rgba(21,172,227,.18);
+  outline-offset:1px;
+}
+
+.password-eye svg{
+  width:20px;
+  height:20px;
+}
+
+.password-eye .eye-off{
+  display:none;
+}
+
+.password-eye.showing .eye-on{
+  display:none;
+}
+
+.password-eye.showing .eye-off{
+  display:block;
+}
+
 button{
   width:100%;
   border:0;
@@ -367,13 +430,33 @@ button:disabled{
       >
 
       <label for="password">Password</label>
-      <input
-        id="password"
-        type="password"
-        autocomplete="current-password"
-        placeholder="Password"
-        required
-      >
+      <div class="password-wrap">
+        <input
+          id="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Password"
+          required
+        >
+        <button
+          class="password-eye"
+          id="passwordEye"
+          type="button"
+          aria-label="Show password"
+          aria-pressed="false"
+        >
+          <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 3l18 18"/>
+            <path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a17.4 17.4 0 0 1-2.2 2.9"/>
+            <path d="M6.6 6.6C3.6 8.4 2 12 2 12s3.5 6 10 6a10.5 10.5 0 0 0 4.1-.8"/>
+            <path d="M9.9 9.9A3 3 0 0 0 14.1 14.1"/>
+          </svg>
+        </button>
+      </div>
 
       <button id="loginBtn" type="submit">Log in</button>
 
@@ -426,6 +509,9 @@ const email =
 const password =
   document.getElementById("password");
 
+const passwordEye =
+  document.getElementById("passwordEye");
+
 const button =
   document.getElementById("loginBtn");
 
@@ -434,6 +520,41 @@ const error =
 
 const status =
   document.getElementById("status");
+
+
+/* =========================================================
+   PASSWORD VISIBILITY
+   ========================================================= */
+
+passwordEye.addEventListener(
+  "click",
+  () => {
+
+    const showing =
+      password.type === "text";
+
+    password.type =
+      showing ? "password" : "text";
+
+    passwordEye.classList.toggle(
+      "showing",
+      !showing
+    );
+
+    passwordEye.setAttribute(
+      "aria-label",
+      showing ? "Show password" : "Hide password"
+    );
+
+    passwordEye.setAttribute(
+      "aria-pressed",
+      String(!showing)
+    );
+
+    password.focus();
+
+  }
+);
 
 
 /* =========================================================
