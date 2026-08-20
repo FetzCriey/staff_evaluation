@@ -1,130 +1,154 @@
 /* =========================================================
-   DASHBOARD / REVIEW NAVIGATION STATE
+   NAVIGATION AUTHORITY + OBSOLETE BUTTON REMOVAL
 
-   Navigation rules:
-   - Dashboard is controlled by the header/sidebar Dashboard controls.
-   - Evaluation form always means "my scoring", never a stale Results view.
-   - The old in-form Dashboard and Back to my scoring controls stay hidden.
-   - A result row looks selected only while an actual Results/History review
-     is open, not while Dashboard or normal scoring is active.
+   - The duplicate in-form "← Dashboard" row is removed from the DOM.
+   - The "Back to my scoring" BUTTON is removed from the DOM.
+   - Its already-registered reset handlers are kept on the detached button
+     object and exposed through one internal function.
+   - Sidebar "Evaluation form" and Dashboard "Start Evaluation" use that
+     function whenever the current form is in Results/History review mode.
+   - The empty #backBar container remains only because supabase.js currently
+     uses it as an internal review-mode visibility/state hook.
    ========================================================= */
 
 (() => {
-  const dashboard = document.getElementById('dashboardView');
-  const backBar = document.getElementById('backBar');
-  const backBtn = document.getElementById('backBtn');
-  const drawerEvaluation = document.getElementById('drawerEvaluation');
-  const headerActionBtn = document.getElementById('headerActionBtn');
-
-  if(!dashboard) return;
-
   const BODY_CLASS = 'suppress-result-selection';
 
-  function ensureStyle(){
-    if(document.getElementById('navigation-authority-style')) return;
+  function init(){
+    const dashboard = document.getElementById('dashboardView');
+    const whoK = document.getElementById('whoK');
+    const backBar = document.getElementById('backBar');
+    const backBtn = document.getElementById('backBtn');
+    const drawerEvaluation = document.getElementById('drawerEvaluation');
+    const headerActionBtn = document.getElementById('headerActionBtn');
 
-    const style = document.createElement('style');
-    style.id = 'navigation-authority-style';
-    style.textContent = `
-      /* The header already provides Dashboard, so remove the duplicate
-         Dashboard control inside the Evaluation form. */
-      .dash-back-row{
-        display:none !important;
-      }
+    if(!dashboard) return;
 
-      /* Sidebar Evaluation form is now the only way to leave Results/History
-         and return to normal scoring. Keep this legacy control in the DOM
-         only so the existing Supabase reset logic can be reused internally. */
-      #backBar{
-        display:none !important;
-      }
+    /* ---------------------------------------------------------
+       Remove the obsolete visible navigation controls.
+       --------------------------------------------------------- */
 
-      /* Do not make an old review target look selected while Dashboard
-         or normal scoring is active. */
-      body.${BODY_CLASS} #resList .res-row.on{
-        border-color:var(--line) !important;
-        background:#fff !important;
-      }
+    // Header already contains Dashboard, so this duplicate row is unnecessary.
+    document.querySelector('.dash-back-row')?.remove();
 
-      body.${BODY_CLASS} #resList .res-row.on:hover{
-        border-color:var(--lagoon) !important;
-        background:#f7fbfd !important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function reviewIsOpen(){
-    // supabase.js removes .hide from #backBar only in review mode.
-    // CSS hides the bar visually, but the class still gives us a reliable
-    // internal signal without changing the existing review implementation.
-    return !!backBar && !backBar.classList.contains('hide');
-  }
-
-  function returnToMyScoringIfNeeded(){
-    if(!reviewIsOpen() || !backBtn) return;
-
-    // Reuse the existing Back-to-my-scoring handler. This also triggers the
-    // existing single-column reset supplemental fix, so review columns cannot
-    // leak back into scoring mode.
-    backBtn.click();
-  }
-
-  function syncSelectionState(){
-    ensureStyle();
-
-    const dashboardVisible =
-      !dashboard.classList.contains('hide');
-
-    // Selected result styling should exist only during an actual review.
-    const suppress =
-      dashboardVisible || !reviewIsOpen();
-
-    document.body.classList.toggle(
-      BODY_CLASS,
-      suppress
-    );
-  }
-
-  /*
-    Run BEFORE dashboard.js's normal click handlers.
-
-    If a reviewer is currently looking at somebody's Results/History and taps
-    "Evaluation form", first restore "mine" mode; dashboard.js then opens the
-    form normally.
-  */
-  drawerEvaluation?.addEventListener('click', () => {
-    returnToMyScoringIfNeeded();
-    syncSelectionState();
-  }, true);
-
-  /*
-    The header's Start Evaluation button is another route into the scoring
-    form. When it is clicked from Dashboard, it should obey the same rule and
-    never reopen a stale review.
-  */
-  headerActionBtn?.addEventListener('click', () => {
-    const dashboardVisible =
-      !dashboard.classList.contains('hide');
-
-    if(dashboardVisible){
-      returnToMyScoringIfNeeded();
-      syncSelectionState();
+    // Keep only the empty state container because supabase.js calls
+    // show('backBar', ...). The actual button is removed from the live DOM.
+    if(backBar){
+      backBar.setAttribute('aria-hidden', 'true');
+      backBar.style.display = 'none';
     }
-  }, true);
 
-  new MutationObserver(syncSelectionState).observe(dashboard, {
-    attributes:true,
-    attributeFilter:['class']
-  });
+    // Supabase and the existing single-column reset script have already
+    // registered their click handlers by DOMContentLoaded. Keep this detached
+    // reference privately, then remove the button from the document.
+    backBtn?.remove();
 
-  if(backBar){
-    new MutationObserver(syncSelectionState).observe(backBar, {
+    /* ---------------------------------------------------------
+       Review → normal scoring
+       --------------------------------------------------------- */
+
+    function isReviewMode(){
+      return whoK?.textContent?.trim() === 'Results for';
+    }
+
+    function returnToMyScoring(){
+      if(!isReviewMode()) return false;
+      if(!backBtn) return false;
+
+      // Fires the existing Supabase reset logic plus the existing
+      // single-column reset fix, but the button itself is no longer in the DOM.
+      backBtn.click();
+      return true;
+    }
+
+    // One internal navigation API; no visible Back button is needed.
+    window.__returnToMyScoring = returnToMyScoring;
+
+    /*
+      Capture phase runs before dashboard.js's normal navigation handler.
+      Evaluation form therefore always exits Results/History first, then the
+      existing dashboard code opens the normal scoring form.
+    */
+    drawerEvaluation?.addEventListener('click', () => {
+      returnToMyScoring();
+    }, true);
+
+    /*
+      Start Evaluation is another path from Dashboard to the scoring form.
+      If an old Results view is still the internal form state, clear it first.
+      When already on the form this header button means Dashboard, so do not
+      reset anything in that case.
+    */
+    headerActionBtn?.addEventListener('click', () => {
+      const dashboardVisible = !dashboard.classList.contains('hide');
+      if(dashboardVisible) returnToMyScoring();
+    }, true);
+
+    /* ---------------------------------------------------------
+       Result-row selected appearance
+       --------------------------------------------------------- */
+
+    function ensureStyle(){
+      if(document.getElementById('navigation-authority-style')) return;
+
+      const style = document.createElement('style');
+      style.id = 'navigation-authority-style';
+      style.textContent = `
+        /* #backBar may have its hide class toggled by the existing review
+           code, but it contains no button and must never reserve space. */
+        #backBar{
+          display:none !important;
+        }
+
+        body.${BODY_CLASS} #resList .res-row.on{
+          border-color:var(--line) !important;
+          background:#fff !important;
+        }
+
+        body.${BODY_CLASS} #resList .res-row.on:hover{
+          border-color:var(--lagoon) !important;
+          background:#f7fbfd !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    function syncSelectionState(){
+      ensureStyle();
+
+      const dashboardVisible =
+        !dashboard.classList.contains('hide');
+
+      // Highlight a result only while that Results/History review is actually
+      // the active form state.
+      document.body.classList.toggle(
+        BODY_CLASS,
+        dashboardVisible || !isReviewMode()
+      );
+    }
+
+    new MutationObserver(syncSelectionState).observe(dashboard, {
       attributes:true,
       attributeFilter:['class']
     });
+
+    if(whoK){
+      new MutationObserver(syncSelectionState).observe(whoK, {
+        childList:true,
+        subtree:true,
+        characterData:true
+      });
+    }
+
+    ensureStyle();
+    syncSelectionState();
   }
 
-  ensureStyle();
-  syncSelectionState();
+  // supabase.js is a deferred module with top-level awaits. DOMContentLoaded
+  // fires only after it finishes attaching the existing reset handlers.
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init, { once:true });
+  }else{
+    init();
+  }
 })();
