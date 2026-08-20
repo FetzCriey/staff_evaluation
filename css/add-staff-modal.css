@@ -399,3 +399,21 @@
     overflow:auto;
   }
 }
+
+
+/* =========================================================
+   HIDE MODAL SCROLLBAR
+   Keep overflow working when needed, but remove the visible
+   scrollbar that appears when the lower dropdown opens.
+   ========================================================= */
+
+.staff-add-dialog{
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+
+.staff-add-dialog::-webkit-scrollbar{
+  width:0;
+  height:0;
+  display:none;
+}
