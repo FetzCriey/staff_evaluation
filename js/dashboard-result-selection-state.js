@@ -1,154 +1,208 @@
 /* =========================================================
-   NAVIGATION AUTHORITY + OBSOLETE BUTTON REMOVAL
+   NAVIGATION AUTHORITY — SAFE INITIALIZATION
 
-   - The duplicate in-form "← Dashboard" row is removed from the DOM.
-   - The "Back to my scoring" BUTTON is removed from the DOM.
-   - Its already-registered reset handlers are kept on the detached button
-     object and exposed through one internal function.
-   - Sidebar "Evaluation form" and Dashboard "Start Evaluation" use that
-     function whenever the current form is in Results/History review mode.
-   - The empty #backBar container remains only because supabase.js currently
-     uses it as an internal review-mode visibility/state hook.
+   Important:
+   supabase.js initializes asynchronously and attaches Results + History
+   handlers to #backBtn late in that process. Never remove #backBtn until
+   those handlers and sidebar loaders are fully initialized.
+
+   After initialization:
+   - duplicate in-form "← Dashboard" is removed
+   - "Back to my scoring" is removed from the live DOM
+   - Sidebar "Evaluation form" / Dashboard "Start Evaluation" can still call
+     the already-registered reset handlers through the detached button object
+   - Results and History continue loading normally
    ========================================================= */
 
 (() => {
   const BODY_CLASS = 'suppress-result-selection';
 
-  function init(){
-    const dashboard = document.getElementById('dashboardView');
-    const whoK = document.getElementById('whoK');
-    const backBar = document.getElementById('backBar');
-    const backBtn = document.getElementById('backBtn');
-    const drawerEvaluation = document.getElementById('drawerEvaluation');
-    const headerActionBtn = document.getElementById('headerActionBtn');
+  const dashboard = document.getElementById('dashboardView');
+  const whoK = document.getElementById('whoK');
+  const backBar = document.getElementById('backBar');
+  const backBtn = document.getElementById('backBtn');
+  const drawerEvaluation = document.getElementById('drawerEvaluation');
+  const headerActionBtn = document.getElementById('headerActionBtn');
 
-    if(!dashboard) return;
+  if(!dashboard) return;
 
-    /* ---------------------------------------------------------
-       Remove the obsolete visible navigation controls.
-       --------------------------------------------------------- */
+  let navigationReady = false;
+  let detachedBackBtn = null;
 
-    // Header already contains Dashboard, so this duplicate row is unnecessary.
+  function ensureStyle(){
+    if(document.getElementById('navigation-authority-style')) return;
+
+    const style = document.createElement('style');
+    style.id = 'navigation-authority-style';
+    style.textContent = `
+      /* The state container is never part of visible navigation. */
+      #backBar{
+        display:none !important;
+      }
+
+      body.${BODY_CLASS} #resList .res-row.on{
+        border-color:var(--line) !important;
+        background:#fff !important;
+      }
+
+      body.${BODY_CLASS} #resList .res-row.on:hover{
+        border-color:var(--lagoon) !important;
+        background:#f7fbfd !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function isReviewMode(){
+    return whoK?.textContent?.trim() === 'Results for';
+  }
+
+  function returnToMyScoring(){
+    if(!isReviewMode()) return true;
+
+    const resetButton = detachedBackBtn || document.getElementById('backBtn');
+    if(!resetButton) return false;
+
+    // All Supabase + single-column-reset handlers are attached before the
+    // button is detached, so click() remains a valid internal reset action.
+    resetButton.click();
+    return true;
+  }
+
+  function syncSelectionState(){
+    ensureStyle();
+
+    const dashboardVisible =
+      !dashboard.classList.contains('hide');
+
+    document.body.classList.toggle(
+      BODY_CLASS,
+      dashboardVisible || !isReviewMode()
+    );
+  }
+
+  function finishNavigationSetup(){
+    if(navigationReady) return;
+
+    navigationReady = true;
+
+    // Safe now: Supabase has already reached Results + History initialization.
     document.querySelector('.dash-back-row')?.remove();
 
-    // Keep only the empty state container because supabase.js calls
-    // show('backBar', ...). The actual button is removed from the live DOM.
     if(backBar){
       backBar.setAttribute('aria-hidden', 'true');
       backBar.style.display = 'none';
     }
 
-    // Supabase and the existing single-column reset script have already
-    // registered their click handlers by DOMContentLoaded. Keep this detached
-    // reference privately, then remove the button from the document.
-    backBtn?.remove();
-
-    /* ---------------------------------------------------------
-       Review → normal scoring
-       --------------------------------------------------------- */
-
-    function isReviewMode(){
-      return whoK?.textContent?.trim() === 'Results for';
+    const liveBackBtn = document.getElementById('backBtn');
+    if(liveBackBtn){
+      detachedBackBtn = liveBackBtn;
+      liveBackBtn.remove();
     }
 
-    function returnToMyScoring(){
-      if(!isReviewMode()) return false;
-      if(!backBtn) return false;
-
-      // Fires the existing Supabase reset logic plus the existing
-      // single-column reset fix, but the button itself is no longer in the DOM.
-      backBtn.click();
-      return true;
-    }
-
-    // One internal navigation API; no visible Back button is needed.
     window.__returnToMyScoring = returnToMyScoring;
-
-    /*
-      Capture phase runs before dashboard.js's normal navigation handler.
-      Evaluation form therefore always exits Results/History first, then the
-      existing dashboard code opens the normal scoring form.
-    */
-    drawerEvaluation?.addEventListener('click', () => {
-      returnToMyScoring();
-    }, true);
-
-    /*
-      Start Evaluation is another path from Dashboard to the scoring form.
-      If an old Results view is still the internal form state, clear it first.
-      When already on the form this header button means Dashboard, so do not
-      reset anything in that case.
-    */
-    headerActionBtn?.addEventListener('click', () => {
-      const dashboardVisible = !dashboard.classList.contains('hide');
-      if(dashboardVisible) returnToMyScoring();
-    }, true);
-
-    /* ---------------------------------------------------------
-       Result-row selected appearance
-       --------------------------------------------------------- */
-
-    function ensureStyle(){
-      if(document.getElementById('navigation-authority-style')) return;
-
-      const style = document.createElement('style');
-      style.id = 'navigation-authority-style';
-      style.textContent = `
-        /* #backBar may have its hide class toggled by the existing review
-           code, but it contains no button and must never reserve space. */
-        #backBar{
-          display:none !important;
-        }
-
-        body.${BODY_CLASS} #resList .res-row.on{
-          border-color:var(--line) !important;
-          background:#fff !important;
-        }
-
-        body.${BODY_CLASS} #resList .res-row.on:hover{
-          border-color:var(--lagoon) !important;
-          background:#f7fbfd !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    function syncSelectionState(){
-      ensureStyle();
-
-      const dashboardVisible =
-        !dashboard.classList.contains('hide');
-
-      // Highlight a result only while that Results/History review is actually
-      // the active form state.
-      document.body.classList.toggle(
-        BODY_CLASS,
-        dashboardVisible || !isReviewMode()
-      );
-    }
-
-    new MutationObserver(syncSelectionState).observe(dashboard, {
-      attributes:true,
-      attributeFilter:['class']
-    });
-
-    if(whoK){
-      new MutationObserver(syncSelectionState).observe(whoK, {
-        childList:true,
-        subtree:true,
-        characterData:true
-      });
-    }
-
-    ensureStyle();
     syncSelectionState();
   }
 
-  // supabase.js is a deferred module with top-level awaits. DOMContentLoaded
-  // fires only after it finishes attaching the existing reset handlers.
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', init, { once:true });
-  }else{
-    init();
+  /*
+    Wait for Supabase's reviewer initialization markers.
+
+    __refreshResults is assigned after the Results button handler is attached.
+    __clearArchiveView is assigned after the History/back handler is attached.
+    Once both exist, removing the visible Back button cannot interrupt
+    supabase.js initialization.
+  */
+  const started = Date.now();
+
+  const readyTimer = setInterval(() => {
+    const resultsReady =
+      typeof window.__refreshResults === 'function';
+
+    const historyReady =
+      typeof window.__clearArchiveView === 'function';
+
+    if(resultsReady && historyReady){
+      clearInterval(readyTimer);
+      finishNavigationSetup();
+      return;
+    }
+
+    /*
+      Basic/Probationary users never initialize Results/History because they
+      do not have reviewer access. Once the authenticated page is fully shown
+      and those sections remain hidden, there is no Results/History handler
+      waiting for #backBtn.
+    */
+    const wrapReady =
+      !document.getElementById('wrap')?.classList.contains('hide');
+
+    const resultsUnavailable =
+      document.getElementById('secResults')?.classList.contains('hide');
+
+    const historyUnavailable =
+      document.getElementById('secHistory')?.classList.contains('hide');
+
+    if(
+      wrapReady &&
+      resultsUnavailable &&
+      historyUnavailable &&
+      Date.now() - started > 1500
+    ){
+      clearInterval(readyTimer);
+      finishNavigationSetup();
+      return;
+    }
+
+    // Safety timeout: do not keep polling forever if another unrelated script
+    // fails. Crucially, unlike the previous version, do NOT remove #backBtn
+    // early during this timeout period.
+    if(Date.now() - started > 12000){
+      clearInterval(readyTimer);
+      console.info(
+        'Navigation cleanup skipped because Results/History did not finish initializing.'
+      );
+    }
+  }, 100);
+
+  /*
+    These capture listeners are safe even before cleanup completes:
+    while #backBtn is still in the DOM they use it normally; after cleanup
+    they use the detached reference with the same registered handlers.
+  */
+  drawerEvaluation?.addEventListener('click', event => {
+    if(!isReviewMode()) return;
+
+    if(!returnToMyScoring()){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, true);
+
+  headerActionBtn?.addEventListener('click', event => {
+    const dashboardVisible =
+      !dashboard.classList.contains('hide');
+
+    if(!dashboardVisible || !isReviewMode()) return;
+
+    if(!returnToMyScoring()){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, true);
+
+  new MutationObserver(syncSelectionState).observe(dashboard, {
+    attributes:true,
+    attributeFilter:['class']
+  });
+
+  if(whoK){
+    new MutationObserver(syncSelectionState).observe(whoK, {
+      childList:true,
+      subtree:true,
+      characterData:true
+    });
   }
+
+  ensureStyle();
+  syncSelectionState();
 })();
