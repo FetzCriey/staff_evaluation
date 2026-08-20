@@ -28,26 +28,59 @@ function ensureStyles(){
   style.id = 'recent-evaluation-results-link-style';
   style.textContent = `
     .dash-live-eval-row.recent-review-link{
+      position:relative;
       cursor:pointer;
-      border-radius:10px;
+      border-radius:11px;
       transition:
-        background-color .15s ease,
-        box-shadow .15s ease,
-        transform .12s ease;
+        background-color .16s ease,
+        box-shadow .16s ease,
+        transform .14s ease;
+    }
+
+    .dash-live-eval-row.recent-review-link::before{
+      content:"";
+      position:absolute;
+      top:9px;
+      bottom:9px;
+      left:-4px;
+      width:3px;
+      border-radius:999px;
+      background:var(--lagoon);
+      opacity:0;
+      transform:scaleY(.45);
+      transition:
+        opacity .16s ease,
+        transform .16s ease;
     }
 
     .dash-live-eval-row.recent-review-link:hover{
-      background:#f4fafd;
-      box-shadow:inset 0 0 0 1px #d7e9f3;
+      background:#eaf7fd;
+      box-shadow:
+        inset 0 0 0 1.5px #9fd6ec,
+        0 7px 18px -12px rgba(8,52,76,.55);
+      transform:translateY(-1px);
+    }
+
+    .dash-live-eval-row.recent-review-link:hover::before{
+      opacity:1;
+      transform:scaleY(1);
     }
 
     .dash-live-eval-row.recent-review-link:active{
-      transform:scale(.997);
+      transform:translateY(0) scale(.995);
+      background:#e2f4fc;
     }
 
     .dash-live-eval-row.recent-review-link:focus-visible{
-      outline:3px solid rgba(21,172,227,.20);
+      outline:3px solid rgba(21,172,227,.32);
       outline-offset:2px;
+      background:#eaf7fd;
+      box-shadow:inset 0 0 0 1.5px #9fd6ec;
+    }
+
+    .dash-live-eval-row.recent-review-link:focus-visible::before{
+      opacity:1;
+      transform:scaleY(1);
     }
   `;
   document.head.appendChild(style);
