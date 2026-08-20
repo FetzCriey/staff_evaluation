@@ -27,7 +27,6 @@
   const ENTERABLE = [
     '.ac-item',
     '.bp-select-option',
-    '.res-row',
     '.his-row',
     '.mgr-row',
     '.dash-live-eval-row',
@@ -35,6 +34,25 @@
     '.prog-chip',
     '.c-card'
   ].join(',');
+
+  // Evaluation Results is rebuilt as a complete list whenever its counts or
+  // selected person refresh. Re-running the entrance animation on every rebuilt
+  // .res-row causes the brief whole-list flash users can see after a review
+  // opens. Keep their click/hover transitions, but animate each staff name only
+  // once per page session.
+  const animatedResultNames = new Set();
+
+  function resultRowName(row){
+    return row?.querySelector?.('.res-nm')?.textContent?.trim().toLowerCase() || '';
+  }
+
+  function animateResultRowOnce(row){
+    const key = resultRowName(row);
+    if(!key || animatedResultNames.has(key)) return;
+
+    animatedResultNames.add(key);
+    animateEnter(row);
+  }
 
   const VALUE_TARGET = [
     '.dash-big-score',
@@ -130,6 +148,16 @@
 
   function scanAddedNode(node){
     if(node.nodeType !== Node.ELEMENT_NODE) return;
+
+    // Evaluation Results rows are special: the entire list is frequently
+    // reconstructed by Supabase, so only the first DOM instance for each
+    // staff name receives the entrance animation.
+    if(node.matches?.('.res-row')){
+      animateResultRowOnce(node);
+    }
+
+    [...node.querySelectorAll?.('.res-row') || []]
+      .forEach(animateResultRowOnce);
 
     if(node.matches?.(ENTERABLE)){
       animateEnter(node);
