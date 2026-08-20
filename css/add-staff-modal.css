@@ -199,3 +199,55 @@
   .staff-add-head h2{font-size:21px}
   .staff-add-body{padding:17px}
 }
+
+
+/* =========================================================
+   THEMED SELECT DROPDOWNS
+   Match Better Practice lagoon / navy interface.
+   ========================================================= */
+
+.staff-add-form select{
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  cursor:pointer;
+  padding-right:42px;
+  background-color:#f8fcfe;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--lagoon-deep) 50%),
+    linear-gradient(135deg, var(--lagoon-deep) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 13px) calc(50% - 2px);
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
+}
+
+.staff-add-form select:hover{
+  border-color:#8ccbe8;
+  background-color:#f2f9fc;
+}
+
+.staff-add-form select:focus{
+  background-color:#fff;
+  border-color:var(--lagoon);
+  box-shadow:0 0 0 4px rgba(21,172,227,.13);
+}
+
+.staff-add-form select option{
+  background:#ffffff;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:600;
+}
+
+.staff-add-form select option:checked{
+  background:var(--accent-soft);
+  color:var(--lagoon-deep);
+}
+
+/* Chromium/WebKit popup styling where supported. */
+.staff-add-form select:focus option:checked{
+  background:linear-gradient(var(--accent-soft),var(--accent-soft));
+  color:var(--lagoon-deep);
+}
