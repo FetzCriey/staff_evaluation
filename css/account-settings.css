@@ -300,3 +300,177 @@
   .account-settings-body{padding:17px}
   .settings-photo-actions{grid-template-columns:1fr}
 }
+
+
+/* =========================================================
+   PROFILE PICTURE CROP
+   ========================================================= */
+
+.profile-crop-modal[hidden]{display:none !important}
+
+.profile-crop-modal{
+  position:fixed;
+  inset:0;
+  z-index:175;
+  display:grid;
+  place-items:center;
+  padding:18px;
+}
+
+.profile-crop-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(5,30,45,.72);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+
+.profile-crop-dialog{
+  position:relative;
+  z-index:1;
+  width:min(430px,100%);
+  border:1.5px solid rgba(201,223,238,.95);
+  border-radius:20px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 32px 90px -24px rgba(5,30,45,.78);
+  animation:accountSettingsIn .18s ease-out;
+}
+
+.profile-crop-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:18px 19px;
+  color:#f2fafe;
+  background:
+    radial-gradient(120% 100% at 90% -20%,rgba(21,172,227,.52),transparent 56%),
+    linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 58%,#051e2d 100%);
+}
+
+.profile-crop-kicker{
+  margin-bottom:4px;
+  color:rgba(180,224,245,.86);
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+
+.profile-crop-head h2{
+  margin:0;
+  color:#fff;
+  font-family:"Bricolage Grotesque","Inter",sans-serif;
+  font-size:21px;
+}
+
+.profile-crop-close{
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border:1.5px solid rgba(255,255,255,.22);
+  border-radius:11px;
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  cursor:pointer;
+}
+
+.profile-crop-body{padding:18px}
+
+.profile-crop-stage{
+  position:relative;
+  width:min(320px,78vw);
+  margin:0 auto;
+  aspect-ratio:1;
+  overflow:hidden;
+  border-radius:18px;
+  background:#dcecf6;
+  box-shadow:inset 0 0 0 1.5px #bddbec;
+  touch-action:none;
+  user-select:none;
+}
+
+.profile-crop-stage canvas{
+  width:100%;
+  height:100%;
+  display:block;
+  cursor:grab;
+  touch-action:none;
+}
+
+.profile-crop-stage canvas:active{cursor:grabbing}
+
+.profile-crop-guide{
+  position:absolute;
+  inset:9px;
+  pointer-events:none;
+  border:2px solid rgba(255,255,255,.92);
+  border-radius:16px;
+  box-shadow:
+    0 0 0 999px rgba(5,30,45,.16),
+    0 0 0 1px rgba(8,52,76,.18);
+}
+
+.profile-crop-zoom-row{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  align-items:center;
+  gap:12px;
+  margin-top:16px;
+  color:var(--ink-soft);
+  font-size:11px;
+  font-weight:750;
+}
+
+.profile-crop-zoom-row input{
+  width:100%;
+  accent-color:var(--lagoon);
+}
+
+.profile-crop-hint{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:10.5px;
+  text-align:center;
+}
+
+.profile-crop-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:16px;
+}
+
+/* =========================================================
+   SAVED AVATARS ACROSS THE DASHBOARD
+   ========================================================= */
+
+.dash-live-avatar,
+.dash-rank-avatar,
+[data-current-user-avatar]{
+  overflow:hidden;
+}
+
+.dash-live-avatar.has-avatar-photo,
+.dash-rank-avatar.has-avatar-photo{
+  padding:0;
+  background:#eaf4fa;
+}
+
+.dash-live-avatar img,
+.dash-rank-avatar img,
+[data-current-user-avatar] img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+}
+
+@media(max-width:560px){
+  .profile-crop-modal{padding:12px}
+  .profile-crop-dialog{border-radius:18px}
+  .profile-crop-body{padding:15px}
+  .profile-crop-actions{grid-template-columns:1fr}
+}
