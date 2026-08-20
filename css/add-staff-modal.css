@@ -251,3 +251,151 @@
   background:linear-gradient(var(--accent-soft),var(--accent-soft));
   color:var(--lagoon-deep);
 }
+
+
+/* =========================================================
+   FULLY CUSTOM ADD-STAFF DROPDOWNS
+   Replaces the OS/browser popup UI while keeping the native
+   <select> underneath for the existing Supabase logic.
+   ========================================================= */
+
+.staff-add-form select.bp-native-select{
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  padding:0 !important;
+  margin:0 !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  clip:rect(0 0 0 0) !important;
+  clip-path:inset(50%) !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+}
+
+.bp-select{
+  position:relative;
+  width:100%;
+}
+
+.bp-select-btn{
+  width:100%;
+  min-height:43px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:10px 12px;
+  border:1.5px solid #bcd8ea;
+  border-radius:10px;
+  background:#f8fcfe;
+  color:var(--ink);
+  font:inherit;
+  font-size:13px;
+  text-align:left;
+  cursor:pointer;
+  transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+}
+
+.bp-select-btn:hover{
+  border-color:#8ccbe8;
+  background:#f2f9fc;
+}
+
+.bp-select.open .bp-select-btn,
+.bp-select-btn:focus-visible{
+  outline:none;
+  background:#fff;
+  border-color:var(--lagoon);
+  box-shadow:0 0 0 4px rgba(21,172,227,.13);
+}
+
+.bp-select-label{
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:600;
+}
+
+.bp-select-arrow{
+  width:9px;
+  height:9px;
+  flex:0 0 9px;
+  border-right:2px solid var(--lagoon-deep);
+  border-bottom:2px solid var(--lagoon-deep);
+  transform:rotate(45deg) translateY(-2px);
+  transition:transform .15s ease;
+}
+
+.bp-select.open .bp-select-arrow{
+  transform:rotate(225deg) translate(-1px,-1px);
+}
+
+.bp-select-menu{
+  position:absolute;
+  z-index:30;
+  left:0;
+  right:0;
+  top:calc(100% + 6px);
+  display:none;
+  padding:6px;
+  border:1.5px solid #bcd8ea;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 16px 36px -18px rgba(8,52,76,.48);
+}
+
+.bp-select.open .bp-select-menu{
+  display:block;
+  animation:bpSelectOpen .12s ease-out;
+}
+
+@keyframes bpSelectOpen{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.bp-select-option{
+  width:100%;
+  display:flex;
+  align-items:center;
+  min-height:38px;
+  padding:9px 10px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--ink-soft);
+  font:inherit;
+  font-size:13px;
+  font-weight:650;
+  text-align:left;
+  cursor:pointer;
+}
+
+.bp-select-option:hover,
+.bp-select-option.focused{
+  background:var(--accent-soft);
+  color:var(--lagoon-deep);
+}
+
+.bp-select-option.selected{
+  background:linear-gradient(90deg,rgba(21,172,227,.18),rgba(11,127,176,.10));
+  color:var(--lagoon-deep);
+  font-weight:800;
+}
+
+.bp-select-option.selected::after{
+  content:"✓";
+  margin-left:auto;
+  color:var(--lagoon-deep);
+  font-weight:900;
+}
+
+@media(max-width:560px){
+  .bp-select-menu{
+    max-height:210px;
+    overflow:auto;
+  }
+}
