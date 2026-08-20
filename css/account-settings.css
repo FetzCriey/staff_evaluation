@@ -1,0 +1,302 @@
+/* =========================================================
+   ACCOUNT SETTINGS
+   Available to every authenticated staff member.
+   ========================================================= */
+
+.acct-settings-btn{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top:12px;
+  padding:10px 12px;
+  border:1.5px solid var(--line);
+  border-radius:11px;
+  background:#f6fbfe;
+  color:var(--ink-soft);
+  font:inherit;
+  font-size:12px;
+  font-weight:750;
+  cursor:pointer;
+  transition:.15s ease;
+}
+
+.acct-settings-btn:hover{
+  background:var(--accent-soft);
+  border-color:#9bd3eb;
+  color:var(--lagoon-deep);
+}
+
+.avatar{
+  overflow:hidden;
+}
+
+.avatar img,
+.settings-avatar-preview img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+}
+
+/* modal */
+.account-settings-modal[hidden]{display:none !important}
+
+.account-settings-modal{
+  position:fixed;
+  inset:0;
+  z-index:150;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+
+.account-settings-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(5,30,45,.58);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+
+.account-settings-dialog{
+  position:relative;
+  z-index:1;
+  width:min(480px,100%);
+  max-height:min(760px,calc(100vh - 40px));
+  overflow:auto;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+  border:1.5px solid rgba(201,223,238,.95);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 30px 90px -28px rgba(5,30,45,.72);
+  animation:accountSettingsIn .18s ease-out;
+}
+
+.account-settings-dialog::-webkit-scrollbar{
+  display:none;
+  width:0;
+  height:0;
+}
+
+@keyframes accountSettingsIn{
+  from{opacity:0;transform:translateY(10px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.account-settings-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:20px;
+  color:#f2fafe;
+  background:
+    radial-gradient(120% 100% at 90% -20%,rgba(21,172,227,.52),transparent 56%),
+    linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 58%,#051e2d 100%);
+}
+
+.account-settings-kicker{
+  margin-bottom:4px;
+  color:rgba(180,224,245,.86);
+  font-size:9.5px;
+  font-weight:700;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+
+.account-settings-head h2{
+  margin:0;
+  color:#fff;
+  font-family:"Bricolage Grotesque","Inter",sans-serif;
+  font-size:22px;
+}
+
+.account-settings-close{
+  width:37px;
+  height:37px;
+  display:grid;
+  place-items:center;
+  border:1.5px solid rgba(255,255,255,.22);
+  border-radius:11px;
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  cursor:pointer;
+}
+
+.account-settings-close:hover{background:rgba(255,255,255,.18)}
+
+.account-settings-body{padding:20px}
+
+.settings-section{display:flex;flex-direction:column;gap:10px}
+
+.settings-section-title{
+  color:var(--ink);
+  font-size:14px;
+  font-weight:800;
+}
+
+.settings-photo-row{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:12px;
+  border:1.5px solid var(--line);
+  border-radius:14px;
+  background:#f7fbfd;
+}
+
+.settings-avatar-preview{
+  width:62px;
+  height:62px;
+  flex:0 0 62px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:17px;
+  background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
+  color:#fff;
+  font-size:18px;
+  font-weight:800;
+  box-shadow:0 8px 18px -10px rgba(21,172,227,.72);
+}
+
+.settings-photo-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+
+.settings-photo-copy strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--ink);
+  font-size:13px;
+}
+
+.settings-photo-copy span{
+  color:var(--muted);
+  font-size:11px;
+}
+
+.settings-file-input{display:none}
+
+.settings-photo-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+
+.settings-btn{
+  min-height:41px;
+  border-radius:10px;
+  font:inherit;
+  font-size:12.5px;
+  font-weight:750;
+  cursor:pointer;
+}
+
+.settings-btn:disabled{
+  opacity:.58;
+  cursor:not-allowed;
+}
+
+.settings-btn-primary{
+  border:0;
+  background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
+  color:#fff;
+  box-shadow:0 8px 18px -9px rgba(21,172,227,.65);
+}
+
+.settings-btn-ghost{
+  border:1.5px solid var(--line);
+  background:#fff;
+  color:var(--ink-soft);
+}
+
+.settings-btn-ghost:hover{
+  background:var(--accent-soft);
+  color:var(--lagoon-deep);
+}
+
+.settings-divider{
+  height:1px;
+  margin:20px 0;
+  background:var(--line);
+}
+
+.settings-label{
+  margin-top:2px;
+  color:var(--ink-soft);
+  font-size:10px;
+  font-weight:750;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+
+.settings-password-wrap{
+  position:relative;
+}
+
+.settings-password-wrap input{
+  width:100%;
+  min-height:43px;
+  padding:10px 64px 10px 12px;
+  border:1.5px solid #bcd8ea;
+  border-radius:10px;
+  background:#f8fcfe;
+  color:var(--ink);
+  font:inherit;
+  font-size:13px;
+  outline:none;
+}
+
+.settings-password-wrap input:focus{
+  background:#fff;
+  border-color:var(--lagoon);
+  box-shadow:0 0 0 4px rgba(21,172,227,.13);
+}
+
+.settings-password-toggle{
+  position:absolute;
+  top:50%;
+  right:7px;
+  transform:translateY(-50%);
+  border:0;
+  border-radius:7px;
+  padding:5px 7px;
+  background:transparent;
+  color:var(--lagoon-deep);
+  font:inherit;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.settings-password-save{margin-top:4px}
+
+.settings-status{
+  min-height:16px;
+  color:var(--muted);
+  font-size:11.5px;
+  text-align:center;
+}
+
+.settings-status.err{color:var(--error-ink)}
+.settings-status.ok{color:#187648}
+
+@media(max-width:560px){
+  .account-settings-modal{padding:14px}
+  .account-settings-dialog{
+    width:100%;
+    max-height:calc(100vh - 28px);
+    border-radius:18px;
+  }
+  .account-settings-head{padding:18px 17px}
+  .account-settings-body{padding:17px}
+  .settings-photo-actions{grid-template-columns:1fr}
+}
