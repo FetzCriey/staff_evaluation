@@ -184,7 +184,7 @@ function createCropUi(){
 
         <div class="profile-crop-actions">
           <button class="settings-btn settings-btn-ghost" type="button" data-crop-cancel>Cancel</button>
-          <button class="settings-btn settings-btn-primary" type="button" id="useCroppedPicture">Use cropped picture</button>
+          <button class="settings-btn settings-btn-primary" type="button" id="useCroppedPicture">OK</button>
         </div>
       </div>
     </section>
@@ -425,9 +425,6 @@ async function uploadAvatarBlob(blob){
       detail:{ userId:uid, avatarPath:path }
     }));
 
-    if(typeof window.uiAlert === 'function'){
-      await window.uiAlert('Profile picture updated', 'Your cropped picture is now used across the site.');
-    }
   }catch(err){
     setStatus(photoStatus, err?.message || 'Could not upload the picture.', 'err');
   }finally{
