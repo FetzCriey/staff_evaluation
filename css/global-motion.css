@@ -1,0 +1,368 @@
+/* =========================================================
+   BETTER PRACTICE — SITE-WIDE MOTION SYSTEM
+   Shared micro-interactions for the dashboard, evaluation form,
+   sidebar, modal UI, dynamic lists, and login page.
+
+   This file adds motion only. It does not change app state,
+   permissions, evaluation logic, Supabase behavior, or layout.
+   ========================================================= */
+
+:root{
+  --motion-instant:110ms;
+  --motion-fast:160ms;
+  --motion-base:240ms;
+  --motion-slow:360ms;
+  --motion-ease:cubic-bezier(.2,.75,.25,1);
+  --motion-spring:cubic-bezier(.18,1.25,.32,1);
+}
+
+/* Smooth page movement for anchors / programmatic scrolling. */
+html{
+  scroll-behavior:smooth;
+}
+
+/* ---------------------------------------------------------
+   Universal interactive transitions
+   --------------------------------------------------------- */
+
+body.motion-ready :where(
+  button,
+  a[href],
+  [role="button"],
+  input,
+  textarea,
+  select,
+  .ac-item,
+  .bp-select-option,
+  .res-row,
+  .his-main,
+  .mgr-row,
+  .dash-live-eval-row,
+  .dash-rank-row,
+  .prog-chip,
+  .dash-metric,
+  .dash-panel-card,
+  .score-in
+){
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--motion-ease),
+    opacity var(--motion-fast) ease,
+    filter var(--motion-fast) ease,
+    translate var(--motion-fast) var(--motion-ease),
+    scale var(--motion-fast) var(--motion-ease);
+}
+
+/* Clickable controls get a small lift before the press. */
+@media (hover:hover){
+  body.motion-ready :where(
+    button:not(:disabled),
+    a[href],
+    [role="button"],
+    .ac-item,
+    .bp-select-option,
+    .res-row,
+    .his-main,
+    .dash-live-eval-row
+  ):hover{
+    translate:0 -1px;
+  }
+
+  /* Non-click dashboard content moves more gently. */
+  body.motion-ready :where(
+    .dash-metric,
+    .dash-panel-card,
+    .dash-rank-row,
+    .prog-chip
+  ):hover{
+    translate:0 -2px;
+  }
+}
+
+/* Physical press feedback. */
+body.motion-ready :where(
+  button:not(:disabled),
+  a[href],
+  [role="button"],
+  .ac-item,
+  .bp-select-option,
+  .res-row,
+  .his-main,
+  .dash-live-eval-row
+):active{
+  scale:.975;
+  translate:0 0;
+}
+
+/* JS reapplies this for mouse, touch and pen clicks. */
+.motion-click{
+  animation:motionPress 210ms var(--motion-ease);
+}
+
+@keyframes motionPress{
+  0%{scale:1}
+  42%{scale:.965}
+  100%{scale:1}
+}
+
+/* ---------------------------------------------------------
+   Fields / score inputs
+   --------------------------------------------------------- */
+
+body.motion-ready :where(input,textarea,select,.score-in):focus{
+  scale:1.004;
+}
+
+.motion-value-change{
+  animation:motionValue 260ms var(--motion-spring);
+}
+
+@keyframes motionValue{
+  0%{scale:.96;opacity:.72}
+  65%{scale:1.025}
+  100%{scale:1;opacity:1}
+}
+
+/* ---------------------------------------------------------
+   Dynamic rows / autocomplete / realtime content
+   --------------------------------------------------------- */
+
+.motion-enter{
+  animation:motionEnter 300ms var(--motion-ease) both;
+}
+
+@keyframes motionEnter{
+  from{
+    opacity:0;
+    translate:0 7px;
+    scale:.992;
+  }
+  to{
+    opacity:1;
+    translate:0 0;
+    scale:1;
+  }
+}
+
+/* Slight staggering is assigned by JS with --motion-delay. */
+.motion-enter{
+  animation-delay:var(--motion-delay,0ms);
+}
+
+/* ---------------------------------------------------------
+   Panels, cards and progress
+   --------------------------------------------------------- */
+
+body.motion-ready :where(
+  .dash-progress-track > span,
+  .dash-live-progress > span,
+  .dash-rank-bar > span,
+  .res-bar > span,
+  .prog-chip-fill,
+  #progFill
+){
+  transition:
+    width var(--motion-slow) var(--motion-ease),
+    background-color var(--motion-fast) ease,
+    opacity var(--motion-fast) ease;
+}
+
+body.motion-ready :where(
+  .dash-metric,
+  .dash-panel-card
+){
+  transform-origin:center;
+}
+
+@media (hover:hover){
+  body.motion-ready .dash-metric:hover{
+    box-shadow:
+      0 2px 4px rgba(8,52,76,.06),
+      0 18px 38px -18px rgba(8,52,76,.32);
+  }
+
+  body.motion-ready .dash-panel-card:hover{
+    box-shadow:
+      0 2px 4px rgba(8,52,76,.05),
+      0 18px 42px -22px rgba(8,52,76,.30);
+  }
+}
+
+/* ---------------------------------------------------------
+   Dropdown / accordion / sidebar movement
+   --------------------------------------------------------- */
+
+body.motion-ready :where(
+  .lay-menu,
+  .ac-box,
+  .bp-select-menu
+){
+  transform-origin:top center;
+}
+
+body.motion-ready .ac-box.open{
+  animation:motionMenuOpen 180ms var(--motion-ease) both;
+}
+
+body.motion-ready .lay-menu.open{
+  animation:motionMenuOpen 180ms var(--motion-ease) both;
+}
+
+body.motion-ready .bp-select.open .bp-select-menu{
+  animation:motionMenuOpen 180ms var(--motion-ease) both;
+}
+
+@keyframes motionMenuOpen{
+  from{
+    opacity:0;
+    translate:0 -5px;
+    scale:.985;
+  }
+  to{
+    opacity:1;
+    translate:0 0;
+    scale:1;
+  }
+}
+
+body.motion-ready :where(
+  .drawer,
+  .scrim,
+  .mgr-panel-body,
+  .chev,
+  .lay-chev,
+  .bp-select-arrow
+){
+  transition-duration:var(--motion-base);
+  transition-timing-function:var(--motion-ease);
+}
+
+/* ---------------------------------------------------------
+   Modal / dialog transitions
+   --------------------------------------------------------- */
+
+body.motion-ready :where(
+  .staff-add-modal:not([hidden]) .staff-add-dialog,
+  .account-settings-modal:not([hidden]) .account-settings-dialog,
+  .profile-crop-modal:not([hidden]) .profile-crop-dialog,
+  .rm-box
+){
+  animation:motionDialogIn 280ms var(--motion-spring) both;
+}
+
+body.motion-ready :where(
+  .staff-add-backdrop,
+  .account-settings-backdrop,
+  .profile-crop-backdrop,
+  .rm-scrim
+){
+  animation:motionFadeIn 200ms ease both;
+}
+
+@keyframes motionDialogIn{
+  from{
+    opacity:0;
+    translate:0 12px;
+    scale:.965;
+  }
+  to{
+    opacity:1;
+    translate:0 0;
+    scale:1;
+  }
+}
+
+@keyframes motionFadeIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+/* ---------------------------------------------------------
+   Images / avatars
+   --------------------------------------------------------- */
+
+body.motion-ready :where(
+  .avatar img,
+  .dash-live-avatar img,
+  .dash-rank-avatar img,
+  .settings-avatar-preview img,
+  .logo,
+  .drawer-brand-logo
+){
+  animation:motionImageIn 260ms ease both;
+}
+
+@keyframes motionImageIn{
+  from{opacity:0;scale:.94}
+  to{opacity:1;scale:1}
+}
+
+/* ---------------------------------------------------------
+   Login page entrance
+   --------------------------------------------------------- */
+
+body.motion-ready > .shell{
+  animation:motionPageIn 420ms var(--motion-ease) both;
+}
+
+body.motion-ready > .shell .brand-top,
+body.motion-ready > .shell .brand-middle,
+body.motion-ready > .shell .card > *{
+  animation:motionEnter 360ms var(--motion-ease) both;
+}
+
+body.motion-ready > .shell .card > *:nth-child(2){--motion-delay:35ms}
+body.motion-ready > .shell .card > *:nth-child(3){--motion-delay:65ms}
+body.motion-ready > .shell .card > *:nth-child(4){--motion-delay:90ms}
+body.motion-ready > .shell .card > *:nth-child(5){--motion-delay:120ms}
+
+@keyframes motionPageIn{
+  from{
+    opacity:0;
+    translate:0 10px;
+    scale:.988;
+  }
+  to{
+    opacity:1;
+    translate:0 0;
+    scale:1;
+  }
+}
+
+/* ---------------------------------------------------------
+   Accessibility
+   --------------------------------------------------------- */
+
+@media (prefers-reduced-motion:reduce){
+  html{
+    scroll-behavior:auto !important;
+  }
+
+  *,
+  *::before,
+  *::after{
+    animation-duration:.01ms !important;
+    animation-delay:0ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+
+  :where(
+    button,
+    a,
+    [role="button"],
+    input,
+    textarea,
+    select,
+    .dash-metric,
+    .dash-panel-card,
+    .dash-live-eval-row,
+    .dash-rank-row
+  ){
+    translate:none !important;
+    scale:1 !important;
+  }
+}
