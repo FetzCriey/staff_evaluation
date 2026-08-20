@@ -1,6 +1,7 @@
 /* =========================================================
    ACCOUNT SETTINGS
    Own password + own profile picture only.
+   Profile uploads are cropped before being stored.
    ========================================================= */
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -50,13 +51,18 @@ function publicAvatarUrl(path){
 function paintAvatar(path){
   const name = profile?.full_name || session?.user?.email || '';
   const url = publicAvatarUrl(path);
+  const stamp = Date.now();
 
   document.querySelectorAll('[data-current-user-avatar]').forEach(host => {
     host.innerHTML = '';
     if(url){
       const img = document.createElement('img');
-      img.src = url + '?v=' + Date.now();
+      img.src = url + '?v=' + stamp;
       img.alt = name ? name + ' profile picture' : 'Profile picture';
+      img.addEventListener('error', () => {
+        host.innerHTML = '';
+        host.textContent = initials(name);
+      }, { once:true });
       host.appendChild(img);
     }else{
       host.textContent = initials(name);
@@ -67,8 +73,12 @@ function paintAvatar(path){
     preview.innerHTML = '';
     if(url){
       const img = document.createElement('img');
-      img.src = url + '?v=' + Date.now();
+      img.src = url + '?v=' + stamp;
       img.alt = name ? name + ' profile picture' : 'Profile picture';
+      img.addEventListener('error', () => {
+        preview.innerHTML = '';
+        preview.textContent = initials(name);
+      }, { once:true });
       preview.appendChild(img);
     }else{
       preview.textContent = initials(name);
@@ -118,6 +128,7 @@ function openModal(){
 
 function closeModal(){
   if(!modal) return;
+  if(document.getElementById('profileCropModal')?.hidden === false) return;
   modal.hidden = true;
   modal.setAttribute('aria-hidden','true');
   document.body.style.overflow = previousOverflow;
@@ -131,8 +142,221 @@ openBtn?.addEventListener('click', openModal);
 closeBtn?.addEventListener('click', closeModal);
 modal?.querySelectorAll('[data-account-settings-close]').forEach(el => el.addEventListener('click', closeModal));
 
+/* =========================================================
+   CROP UI
+   ========================================================= */
+
+const CROP_CANVAS_SIZE = 900;
+let cropState = null;
+
+function createCropUi(){
+  if(document.getElementById('profileCropModal')) return;
+
+  const shell = document.createElement('div');
+  shell.className = 'profile-crop-modal';
+  shell.id = 'profileCropModal';
+  shell.hidden = true;
+  shell.setAttribute('aria-hidden','true');
+  shell.innerHTML = `
+    <div class="profile-crop-backdrop" data-crop-cancel></div>
+    <section class="profile-crop-dialog" role="dialog" aria-modal="true" aria-labelledby="profileCropTitle">
+      <div class="profile-crop-head">
+        <div>
+          <div class="profile-crop-kicker">Profile picture</div>
+          <h2 id="profileCropTitle">Crop picture</h2>
+        </div>
+        <button class="profile-crop-close" type="button" data-crop-cancel aria-label="Cancel crop">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="profile-crop-body">
+        <div class="profile-crop-stage">
+          <canvas id="profileCropCanvas" width="${CROP_CANVAS_SIZE}" height="${CROP_CANVAS_SIZE}" aria-label="Profile picture crop preview"></canvas>
+          <div class="profile-crop-guide" aria-hidden="true"></div>
+        </div>
+
+        <div class="profile-crop-zoom-row">
+          <span>Zoom</span>
+          <input id="profileCropZoom" type="range" min="1" max="3" value="1" step="0.01" aria-label="Crop zoom">
+        </div>
+
+        <div class="profile-crop-hint">Drag the picture to reposition it inside the square.</div>
+
+        <div class="profile-crop-actions">
+          <button class="settings-btn settings-btn-ghost" type="button" data-crop-cancel>Cancel</button>
+          <button class="settings-btn settings-btn-primary" type="button" id="useCroppedPicture">Use cropped picture</button>
+        </div>
+      </div>
+    </section>
+  `;
+
+  document.body.appendChild(shell);
+
+  shell.querySelectorAll('[data-crop-cancel]').forEach(btn => {
+    btn.addEventListener('click', closeCropUi);
+  });
+
+  shell.querySelector('#profileCropZoom')?.addEventListener('input', e => {
+    if(!cropState) return;
+    cropState.zoom = Number(e.target.value) || 1;
+    clampCropOffsets();
+    drawCrop();
+  });
+
+  const canvas = shell.querySelector('#profileCropCanvas');
+
+  canvas?.addEventListener('pointerdown', e => {
+    if(!cropState) return;
+    cropState.dragging = true;
+    cropState.lastX = e.clientX;
+    cropState.lastY = e.clientY;
+    canvas.setPointerCapture?.(e.pointerId);
+  });
+
+  canvas?.addEventListener('pointermove', e => {
+    if(!cropState?.dragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const factor = CROP_CANVAS_SIZE / Math.max(1, rect.width);
+
+    cropState.offsetX += (e.clientX - cropState.lastX) * factor;
+    cropState.offsetY += (e.clientY - cropState.lastY) * factor;
+    cropState.lastX = e.clientX;
+    cropState.lastY = e.clientY;
+
+    clampCropOffsets();
+    drawCrop();
+  });
+
+  const stopDrag = e => {
+    if(!cropState) return;
+    cropState.dragging = false;
+    try{ canvas.releasePointerCapture?.(e.pointerId); }catch(_){}
+  };
+
+  canvas?.addEventListener('pointerup', stopDrag);
+  canvas?.addEventListener('pointercancel', stopDrag);
+
+  shell.querySelector('#useCroppedPicture')?.addEventListener('click', async () => {
+    if(!cropState) return;
+    const useBtn = shell.querySelector('#useCroppedPicture');
+    useBtn.disabled = true;
+    setStatus(photoStatus, 'Preparing cropped picture…');
+
+    try{
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          result => result ? resolve(result) : reject(new Error('Could not create the cropped image.')),
+          'image/jpeg',
+          0.92
+        );
+      });
+
+      closeCropUi();
+      await uploadAvatarBlob(blob);
+    }catch(err){
+      setStatus(photoStatus, err?.message || 'Could not crop the picture.', 'err');
+    }finally{
+      useBtn.disabled = false;
+    }
+  });
+}
+
+function clampCropOffsets(){
+  if(!cropState) return;
+  const scale = cropState.baseScale * cropState.zoom;
+  const drawW = cropState.image.naturalWidth * scale;
+  const drawH = cropState.image.naturalHeight * scale;
+
+  const limitX = Math.max(0, (drawW - CROP_CANVAS_SIZE) / 2);
+  const limitY = Math.max(0, (drawH - CROP_CANVAS_SIZE) / 2);
+
+  cropState.offsetX = Math.max(-limitX, Math.min(limitX, cropState.offsetX));
+  cropState.offsetY = Math.max(-limitY, Math.min(limitY, cropState.offsetY));
+}
+
+function drawCrop(){
+  if(!cropState) return;
+  const canvas = document.getElementById('profileCropCanvas');
+  const ctx = canvas?.getContext('2d');
+  if(!ctx) return;
+
+  const scale = cropState.baseScale * cropState.zoom;
+  const drawW = cropState.image.naturalWidth * scale;
+  const drawH = cropState.image.naturalHeight * scale;
+  const x = (CROP_CANVAS_SIZE - drawW) / 2 + cropState.offsetX;
+  const y = (CROP_CANVAS_SIZE - drawH) / 2 + cropState.offsetY;
+
+  ctx.clearRect(0,0,CROP_CANVAS_SIZE,CROP_CANVAS_SIZE);
+  ctx.fillStyle = '#eaf4fa';
+  ctx.fillRect(0,0,CROP_CANVAS_SIZE,CROP_CANVAS_SIZE);
+  ctx.drawImage(cropState.image, x, y, drawW, drawH);
+}
+
+async function openCropUi(file){
+  createCropUi();
+
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+
+  await new Promise((resolve, reject) => {
+    image.onload = resolve;
+    image.onerror = () => reject(new Error('Could not read that image.'));
+    image.src = objectUrl;
+  });
+
+  const baseScale = Math.max(
+    CROP_CANVAS_SIZE / image.naturalWidth,
+    CROP_CANVAS_SIZE / image.naturalHeight
+  );
+
+  cropState = {
+    file,
+    image,
+    objectUrl,
+    baseScale,
+    zoom:1,
+    offsetX:0,
+    offsetY:0,
+    dragging:false,
+    lastX:0,
+    lastY:0
+  };
+
+  const cropModal = document.getElementById('profileCropModal');
+  cropModal.hidden = false;
+  cropModal.setAttribute('aria-hidden','false');
+
+  const zoom = document.getElementById('profileCropZoom');
+  if(zoom) zoom.value = '1';
+
+  clampCropOffsets();
+  drawCrop();
+}
+
+function closeCropUi(){
+  const cropModal = document.getElementById('profileCropModal');
+  if(cropModal){
+    cropModal.hidden = true;
+    cropModal.setAttribute('aria-hidden','true');
+  }
+
+  if(cropState?.objectUrl){
+    URL.revokeObjectURL(cropState.objectUrl);
+  }
+  cropState = null;
+}
+
 document.addEventListener('keydown', event => {
-  if(event.key === 'Escape' && modal && !modal.hidden) closeModal();
+  if(event.key !== 'Escape') return;
+
+  const cropModal = document.getElementById('profileCropModal');
+  if(cropModal && !cropModal.hidden){
+    event.preventDefault();
+    closeCropUi();
+    return;
+  }
+
+  if(modal && !modal.hidden) closeModal();
 });
 
 chooseBtn?.addEventListener('click', () => fileInput?.click());
@@ -152,8 +376,18 @@ fileInput?.addEventListener('change', async () => {
     return;
   }
 
+  try{
+    setStatus(photoStatus, 'Adjust the crop, then confirm.');
+    await openCropUi(file);
+  }catch(err){
+    setStatus(photoStatus, err?.message || 'Could not open the picture.', 'err');
+  }
+});
+
+async function uploadAvatarBlob(blob){
   if(!session) await loadAccount();
   const uid = session?.user?.id;
+
   if(!uid){
     setStatus(photoStatus, 'Your session has expired. Please sign in again.', 'err');
     return;
@@ -161,16 +395,16 @@ fileInput?.addEventListener('change', async () => {
 
   chooseBtn.disabled = true;
   removeBtn && (removeBtn.disabled = true);
-  setStatus(photoStatus, 'Uploading picture…');
+  setStatus(photoStatus, 'Uploading cropped picture…');
 
   const path = `${uid}/avatar`;
 
   try{
     const { error:uploadError } = await db.storage
       .from(BUCKET)
-      .upload(path, file, {
+      .upload(path, blob, {
         upsert:true,
-        contentType:file.type,
+        contentType:'image/jpeg',
         cacheControl:'3600'
       });
 
@@ -187,8 +421,12 @@ fileInput?.addEventListener('change', async () => {
     paintAvatar(path);
     setStatus(photoStatus, 'Profile picture updated.', 'ok');
 
+    window.dispatchEvent(new CustomEvent('profile-avatar-updated', {
+      detail:{ userId:uid, avatarPath:path }
+    }));
+
     if(typeof window.uiAlert === 'function'){
-      await window.uiAlert('Profile picture updated', 'Your new picture is now used for your account.');
+      await window.uiAlert('Profile picture updated', 'Your cropped picture is now used across the site.');
     }
   }catch(err){
     setStatus(photoStatus, err?.message || 'Could not upload the picture.', 'err');
@@ -196,7 +434,7 @@ fileInput?.addEventListener('change', async () => {
     chooseBtn.disabled = false;
     removeBtn && (removeBtn.disabled = !profile?.avatar_path);
   }
-});
+}
 
 removeBtn?.addEventListener('click', async () => {
   if(!session) await loadAccount();
@@ -226,6 +464,10 @@ removeBtn?.addEventListener('click', async () => {
     profile.avatar_path = null;
     paintAvatar(null);
     setStatus(photoStatus, 'Profile picture removed.', 'ok');
+
+    window.dispatchEvent(new CustomEvent('profile-avatar-updated', {
+      detail:{ userId:uid, avatarPath:null }
+    }));
   }catch(err){
     setStatus(photoStatus, err?.message || 'Could not remove the picture.', 'err');
   }finally{
