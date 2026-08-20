@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="css/mobile-layout-tweaks.css?v=20260819-1817">
 <link rel="stylesheet" href="css/dashboard-empty-panels.css?v=20260819-2124">
 <link rel="stylesheet" href="css/sidebar-branding.css?v=20260819-2258">
+<link rel="stylesheet" href="css/add-staff-modal.css?v=20260820-1201">
 </head>
 <body>
 <div class="gate" id="gate" role="status" aria-live="polite" aria-label="Loading">
@@ -92,21 +93,13 @@
         <button class="mgr-sum" id="sumRoles" aria-expanded="false" aria-controls="bodyRoles"><span class="lbl">Form roles</span><span class="cnt" id="rolesCount">0</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="mgr-panel-body" id="bodyRoles"><div class="mgr-list" id="mgrList"></div></div>
       </div>
-      <div class="mgr-sec" id="secAdd">
-        <button class="mgr-sum" id="sumAdd" aria-expanded="false" aria-controls="bodyAdd"><span class="lbl">Add staff</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mgr-panel-body" id="bodyAdd">
-          <div class="mgr-add">
-            <div class="mgr-lbl">Person</div>
-            <input id="mgrName" placeholder="Full name" autocomplete="off">
-            <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
-            <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
-            <div class="mgr-lbl">Evaluation form</div>
-            <select id="mgrRole"><option value="Probationary">Probationary</option><option value="Junior Staff">Junior Staff</option><option value="Senior Staff">Senior Staff</option></select>
-            <div class="mgr-lbl">Access level</div>
-            <select id="mgrAccess"><option value="employee">Employee access</option><option value="manager">Manager access</option></select>
-            <button class="btn-add" id="mgrAdd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Create user</span></button>
-          </div>
-        </div>
+      <div class="mgr-sec mgr-add-button-sec" id="secAdd">
+        <button class="mgr-add-launch" id="openAddStaff" type="button">
+          <span class="mgr-add-launch-icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <span>Add staff</span>
+        </button>
       </div>
       <div class="mgr-msg" id="mgrMsg"></div>
     </div>
@@ -171,11 +164,58 @@
   </div>
 </div>
 
+
+<!-- ================= ADD STAFF MODAL ================= -->
+<div class="staff-add-modal" id="addStaffModal" hidden aria-hidden="true">
+  <div class="staff-add-backdrop" data-add-staff-close></div>
+  <section class="staff-add-dialog" role="dialog" aria-modal="true" aria-labelledby="addStaffTitle">
+    <div class="staff-add-head">
+      <div>
+        <div class="staff-add-kicker">Staff administration</div>
+        <h2 id="addStaffTitle">Add staff</h2>
+      </div>
+      <button class="staff-add-close" id="closeAddStaff" type="button" aria-label="Close Add Staff">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="staff-add-body">
+      <div class="mgr-add staff-add-form">
+        <div class="mgr-lbl">Person</div>
+        <input id="mgrName" placeholder="Full name" autocomplete="off">
+        <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
+        <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
+
+        <div class="mgr-lbl">Evaluation form</div>
+        <select id="mgrRole">
+          <option value="Probationary">Probationary</option>
+          <option value="Junior Staff">Junior Staff</option>
+          <option value="Senior Staff">Senior Staff</option>
+        </select>
+
+        <div class="mgr-lbl">Access level</div>
+        <select id="mgrAccess">
+          <option value="employee">Employee access</option>
+          <option value="manager">Manager access</option>
+        </select>
+
+        <button class="btn-add staff-add-submit" id="mgrAdd" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Create user</span>
+        </button>
+      </div>
+
+      <div class="staff-add-status" id="addStaffStatus" aria-live="polite"></div>
+    </div>
+  </section>
+</div>
+
 <script src="js/evaluation.js"></script>
 <script src="js/logo-file-source.js?v=20260819-2314"></script>
 <script type="module" src="js/supabase.js"></script>
 <script type="module" src="js/dashboard.js?v=20260819-1648"></script>
 <script src="js/complete-redirect.js?v=20260819-1605"></script>
+<script src="js/add-staff-modal.js?v=20260820-1201"></script>
 <script src="js/criteria-average-visibility.js?v=20260819-1631"></script>
 <script src="js/mobile-layout-options.js?v=20260819-2130"></script>
 <script type="module" src="js/autocomplete-progress.js?v=20260819-2211"></script>
