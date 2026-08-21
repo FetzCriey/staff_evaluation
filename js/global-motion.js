@@ -29,7 +29,6 @@
     '.bp-select-option',
     '.his-row',
     '.mgr-row',
-    '.dash-live-eval-row',
     '.dash-rank-row',
     '.prog-chip',
     '.c-card'
@@ -51,6 +50,30 @@
     if(!key || animatedResultNames.has(key)) return;
 
     animatedResultNames.add(key);
+    animateEnter(row);
+  }
+
+  // Dashboard Recent Evaluations is also rebuilt as a whole list on refresh.
+  // Animate each evaluator → employee pair only once per page session, so the
+  // periodic/realtime refresh does not make the activity card blink.
+  const animatedRecentPairs = new Set();
+
+  function recentRowKey(row){
+    const evaluator =
+      row?.querySelector?.('.dash-live-evaluator')?.textContent?.trim().toLowerCase() || '';
+    const employee =
+      row?.querySelector?.('.dash-live-employee')?.textContent?.trim().toLowerCase() || '';
+
+    return evaluator && employee
+      ? evaluator + '|' + employee
+      : '';
+  }
+
+  function animateRecentRowOnce(row){
+    const key = recentRowKey(row);
+    if(!key || animatedRecentPairs.has(key)) return;
+
+    animatedRecentPairs.add(key);
     animateEnter(row);
   }
 
@@ -158,6 +181,15 @@
 
     [...node.querySelectorAll?.('.res-row') || []]
       .forEach(animateResultRowOnce);
+
+    // Recent Evaluations is periodically/realtime rebuilt by dashboard.js.
+    // Do not replay the entrance animation on unchanged activity rows.
+    if(node.matches?.('.dash-live-eval-row')){
+      animateRecentRowOnce(node);
+    }
+
+    [...node.querySelectorAll?.('.dash-live-eval-row') || []]
+      .forEach(animateRecentRowOnce);
 
     if(node.matches?.(ENTERABLE)){
       animateEnter(node);
