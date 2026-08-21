@@ -2,9 +2,10 @@
    RECENT EVALUATIONS → EXISTING RESULTS VIEW
    Manager / Senior Staff only.
 
-   This does not create a second review flow. It finds the same
-   Evaluation Results row already built by js/supabase.js and
-   triggers that existing row, preserving all current safeguards.
+   Also keeps unchanged Recent Evaluations rows mounted across the
+   dashboard's periodic refresh. dashboard.js rebuilds this section every
+   few seconds; reusing the existing row nodes prevents the text/avatar
+   from flashing when the underlying data has not visually changed.
    ========================================================= */
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -116,6 +117,127 @@ function decorateRows(){
   });
 }
 
+/* ---------------------------------------------------------
+   Stable Recent Evaluations DOM
+   --------------------------------------------------------- */
+
+function recentRowKey(row){
+  if(!row) return '';
+
+  const evaluator = normalize(
+    row.querySelector('.dash-live-evaluator')?.textContent
+  );
+  const employee = normalize(
+    row.querySelector('.dash-live-employee')?.textContent
+  );
+
+  return evaluator && employee
+    ? `${evaluator}|${employee}`
+    : '';
+}
+
+function collectRows(node, map){
+  if(node?.nodeType !== Node.ELEMENT_NODE) return;
+
+  if(node.matches?.('.dash-live-eval-row')){
+    const key = recentRowKey(node);
+    if(key) map.set(key, node);
+  }
+
+  node.querySelectorAll?.('.dash-live-eval-row').forEach(row => {
+    const key = recentRowKey(row);
+    if(key) map.set(key, row);
+  });
+}
+
+function copyText(oldRow, newRow, selector){
+  const oldEl = oldRow.querySelector(selector);
+  const newEl = newRow.querySelector(selector);
+  if(oldEl && newEl && oldEl.textContent !== newEl.textContent){
+    oldEl.textContent = newEl.textContent;
+  }
+}
+
+function syncStableRow(oldRow, newRow){
+  oldRow.dataset.recentIndex = newRow.dataset.recentIndex || '';
+  oldRow.classList.toggle(
+    'dash-recent-hidden',
+    newRow.classList.contains('dash-recent-hidden')
+  );
+
+  copyText(oldRow, newRow, '.dash-live-evaluator');
+  copyText(oldRow, newRow, '.dash-live-employee');
+  copyText(oldRow, newRow, '.dash-live-progress-line span');
+  copyText(oldRow, newRow, '.dash-live-progress-line strong');
+  copyText(oldRow, newRow, '.dash-live-meta > span:last-child');
+
+  const oldStatus = oldRow.querySelector('.dash-live-status');
+  const newStatus = newRow.querySelector('.dash-live-status');
+  if(oldStatus && newStatus){
+    oldStatus.className = newStatus.className;
+    if(oldStatus.textContent !== newStatus.textContent){
+      oldStatus.textContent = newStatus.textContent;
+    }
+  }
+
+  const oldComment = oldRow.querySelector('.dash-live-comment');
+  const newComment = newRow.querySelector('.dash-live-comment');
+  if(oldComment && newComment){
+    oldComment.className = newComment.className;
+    if(oldComment.textContent !== newComment.textContent){
+      oldComment.textContent = newComment.textContent;
+    }
+  }
+
+  const oldBar = oldRow.querySelector('.dash-live-progress > span');
+  const newPctText =
+    newRow.querySelector('.dash-live-progress-line strong')?.textContent || '';
+  const pct = Number.parseFloat(newPctText);
+
+  if(oldBar && Number.isFinite(pct)){
+    // Keep the same DOM node so the existing CSS width transition animates a
+    // genuine progress change without flashing the surrounding text.
+    oldBar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+  }
+}
+
+let recentObserver = null;
+
+function observeRecent(){
+  recentObserver?.observe(recent, {
+    childList:true,
+    subtree:true
+  });
+}
+
+function stabilizeRefresh(mutations){
+  const removedRows = new Map();
+
+  mutations.forEach(mutation => {
+    mutation.removedNodes.forEach(node => collectRows(node, removedRows));
+  });
+
+  if(removedRows.size){
+    // Disconnect while swapping nodes so our own replacements do not create a
+    // second observer pass. MutationObserver callbacks run before paint, so an
+    // unchanged row never visually disappears between dashboard refreshes.
+    recentObserver.disconnect();
+
+    recent.querySelectorAll('.dash-live-eval-row').forEach(newRow => {
+      const key = recentRowKey(newRow);
+      const oldRow = key ? removedRows.get(key) : null;
+      if(!oldRow) return;
+
+      syncStableRow(oldRow, newRow);
+      newRow.replaceWith(oldRow);
+    });
+
+    observeRecent();
+  }
+
+  requestAnimationFrame(decorateRows);
+}
+
 function matchingResultsRow(employeeName){
   const wanted = normalize(employeeName);
   if(!wanted) return null;
@@ -210,14 +332,8 @@ if(recent){
     openEmployeeResults(row);
   });
 
-  // Dashboard.js rebuilds Recent Evaluations during realtime refreshes.
-  // Re-apply the clickable state to every newly created row.
-  new MutationObserver(() => {
-    requestAnimationFrame(decorateRows);
-  }).observe(recent, {
-    childList:true,
-    subtree:true
-  });
+  recentObserver = new MutationObserver(stabilizeRefresh);
+  observeRecent();
 }
 
 determineAccess();
