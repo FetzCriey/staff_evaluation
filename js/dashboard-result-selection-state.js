@@ -12,6 +12,8 @@
    - Sidebar "Evaluation form" / Dashboard "Start Evaluation" can still call
      the already-registered reset handlers through the detached button object
    - Results and History continue loading normally
+   - deleting the History record currently being viewed cannot crash merely
+     because the legacy Back button has already been removed
    ========================================================= */
 
 (() => {
@@ -28,6 +30,17 @@
 
   let navigationReady = false;
   let detachedBackBtn = null;
+
+  /*
+    supabase.js still contains one legacy path that looks up #backBtn after a
+    successfully deleted History record. Normally that element is intentionally
+    detached. For that one confirmed operation only, temporarily reconnect the
+    already-initialized button inside the permanently hidden #backBar so the
+    existing Supabase reset handlers can finish safely. It is detached again
+    immediately after the internal click.
+  */
+  let deleteBridgeActive = false;
+  let deleteBridgeTimer = null;
 
   function ensureStyle(){
     if(document.getElementById('navigation-authority-style')) return;
@@ -67,6 +80,133 @@
     // button is detached, so click() remains a valid internal reset action.
     resetButton.click();
     return true;
+  }
+
+  function cleanupDeleteBridge(){
+    clearTimeout(deleteBridgeTimer);
+    deleteBridgeTimer = null;
+
+    if(deleteBridgeActive && detachedBackBtn?.isConnected){
+      detachedBackBtn.remove();
+    }
+
+    deleteBridgeActive = false;
+  }
+
+  function currentArchiveMatchesDelete(message){
+    const note = document.getElementById('archNote');
+    if(!note || note.classList.contains('hide')) return false;
+
+    const currentName =
+      document.getElementById('whoV')?.textContent?.trim() || '';
+
+    const archiveText =
+      document.getElementById('archText')?.textContent?.trim() || '';
+
+    // openArchive() writes:
+    // "Archived <locale date/time> — read only. ..."
+    const match = archiveText.match(/^Archived\s+(.+?)\s+—/);
+    const currentWhen = match?.[1]?.trim() || '';
+
+    const text = String(message || '');
+
+    return !!currentName &&
+      !!currentWhen &&
+      text.includes(currentName) &&
+      text.includes(currentWhen);
+  }
+
+  function armDeleteBridge(){
+    /*
+      Before navigation cleanup there is nothing to bridge: #backBtn is still
+      in the document and Supabase can find it normally.
+    */
+    if(!navigationReady || !backBar || !detachedBackBtn) return;
+    if(detachedBackBtn.isConnected) return;
+
+    deleteBridgeActive = true;
+    backBar.appendChild(detachedBackBtn);
+
+    /*
+      Supabase's own click handlers were attached before this supplemental
+      listener, so they reset review/archive state first. Then remove the
+      temporary DOM bridge again.
+    */
+    detachedBackBtn.addEventListener('click', () => {
+      queueMicrotask(cleanupDeleteBridge);
+    }, { once:true });
+
+    // Network/RLS failures never reach the internal click. This is only a
+    // failsafe; the alert wrapper below normally cleans those cases sooner.
+    deleteBridgeTimer = setTimeout(cleanupDeleteBridge, 30000);
+  }
+
+  function installHistoryDeleteSafety(){
+    /*
+      Arm the bridge only AFTER the user confirms deletion of the archive that
+      is currently open. Cancelling deletion therefore changes nothing.
+    */
+    const originalConfirm = window.uiConfirm;
+
+    if(
+      typeof originalConfirm === 'function' &&
+      !originalConfirm.__historyDeleteNavigationSafety
+    ){
+      const wrappedConfirm = async function(title, message, ...rest){
+        const ok = await originalConfirm.call(this, title, message, ...rest);
+
+        if(
+          ok &&
+          title === 'Delete this history record?' &&
+          currentArchiveMatchesDelete(message)
+        ){
+          armDeleteBridge();
+        }
+
+        return ok;
+      };
+
+      wrappedConfirm.__historyDeleteNavigationSafety = true;
+      wrappedConfirm.__historyDeleteOriginal = originalConfirm;
+      window.uiConfirm = wrappedConfirm;
+    }
+
+    /*
+      If Supabase rejects/fails the deletion, its success-path internal click
+      never occurs. Remove the temporary bridge as soon as that failure is
+      reported. Preserve any other uiAlert wrappers already installed.
+    */
+    const originalAlert = window.uiAlert;
+
+    if(
+      typeof originalAlert === 'function' &&
+      !originalAlert.__historyDeleteNavigationSafety
+    ){
+      const wrappedAlert = async function(title, message, ...rest){
+        if(
+          deleteBridgeActive &&
+          (
+            title === 'Could not delete' ||
+            title === 'Nothing was deleted'
+          )
+        ){
+          cleanupDeleteBridge();
+        }
+
+        const result =
+          await originalAlert.call(this, title, message, ...rest);
+
+        if(deleteBridgeActive && title === 'Deleted'){
+          cleanupDeleteBridge();
+        }
+
+        return result;
+      };
+
+      wrappedAlert.__historyDeleteNavigationSafety = true;
+      wrappedAlert.__historyDeleteOriginal = originalAlert;
+      window.uiAlert = wrappedAlert;
+    }
   }
 
   function syncSelectionState(){
@@ -204,5 +344,6 @@
   }
 
   ensureStyle();
+  installHistoryDeleteSafety();
   syncSelectionState();
 })();

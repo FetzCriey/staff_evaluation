@@ -11,7 +11,8 @@
       /evaluated everyone/i.test(String(message || ''))
     ) {
       requestAnimationFrame(() => {
-        document.getElementById('backToDashboard')?.click();
+        // Sidebar Dashboard is the authoritative navigation.
+        document.getElementById('drawerDashboard')?.click();
       });
     }
 
