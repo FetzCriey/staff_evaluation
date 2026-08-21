@@ -125,6 +125,10 @@
   document.addEventListener('input', event => {
     const field = event.target;
 
+    // Login fields must remain steady while typing.
+    // Other form/input animations in the main evaluation site are unchanged.
+    if(field?.closest?.('#loginForm')) return;
+
     if(
       field?.matches?.('.score-in,input,textarea,select') &&
       !field.matches('[type="range"]')
