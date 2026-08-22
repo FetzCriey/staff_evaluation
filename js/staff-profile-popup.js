@@ -667,6 +667,44 @@ function enableSidebarReviewNavigation(){
 
 enableSidebarReviewNavigation();
 
+
+
+/* =========================================================
+   HISTORY CARD FULL CLICK AREA
+   The existing .his-main button remains the real History action.
+   Taps on the average or unused space inside the same card are
+   forwarded to it. The Delete button remains a separate action.
+   ========================================================= */
+function enableHistoryFullCardClick(){
+  const historyList = document.getElementById("hisList");
+  if(!historyList || historyList.dataset.fullCardClickReady === "1") return;
+
+  historyList.dataset.fullCardClickReady = "1";
+
+  if(!document.getElementById("history-full-card-click-style")){
+    const style = document.createElement("style");
+    style.id = "history-full-card-click-style";
+    style.textContent = `
+      #hisList .his-row{cursor:pointer}
+      #hisList .his-row .his-del{cursor:pointer}
+    `;
+    document.head.appendChild(style);
+  }
+
+  historyList.addEventListener("click", event => {
+    const row = event.target?.closest?.(".his-row");
+    if(!row || !historyList.contains(row)) return;
+
+    // The main History button and Delete already have their own handlers.
+    if(event.target.closest(".his-main,.his-del")) return;
+
+    const main = row.querySelector(".his-main");
+    if(main && !main.disabled) main.click();
+  });
+}
+
+enableHistoryFullCardClick();
+
 window.addEventListener("profile-avatar-updated", () => {
   cacheAt = 0;
 });
