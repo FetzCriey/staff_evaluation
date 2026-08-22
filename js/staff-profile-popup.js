@@ -1085,7 +1085,5 @@ document.addEventListener("visibilitychange", () => {
 ensureModal();
 decorateTriggers();
 
-// Warm the safe profile/dashboard data without blocking the rest of the app.
-loadData()
-  .then(() => decorateTriggers())
-  .catch(error => console.info("Staff profile data will load on first click.", error));
+// Profile/dashboard statistics are intentionally loaded on first profile click.
+ // Avoid duplicate Supabase reads during every page reload.
