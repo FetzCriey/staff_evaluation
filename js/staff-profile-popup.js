@@ -216,8 +216,7 @@ function profileStats(profile, data){
     overallRank:data.overallRanks.get(profile.id)?.rank || null,
     expected,
     submitted,
-    currentPercent,
-    hasLogin:targetHasLogin
+    currentPercent
   };
 }
 
@@ -227,6 +226,7 @@ function ensureModal(){
   modal = document.createElement("div");
   modal.className = "staff-profile-modal";
   modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
   modal.innerHTML = `
     <div class="staff-profile-backdrop" data-staff-profile-close></div>
     <section class="staff-profile-card"
@@ -261,6 +261,7 @@ function ensureModal(){
 function closeModal(){
   if(!modal || modal.hidden) return;
   modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = previousOverflow;
   lastFocused?.focus?.({preventScroll:true});
   lastFocused = null;
@@ -297,6 +298,7 @@ function openShell(){
     previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
   }
   modal.querySelector(".staff-profile-close")?.focus({preventScroll:true});
 }
@@ -370,8 +372,7 @@ function renderProfile(profile, stats){
   const badges = content.querySelector(".staff-profile-badges");
   const badgeTexts = [
     profile.form_role || null,
-    profile.role === "manager" ? "Manager access" : null,
-    stats.hasLogin ? "Active login" : "Roster only"
+    profile.role === "manager" ? "Manager" : null
   ].filter(Boolean);
 
   badgeTexts.forEach(text => {
@@ -491,7 +492,7 @@ function profileFromText(text, data){
     return data.byName.get(cleaned);
   }
 
-  // Handles containers whose text also contains small tags such as "mgr".
+  // Handles containers whose text also includes a small tag such as "mgr".
   let best = null;
   for(const [name, profile] of data.byName){
     if(cleaned.includes(name) && (!best || name.length > normalize(best.full_name).length)){
@@ -507,68 +508,40 @@ function nearbyTextCandidates(element){
   if(element?.textContent) values.push(element.textContent);
 
   const row = element?.closest?.(
-    ".dash-rank-row,.dash-live-eval-row,.res-row,.his-row,.mgr-row,.prog-chip,.acct-row,.whobar"
+    ".dash-rank-row,.dash-live-eval-row"
   );
 
   if(row){
     [
       ".dash-rank-name",
       ".dash-live-evaluator",
-      ".dash-live-employee",
-      ".res-nm",
-      ".his-nm",
-      ".mgr-nm",
-      ".prog-chip-name",
-      ".acct-nm",
-      "#whoV"
+      ".dash-live-employee"
     ].forEach(selector => {
       const node = row.querySelector(selector);
       if(node?.textContent) values.push(node.textContent);
     });
   }
 
-  if(element?.id === "acctInitials"){
-    const name = document.getElementById("acctName")?.textContent;
-    if(name) values.push(name);
-  }
-
   return values;
 }
 
+// The profile popup is intentionally Dashboard-only. Sidebar Results,
+// History, Staff Administration, and the signed-in account area keep their
+// normal navigation/management purpose and are never intercepted here.
 const explicitSelectors = [
   "#latestTopName",
   "#overallTopName",
-  "#acctName",
-  "#acctInitials",
-  "#whoV",
   ".dash-rank-name",
   ".dash-rank-avatar",
   ".dash-live-evaluator",
   ".dash-live-employee",
-  ".dash-live-avatar",
-  ".res-nm",
-  ".his-nm",
-  ".mgr-nm",
-  ".prog-chip-name"
+  ".dash-live-avatar"
 ].join(",");
 
-function semanticTrigger(element){
+function profileTrigger(element){
   if(!element || element.nodeType !== Node.ELEMENT_NODE) return null;
-
-  const explicit = element.closest?.(explicitSelectors);
-  if(explicit) return explicit;
-
-  let node = element;
-  for(let depth=0; node && depth<4; depth++, node=node.parentElement){
-    const classText = typeof node.className === "string" ? node.className : "";
-    if(/(?:^|\s|[-_])(name|nm|avatar|person)(?:\s|$|[-_])/i.test(classText)){
-      if(node.closest("#dashboardView,#formView,#drawer")){
-        return node;
-      }
-    }
-  }
-
-  return null;
+  const trigger = element.closest?.(explicitSelectors) || null;
+  return trigger?.closest?.("#dashboardView") ? trigger : null;
 }
 
 async function resolveTriggerProfile(trigger){
@@ -584,27 +557,21 @@ async function resolveTriggerProfile(trigger){
 
 function decorateTriggers(root=document){
   root.querySelectorAll?.(explicitSelectors).forEach(node => {
+    if(!node.closest("#dashboardView")) return;
+
     node.classList.add("staff-profile-trigger");
-
-    // Avoid invalid nested interactive controls. Plain name/avatar elements
-    // receive keyboard access; elements already inside a button keep the
-    // button's existing semantics.
-    if(!node.closest("button,a,[role='button']")){
-      node.setAttribute("role", "button");
-      if(!node.hasAttribute("tabindex")) node.tabIndex = 0;
-    }
-
+    node.setAttribute("role", "button");
+    if(!node.hasAttribute("tabindex")) node.tabIndex = 0;
     node.title = node.title || "View staff profile";
   });
 }
 
 document.addEventListener("click", event => {
-  const trigger = semanticTrigger(event.target);
+  const trigger = profileTrigger(event.target);
   if(!trigger) return;
 
-  // Stop the existing row action immediately. Event propagation does not wait
-  // for an async database lookup, so this must happen before resolving the name.
-  // Clicking elsewhere on Results/History/Recent rows keeps the original action.
+  // Only the exact Dashboard name/avatar click opens the profile. For Recent
+  // Evaluations, clicking elsewhere on the row keeps the existing Results action.
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
@@ -622,10 +589,7 @@ document.addEventListener("keydown", event => {
   if(event.key !== "Enter" && event.key !== " ") return;
 
   const trigger = event.target?.closest?.(".staff-profile-trigger");
-  if(!trigger) return;
-
-  const interactiveParent = trigger.closest("button,a,[role='button']");
-  if(interactiveParent && interactiveParent !== trigger) return;
+  if(!trigger || !trigger.closest("#dashboardView")) return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -655,6 +619,54 @@ triggerObserver.observe(document.documentElement, {
   subtree:true
 });
 
+/*
+  Sidebar Results / History access
+  --------------------------------
+  supabase.js deliberately prevents changing to another evaluatee while a
+  partially-completed score is open. That rule should remain for switching
+  evaluatees, but it should not block authorized read-only Results/History.
+
+  Its guard calculates "filled" through evalApi.getColumnScores(0). During the
+  single Results/History click only, report an empty scoring column so the
+  navigation guard treats the action as read-only navigation. The original API
+  method is restored immediately after the event dispatch, before later work.
+
+  Draft score changes are already live-saved by supabase.js; this does not alter
+  scores, database data, permissions, RLS, or the actual evaluator-switch rule.
+*/
+function enableSidebarReviewNavigation(){
+  document.addEventListener("click", event => {
+    const reviewTarget = event.target?.closest?.(
+      "#resList .res-row, #hisList .his-main"
+    );
+    if(!reviewTarget) return;
+
+    const api = window.evalApi;
+    if(!api || typeof api.getColumnScores !== "function") return;
+
+    const original = api.getColumnScores;
+    let restored = false;
+
+    const temporaryGetColumnScores = function(index){
+      if(Number(index) === 0) return {};
+      return original.call(this, index);
+    };
+
+    const restore = () => {
+      if(restored) return;
+      restored = true;
+      if(api.getColumnScores === temporaryGetColumnScores){
+        api.getColumnScores = original;
+      }
+    };
+
+    api.getColumnScores = temporaryGetColumnScores;
+    queueMicrotask(restore);
+  }, true);
+}
+
+enableSidebarReviewNavigation();
+
 window.addEventListener("profile-avatar-updated", () => {
   cacheAt = 0;
 });
@@ -668,8 +680,7 @@ document.addEventListener("visibilitychange", () => {
 ensureModal();
 decorateTriggers();
 
-// Warm the name map without blocking the page. The main app's own session
-// loader remains completely independent of this feature.
+// Warm the safe profile/dashboard data without blocking the rest of the app.
 loadData()
   .then(() => decorateTriggers())
   .catch(error => console.info("Staff profile data will load on first click.", error));
