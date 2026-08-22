@@ -319,9 +319,30 @@ if(!session){
   // name -> id, so we know who is being evaluated
   let idByName = new Map();
   let nameById = new Map();
+  let eligibleEvaluatorIds = new Set();
   async function loadIds(){
-    const { data } = await supabase.from('profiles').select('id, full_name');
-    (data ?? []).forEach(p => { idByName.set(p.full_name.toLowerCase(), p.id); nameById.set(p.id, p.full_name); });
+    const [profilesResult, rosterResult] = await Promise.all([
+      supabase.from('profiles').select('id, full_name'),
+      supabase.rpc('get_evaluation_roster')
+    ]);
+
+    const profiles = profilesResult.data ?? [];
+    profiles.forEach(p => {
+      idByName.set(p.full_name.toLowerCase(), p.id);
+      nameById.set(p.id, p.full_name);
+    });
+
+    // No-login roster entries may still be evaluated, but they cannot be
+    // required evaluators because there is no Auth account that can sign in.
+    if(!rosterResult.error && Array.isArray(rosterResult.data)){
+      eligibleEvaluatorIds = new Set(
+        rosterResult.data.filter(p => p.has_login !== false).map(p => p.id)
+      );
+    }else{
+      // Safe fallback for a transient RPC/network failure: preserve the old
+      // behavior rather than blocking the whole evaluation screen.
+      eligibleEvaluatorIds = new Set(nameById.keys());
+    }
   }
   await loadIds();
 
@@ -508,7 +529,7 @@ if(!session){
   function filledCount(){ return Object.keys(api.getColumnScores(0)).length; }
 
   function expectedEvaluatorIds(employeeId){
-    return [...nameById.keys()].filter(pid => pid !== employeeId);
+    return [...eligibleEvaluatorIds].filter(pid => pid !== employeeId);
   }
 
   async function currentRoundSubmissionState(employeeId){
@@ -860,7 +881,7 @@ if(!session){
 
   function queueLiveSave(){
     clearTimeout(liveSaveTimer);
-    liveSaveTimer = setTimeout(saveLiveDraft, 650);
+    liveSaveTimer = setTimeout(saveLiveDraft, 500);
   }
 
   // ----- live remarks saving -----
@@ -1421,11 +1442,12 @@ if(!session){
       const scrim = document.createElement('div');
       scrim.className = 'rm-scrim';
       const who = api.employeeName();
+      const safeWho = esc(who);
       scrim.innerHTML =
         '<div class="rm-box">' +
           '<div class="rm-top"><div class="rm-ttl">Reset a submission</div>' +
-          '<div class="rm-sub">Whose scores for ' + who + ' should be cleared? ' +
-          'They can then evaluate ' + who + ' again.</div></div>' +
+          '<div class="rm-sub">Whose scores for ' + safeWho + ' should be cleared? ' +
+          'They can then evaluate ' + safeWho + ' again.</div></div>' +
           '<div class="rm-body" id="rmBody"></div>' +
           '<div class="rm-foot">' +
             '<button type="button" id="rmClose">Close</button>' +

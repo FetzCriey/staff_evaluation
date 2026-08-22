@@ -4,6 +4,19 @@ const db=createClient(SUPABASE_URL,SUPABASE_KEY), el=id=>document.getElementById
 let recentExpanded=false;
 let recentAnimating=false;
 const recentProgressPct=new Map();
+const renderSignatures=new Map();
+const setText=(id,value)=>{
+  const node=el(id);
+  if(!node) return;
+  const next=String(value ?? '');
+  if(node.textContent!==next) node.textContent=next;
+};
+const setWidth=(id,value)=>{
+  const node=el(id);
+  if(!node) return;
+  const next=String(value);
+  if(node.style.width!==next) node.style.width=next;
+};
 const initials=(n='')=>{const p=n.trim().split(/\s+/).filter(Boolean);return((p[0]?.[0]||'')+(p.length>1?p[p.length-1][0]:'')).toUpperCase()||'—'};
 const mean=v=>{const a=v.map(Number).filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const score=v=>Number.isFinite(v)?v.toFixed(2):'—';
@@ -166,16 +179,85 @@ el('hisList')?.addEventListener('click', e => {
 function rounds(rows){const g=new Map();rows.filter(r=>r.archived&&r.archived_at).forEach(r=>{const k=`${r.employee_id}|${r.archived_at}`;if(!g.has(k))g.set(k,[]);g.get(k).push(r)});return[...g.entries()].map(([k,rs])=>{const i=k.indexOf('|');return{employee_id:k.slice(0,i),archived_at:k.slice(i+1),average:mean(rs.map(r=>r.average))}}).filter(r=>Number.isFinite(r.average))}
 function latest(rs){const m=new Map();rs.forEach(r=>{const p=m.get(r.employee_id);if(!p||new Date(r.archived_at)>new Date(p.archived_at))m.set(r.employee_id,r)});return[...m.values()]}
 function overall(rs){const m=new Map();rs.forEach(r=>{if(!m.has(r.employee_id))m.set(r.employee_id,[]);m.get(r.employee_id).push(r.average)});return[...m.entries()].map(([employee_id,v])=>({employee_id,average:mean(v)})).filter(r=>Number.isFinite(r.average))}
-function rank(id,rows,names){const h=el(id);if(!h)return;h.innerHTML='';if(!rows.length){h.innerHTML='<div class="dash-empty">No finalized evaluation results yet.</div>';return}rows.slice(0,7).forEach((r,i)=>{const n=names.get(r.employee_id)||'Unknown',d=document.createElement('div');d.className='dash-rank-row';d.innerHTML=`<span class="dash-rank-no">${i+1}</span><div class="dash-rank-person"><span class="dash-rank-avatar">${initials(n)}</span><span class="dash-rank-name"></span></div><div class="dash-rank-bar"><span style="width:${Math.max(0,Math.min(100,r.average/5*100))}%"></span></div><span class="dash-rank-score">${score(r.average)}</span>`;d.querySelector('.dash-rank-name').textContent=n;h.appendChild(d)})}
-function chart(rs){const s=el('trendChart'),e=el('trendEmpty');if(!s||!e)return;s.innerHTML='';const m=new Map();rs.forEach(r=>{const d=dt(r.archived_at);if(!d)return;const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if(!m.has(k))m.set(k,[]);m.get(k).push(r.average)});const p=[...m.entries()].sort((a,b)=>a[0].localeCompare(b[0])).slice(-6).map(([key,v])=>({key,value:mean(v)}));if(!p.length){e.classList.remove('hide');return}e.classList.add('hide');const W=700,H=250,L=38,R=18,T=26,B=38,x=i=>p.length===1?L+(W-L-R)/2:L+i*((W-L-R)/(p.length-1)),y=v=>T+(5-v)/4*(H-T-B);s.innerHTML='<defs><linearGradient id="dashChartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#15ACE3" stop-opacity=".26"/><stop offset="100%" stop-color="#15ACE3" stop-opacity=".02"/></linearGradient></defs>';[1,2,3,4,5].forEach(v=>{const yy=y(v);s.insertAdjacentHTML('beforeend',`<line class="dash-chart-grid" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/><text class="dash-chart-text" x="8" y="${yy+3}">${v}</text>`)});const c=p.map((q,i)=>[x(i),y(q.value)]),line=c.map((q,i)=>`${i?'L':'M'} ${q[0]} ${q[1]}`).join(' '),area=`M ${c[0][0]} ${H-B} `+c.map(q=>`L ${q[0]} ${q[1]}`).join(' ')+` L ${c.at(-1)[0]} ${H-B} Z`;s.insertAdjacentHTML('beforeend',`<path class="dash-chart-area" d="${area}"/><path class="dash-chart-line" d="${line}"/>`);p.forEach((q,i)=>{const [xx,yy]=c[i],[yr,mo]=q.key.split('-'),lab=new Date(+yr,+mo-1,1).toLocaleDateString(undefined,{month:'short',year:'2-digit'});s.insertAdjacentHTML('beforeend',`<circle class="dash-chart-dot" cx="${xx}" cy="${yy}" r="5"/><text class="dash-chart-value" x="${xx}" y="${yy-11}" text-anchor="middle">${q.value.toFixed(2)}</text><text class="dash-chart-text" x="${xx}" y="${H-13}" text-anchor="middle">${lab}</text>`)})}
+function rank(id,rows,names){
+  const h=el(id);
+  if(!h) return;
+
+  const view=rows.slice(0,7).map((r,i)=>({
+    rank:i+1,
+    employee_id:r.employee_id,
+    name:names.get(r.employee_id)||'Unknown',
+    average:Number(r.average)
+  }));
+  const signature=JSON.stringify(view);
+  const key='rank:'+id;
+  if(renderSignatures.get(key)===signature) return;
+  renderSignatures.set(key,signature);
+
+  h.innerHTML='';
+  if(!view.length){
+    h.innerHTML='<div class="dash-empty">No finalized evaluation results yet.</div>';
+    return;
+  }
+
+  view.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='dash-rank-row';
+    d.innerHTML=`<span class="dash-rank-no">${r.rank}</span><div class="dash-rank-person"><span class="dash-rank-avatar">${initials(r.name)}</span><span class="dash-rank-name"></span></div><div class="dash-rank-bar"><span style="width:${Math.max(0,Math.min(100,r.average/5*100))}%"></span></div><span class="dash-rank-score">${score(r.average)}</span>`;
+    d.querySelector('.dash-rank-name').textContent=r.name;
+    h.appendChild(d);
+  });
+}
+function chart(rs){
+  const s=el('trendChart'),e=el('trendEmpty');
+  if(!s||!e) return;
+
+  const m=new Map();
+  rs.forEach(r=>{
+    const d=dt(r.archived_at);
+    if(!d) return;
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!m.has(k)) m.set(k,[]);
+    m.get(k).push(r.average);
+  });
+  const p=[...m.entries()]
+    .sort((a,b)=>a[0].localeCompare(b[0]))
+    .slice(-6)
+    .map(([key,v])=>({key,value:mean(v)}));
+
+  const signature=JSON.stringify(p.map(q=>[q.key,Number(q.value)]));
+  if(renderSignatures.get('trendChart')===signature) return;
+  renderSignatures.set('trendChart',signature);
+
+  s.innerHTML='';
+  if(!p.length){
+    e.classList.remove('hide');
+    return;
+  }
+  e.classList.add('hide');
+
+  const W=700,H=250,L=38,R=18,T=26,B=38;
+  const x=i=>p.length===1?L+(W-L-R)/2:L+i*((W-L-R)/(p.length-1));
+  const y=v=>T+(5-v)/4*(H-T-B);
+  s.innerHTML='<defs><linearGradient id="dashChartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#15ACE3" stop-opacity=".26"/><stop offset="100%" stop-color="#15ACE3" stop-opacity=".02"/></linearGradient></defs>';
+  [1,2,3,4,5].forEach(v=>{
+    const yy=y(v);
+    s.insertAdjacentHTML('beforeend',`<line class="dash-chart-grid" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/><text class="dash-chart-text" x="8" y="${yy+3}">${v}</text>`);
+  });
+  const c=p.map((q,i)=>[x(i),y(q.value)]);
+  const line=c.map((q,i)=>`${i?'L':'M'} ${q[0]} ${q[1]}`).join(' ');
+  const area=`M ${c[0][0]} ${H-B} `+c.map(q=>`L ${q[0]} ${q[1]}`).join(' ')+` L ${c.at(-1)[0]} ${H-B} Z`;
+  s.insertAdjacentHTML('beforeend',`<path class="dash-chart-area" d="${area}"/><path class="dash-chart-line" d="${line}"/>`);
+  p.forEach((q,i)=>{
+    const [xx,yy]=c[i];
+    const [yr,mo]=q.key.split('-');
+    const lab=new Date(+yr,+mo-1,1).toLocaleDateString(undefined,{month:'short',year:'2-digit'});
+    s.insertAdjacentHTML('beforeend',`<circle class="dash-chart-dot" cx="${xx}" cy="${yy}" r="5"/><text class="dash-chart-value" x="${xx}" y="${yy-11}" text-anchor="middle">${q.value.toFixed(2)}</text><text class="dash-chart-text" x="${xx}" y="${H-13}" text-anchor="middle">${lab}</text>`);
+  });
+}
 function activity(rows,names){
   const h=el('recentActivity');
   if(!h)return;
-
-  // A realtime refresh can happen during an animation. Re-rendering resets the
-  // activity view to a stable state so the next toggle always works.
-  recentAnimating=false;
-  h.innerHTML='';
 
   const CURRENT_CRITERIA_TOTAL=10;
 
@@ -206,6 +288,28 @@ function activity(rows,names){
     })
     .filter(r=>r.when)
     .sort((a,b)=>new Date(b.when)-new Date(a.when));
+
+  const signature=JSON.stringify(items.map(r=>[
+    r.evaluator_id,
+    r.employee_id,
+    r.filled,
+    r.total,
+    Math.round(r.pct*100)/100,
+    r.hasComment,
+    !!r.locked,
+    r.when,
+    names.get(r.evaluator_id)||'',
+    names.get(r.employee_id)||''
+  ]));
+
+  // The dashboard still checks Supabase every five seconds, but an identical
+  // response no longer tears down and recreates the Recent Evaluations DOM.
+  // This also keeps Show More / Show Less closures attached to the live rows.
+  if(renderSignatures.get('recentActivity')===signature) return;
+  renderSignatures.set('recentActivity',signature);
+
+  recentAnimating=false;
+  h.innerHTML='';
 
   if(!items.length){
     h.innerHTML='<div class="dash-empty">No current evaluation activity yet.</div>';
@@ -413,9 +517,96 @@ function activity(rows,names){
     h.appendChild(wrap);
   }
 }
-async function load(){const{data:{session}}=await db.auth.getSession();if(!session)return;const uid=session.user.id,[a,b,c]=await Promise.all([db.from('profiles').select('id,full_name,position,role,form_role').eq('id',uid).maybeSingle(),db.from('profiles').select('id,full_name,position,role,form_role').order('full_name'),db.rpc('get_dashboard_evaluations')]);const me=a.data,people=b.data||[],rows=c.data||[],names=new Map(people.map(p=>[p.id,p.full_name||'Unknown'])),full=!!me,my=me?.full_name||session.user.email||'Signed in';if(el('dashGreeting'))el('dashGreeting').textContent=`Welcome, ${my}`;if(el('dashDateChip'))el('dashDateChip').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'long',day:'numeric',year:'numeric'});const note=el('dashAccessNote');if(note){if(b.error||c.error){note.textContent='Some dashboard data could not be loaded with this account.';note.classList.remove('hide')}else if(!full){note.textContent='Dashboard data is available to all staff accounts with a valid profile.';note.classList.remove('hide')}else note.classList.add('hide')}
-if(full){const rs=rounds(rows),l=latest(rs).sort((x,y)=>y.average-x.average),o=overall(rs).sort((x,y)=>y.average-x.average),lt=l[0],ot=o[0];el('latestTopName').textContent=lt?names.get(lt.employee_id)||'Unknown':'—';el('latestTopScore').textContent=lt?score(lt.average):'—';el('latestTopMeta').textContent=lt?`Finalized ${short(lt.archived_at)}`:'No finalized evaluation yet';el('overallTopName').textContent=ot?names.get(ot.employee_id)||'Unknown':'—';el('overallTopScore').textContent=ot?score(ot.average):'—';el('teamAverage').textContent=score(mean(o.map(r=>r.average)));el('latestRankingDate').textContent=lt?short(lt.archived_at):'Latest';rank('latestRanking',l,names);rank('overallRanking',o,names);chart(rs);activity(rows,names)}else{el('latestTopName').textContent='Restricted';el('overallTopName').textContent='Restricted';['latestTopScore','overallTopScore','teamAverage'].forEach(id=>el(id).textContent='—');el('latestTopMeta').textContent='Reviewer access required';el('latestRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('overallRanking').innerHTML='<div class="dash-empty">Reviewer access required for team rankings.</div>';el('recentActivity').innerHTML='<div class="dash-empty">Reviewer access required for team activity.</div>';el('trendChart').innerHTML='';el('trendEmpty').classList.remove('hide')}
-const expected=Math.max(people.length*(people.length-1),0),done=new Set(rows.filter(r=>!r.archived&&r.locked).map(r=>`${r.employee_id}|${r.evaluator_id}`)).size,pct=expected?Math.min(100,done/expected*100):0;el('completionText').textContent=`${done} / ${expected}`;el('completionPercent').textContent=`${Math.round(pct)}%`;el('completionBar').style.width=`${pct}%`}
+async function load(){
+  const {data:{session}}=await db.auth.getSession();
+  if(!session) return;
+
+  const uid=session.user.id;
+  const [a,b,c,d]=await Promise.all([
+    db.from('profiles').select('id,full_name,position,role,form_role').eq('id',uid).maybeSingle(),
+    db.from('profiles').select('id,full_name,position,role,form_role').order('full_name'),
+    db.rpc('get_dashboard_evaluations'),
+    db.rpc('get_evaluation_roster')
+  ]);
+
+  const me=a.data;
+  const people=b.data||[];
+  const rows=c.data||[];
+  const names=new Map(people.map(p=>[p.id,p.full_name||'Unknown']));
+  const full=!!me;
+  const my=me?.full_name||session.user.email||'Signed in';
+
+  setText('dashGreeting',`Welcome, ${my}`);
+  setText('dashDateChip',new Date().toLocaleDateString(undefined,{weekday:'short',month:'long',day:'numeric',year:'numeric'}));
+
+  const note=el('dashAccessNote');
+  if(note){
+    if(b.error||c.error){
+      if(note.textContent!=='Some dashboard data could not be loaded with this account.') note.textContent='Some dashboard data could not be loaded with this account.';
+      note.classList.remove('hide');
+    }else if(!full){
+      if(note.textContent!=='Dashboard data is available to all staff accounts with a valid profile.') note.textContent='Dashboard data is available to all staff accounts with a valid profile.';
+      note.classList.remove('hide');
+    }else{
+      note.classList.add('hide');
+    }
+  }
+
+  if(full){
+    const rs=rounds(rows);
+    const l=latest(rs).sort((x,y)=>y.average-x.average);
+    const o=overall(rs).sort((x,y)=>y.average-x.average);
+    const lt=l[0],ot=o[0];
+
+    setText('latestTopName',lt?names.get(lt.employee_id)||'Unknown':'—');
+    setText('latestTopScore',lt?score(lt.average):'—');
+    setText('latestTopMeta',lt?`Finalized ${short(lt.archived_at)}`:'No finalized evaluation yet');
+    setText('overallTopName',ot?names.get(ot.employee_id)||'Unknown':'—');
+    setText('overallTopScore',ot?score(ot.average):'—');
+    setText('teamAverage',score(mean(o.map(r=>r.average))));
+    setText('latestRankingDate',lt?short(lt.archived_at):'Latest');
+
+    rank('latestRanking',l,names);
+    rank('overallRanking',o,names);
+    chart(rs);
+    activity(rows,names);
+  }else{
+    setText('latestTopName','Restricted');
+    setText('overallTopName','Restricted');
+    ['latestTopScore','overallTopScore','teamAverage'].forEach(id=>setText(id,'—'));
+    setText('latestTopMeta','Reviewer access required');
+
+    const restricted='<div class="dash-empty">Reviewer access required for team rankings.</div>';
+    if(el('latestRanking')?.innerHTML!==restricted) el('latestRanking').innerHTML=restricted;
+    if(el('overallRanking')?.innerHTML!==restricted) el('overallRanking').innerHTML=restricted;
+    const activityRestricted='<div class="dash-empty">Reviewer access required for team activity.</div>';
+    if(el('recentActivity')?.innerHTML!==activityRestricted) el('recentActivity').innerHTML=activityRestricted;
+    if(el('trendChart')?.innerHTML) el('trendChart').innerHTML='';
+    el('trendEmpty')?.classList.remove('hide');
+  }
+
+  // Profiles without a Supabase Auth user remain valid evaluatees, but they
+  // are not counted as required evaluators because they cannot sign in.
+  const roster=(!d.error && Array.isArray(d.data)) ? d.data : people.map(p=>({...p,has_login:true}));
+  const eligibleEvaluatorIds=new Set(roster.filter(p=>p.has_login!==false).map(p=>p.id));
+  const peopleIds=new Set(people.map(p=>p.id));
+  const eligibleCount=eligibleEvaluatorIds.size;
+  const expected=people.reduce(
+    (sum,p)=>sum+Math.max(eligibleCount-(eligibleEvaluatorIds.has(p.id)?1:0),0),
+    0
+  );
+  const done=new Set(
+    rows
+      .filter(r=>!r.archived&&r.locked&&peopleIds.has(r.employee_id)&&eligibleEvaluatorIds.has(r.evaluator_id))
+      .map(r=>`${r.employee_id}|${r.evaluator_id}`)
+  ).size;
+  const pct=expected?Math.min(100,done/expected*100):0;
+
+  setText('completionText',`${done} / ${expected}`);
+  setText('completionPercent',`${Math.round(pct)}%`);
+  setWidth('completionBar',`${pct}%`);
+}
+
 function schedule(ms=120){
   clearTimeout(timer);
   timer=setTimeout(load,ms);
