@@ -705,6 +705,373 @@ function enableHistoryFullCardClick(){
 
 enableHistoryFullCardClick();
 
+
+/* =========================================================
+   RELOAD LOCATION PERSISTENCE
+   Keep the same Dashboard / Evaluation / Results / History
+   location after a normal page reload in the same browser tab.
+   No database or authentication data is stored here.
+   ========================================================= */
+(function installReloadLocationPersistence(){
+  const STORAGE_KEY = "bp-staff-evaluation-location-v1";
+  const MAX_WAIT_MS = 5500;
+
+  let restoring = true;
+  let savedAtLoad = readState();
+  let scrollTimer = null;
+
+  function readState(){
+    try{
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if(!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    }catch(_){
+      return null;
+    }
+  }
+
+  function writeState(next){
+    if(restoring || !next) return;
+
+    try{
+      const current = readState() || {};
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ...current,
+          ...next,
+          savedAt:Date.now()
+        })
+      );
+    }catch(_){}
+  }
+
+  function clearState(){
+    try{
+      sessionStorage.removeItem(STORAGE_KEY);
+    }catch(_){}
+  }
+
+  function textOf(node){
+    return String(node?.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  function formIsVisible(){
+    const form = document.getElementById("formView");
+    return !!form && !form.classList.contains("hide");
+  }
+
+  function dashboardIsVisible(){
+    const dash = document.getElementById("dashboardView");
+    return !!dash && !dash.classList.contains("hide");
+  }
+
+  function historyFingerprint(row){
+    return {
+      historyName:textOf(row?.querySelector(".his-nm")),
+      historyMeta:textOf(row?.querySelector(".his-meta")),
+      historyAverage:textOf(row?.querySelector(".his-avg"))
+    };
+  }
+
+  function historyMatches(row, state){
+    if(!row || !state) return false;
+
+    const fp = historyFingerprint(row);
+
+    if(state.historyName && fp.historyName !== state.historyName) return false;
+    if(state.historyMeta && fp.historyMeta !== state.historyMeta) return false;
+    if(
+      state.historyAverage &&
+      fp.historyAverage &&
+      fp.historyAverage !== state.historyAverage
+    ) return false;
+
+    return !!(fp.historyName || fp.historyMeta);
+  }
+
+  function syncFromDom(){
+    if(restoring) return;
+
+    if(dashboardIsVisible()){
+      writeState({
+        view:"dashboard",
+        mode:null,
+        employeeName:null,
+        historyName:null,
+        historyMeta:null,
+        historyAverage:null,
+        scrollY:window.scrollY || 0
+      });
+      return;
+    }
+
+    if(!formIsVisible()) return;
+
+    const whoKind = textOf(document.getElementById("whoK"));
+    const whoName = textOf(document.getElementById("whoV"));
+    const archiveNote = document.getElementById("archNote");
+    const archiveVisible =
+      !!archiveNote && !archiveNote.classList.contains("hide");
+
+    if(whoKind === "Results for"){
+      if(archiveVisible){
+        const previous = readState() || {};
+        writeState({
+          view:"form",
+          mode:"history",
+          employeeName:whoName || previous.employeeName || null,
+          historyName:previous.historyName || whoName || null,
+          historyMeta:previous.historyMeta || null,
+          historyAverage:previous.historyAverage || null,
+          scrollY:window.scrollY || 0
+        });
+      }else{
+        writeState({
+          view:"form",
+          mode:"results",
+          employeeName:whoName || null,
+          historyName:null,
+          historyMeta:null,
+          historyAverage:null,
+          scrollY:window.scrollY || 0
+        });
+      }
+      return;
+    }
+
+    const employee =
+      document.getElementById("empName")?.value?.trim() || "";
+
+    writeState({
+      view:"form",
+      mode:"mine",
+      employeeName:employee || null,
+      historyName:null,
+      historyMeta:null,
+      historyAverage:null,
+      scrollY:window.scrollY || 0
+    });
+  }
+
+  function waitFor(test, timeout=MAX_WAIT_MS, interval=80){
+    return new Promise(resolve => {
+      const started = Date.now();
+
+      const check = () => {
+        let value = null;
+
+        try{
+          value = test();
+        }catch(_){}
+
+        if(value){
+          resolve(value);
+          return;
+        }
+
+        if(Date.now() - started >= timeout){
+          resolve(null);
+          return;
+        }
+
+        setTimeout(check, interval);
+      };
+
+      check();
+    });
+  }
+
+  async function ensureFormVisible(){
+    if(formIsVisible()) return true;
+
+    const button = document.getElementById("drawerEvaluation");
+    if(!button) return false;
+
+    const started = Date.now();
+
+    while(Date.now() - started < MAX_WAIT_MS){
+      if(formIsVisible()) return true;
+      button.click();
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    return formIsVisible();
+  }
+
+  async function restoreMine(state){
+    if(!state.employeeName) return;
+
+    const input = await waitFor(() => document.getElementById("empName"));
+    if(!input) return;
+
+    input.value = state.employeeName;
+    input.dispatchEvent(new Event("change", {bubbles:true}));
+  }
+
+  async function restoreResults(state){
+    if(!state.employeeName) return;
+
+    const wanted = state.employeeName.toLowerCase();
+
+    const row = await waitFor(() => {
+      return [...document.querySelectorAll("#resList .res-row")]
+        .find(item =>
+          textOf(item.querySelector(".res-nm")).toLowerCase() === wanted
+        ) || null;
+    });
+
+    row?.click();
+  }
+
+  async function restoreHistory(state){
+    const row = await waitFor(() => {
+      return [...document.querySelectorAll("#hisList .his-row")]
+        .find(item => historyMatches(item, state)) || null;
+    });
+
+    row?.querySelector(".his-main")?.click();
+  }
+
+  async function restoreLocation(){
+    const state = savedAtLoad;
+
+    if(!state){
+      restoring = false;
+      syncFromDom();
+      return;
+    }
+
+    // Wait until Supabase has authenticated the page and revealed the app.
+    await waitFor(() => {
+      const wrap = document.getElementById("wrap");
+      return wrap && !wrap.classList.contains("hide") ? wrap : null;
+    });
+
+    if(state.view === "form"){
+      const opened = await ensureFormVisible();
+
+      if(opened){
+        if(state.mode === "history"){
+          await restoreHistory(state);
+        }else if(state.mode === "results"){
+          await restoreResults(state);
+        }else{
+          await restoreMine(state);
+        }
+      }
+    }
+
+    if(Number.isFinite(Number(state.scrollY))){
+      setTimeout(() => {
+        window.scrollTo({
+          top:Math.max(0, Number(state.scrollY)),
+          left:0,
+          behavior:"auto"
+        });
+      }, 180);
+    }
+
+    restoring = false;
+    savedAtLoad = null;
+
+    // Let all app handlers finish changing Results/History/form state first.
+    setTimeout(syncFromDom, 220);
+  }
+
+  // Record the exact History card before its existing handler opens it.
+  document.addEventListener("click", event => {
+    if(restoring) return;
+
+    const signOut = event.target?.closest?.("#signOut");
+    if(signOut){
+      clearState();
+      return;
+    }
+
+    const historyRow = event.target?.closest?.("#hisList .his-row");
+    if(historyRow && !event.target.closest(".his-del")){
+      writeState({
+        view:"form",
+        mode:"history",
+        employeeName:textOf(historyRow.querySelector(".his-nm")) || null,
+        ...historyFingerprint(historyRow),
+        scrollY:window.scrollY || 0
+      });
+      return;
+    }
+
+    const resultsRow = event.target?.closest?.("#resList .res-row");
+    if(resultsRow){
+      writeState({
+        view:"form",
+        mode:"results",
+        employeeName:textOf(resultsRow.querySelector(".res-nm")) || null,
+        historyName:null,
+        historyMeta:null,
+        historyAverage:null,
+        scrollY:window.scrollY || 0
+      });
+      return;
+    }
+
+    // Dashboard / Evaluation navigation is synchronized after the app's own
+    // click handlers have changed the visible view.
+    if(
+      event.target?.closest?.(
+        "#drawerDashboard,#drawerEvaluation,#headerActionBtn,#backToDashboard"
+      )
+    ){
+      setTimeout(syncFromDom, 120);
+    }
+  }, true);
+
+  const empName = document.getElementById("empName");
+  empName?.addEventListener("change", () => setTimeout(syncFromDom, 120));
+  empName?.addEventListener("blur", () => setTimeout(syncFromDom, 120));
+
+  const watched = [
+    document.getElementById("dashboardView"),
+    document.getElementById("formView"),
+    document.getElementById("whoK"),
+    document.getElementById("whoV"),
+    document.getElementById("archNote")
+  ].filter(Boolean);
+
+  if(watched.length){
+    const observer = new MutationObserver(() => {
+      if(!restoring) setTimeout(syncFromDom, 60);
+    });
+
+    watched.forEach(node => {
+      observer.observe(node, {
+        attributes:true,
+        attributeFilter:["class"],
+        childList:true,
+        subtree:true,
+        characterData:true
+      });
+    });
+  }
+
+  window.addEventListener("scroll", () => {
+    if(restoring) return;
+
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      writeState({scrollY:window.scrollY || 0});
+    }, 180);
+  }, {passive:true});
+
+  window.addEventListener("beforeunload", () => {
+    if(!restoring) syncFromDom();
+  });
+
+  restoreLocation();
+})();
+
 window.addEventListener("profile-avatar-updated", () => {
   cacheAt = 0;
 });
