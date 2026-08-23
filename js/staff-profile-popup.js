@@ -708,16 +708,37 @@ enableHistoryFullCardClick();
 
 /* =========================================================
    RELOAD LOCATION PERSISTENCE
-   Keep the same Dashboard / Evaluation / Results / History
-   location after a normal page reload in the same browser tab.
-   No database or authentication data is stored here.
+   Keep Dashboard / Evaluation / Results / History location after
+   reload, but scope it to the signed-in account and make restoration
+   cancellable when the user chooses another destination.
    ========================================================= */
 (function installReloadLocationPersistence(){
   const STORAGE_KEY = "bp-staff-evaluation-location-v1";
-  const MAX_WAIT_MS = 5500;
+  const AUTH_STORAGE_KEY = "sb-giosjwjhalhmwcuyzfos-auth-token";
+  const MAX_WAIT_MS = 2800;
 
-  let restoring = true;
+  function currentOwnerKey(){
+    try{
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+      const auth = raw ? JSON.parse(raw) : null;
+      const id = auth?.user?.id;
+      if(id) return "uid:" + String(id);
+    }catch(_){}
+
+    try{
+      const email = String(sessionStorage.getItem("staff_email") || "")
+        .trim()
+        .toLowerCase();
+      if(email) return "email:" + email;
+    }catch(_){}
+
+    return "";
+  }
+
+  const ownerKey = currentOwnerKey();
   let savedAtLoad = readState();
+  let restoring = savedAtLoad?.view === "form";
+  let restoreCancelled = false;
   let scrollTimer = null;
 
   function readState(){
@@ -726,14 +747,21 @@ enableHistoryFullCardClick();
       if(!raw) return null;
 
       const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : null;
+      if(!parsed || typeof parsed !== "object") return null;
+
+      if(!ownerKey || !parsed.ownerKey || parsed.ownerKey !== ownerKey){
+        sessionStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+
+      return parsed;
     }catch(_){
       return null;
     }
   }
 
   function writeState(next){
-    if(restoring || !next) return;
+    if(restoring || !next || !ownerKey) return;
 
     try{
       const current = readState() || {};
@@ -742,6 +770,7 @@ enableHistoryFullCardClick();
         JSON.stringify({
           ...current,
           ...next,
+          ownerKey,
           savedAt:Date.now()
         })
       );
@@ -752,6 +781,20 @@ enableHistoryFullCardClick();
     try{
       sessionStorage.removeItem(STORAGE_KEY);
     }catch(_){}
+  }
+
+  function cancelRestore(){
+    if(!restoring) return;
+    restoreCancelled = true;
+    restoring = false;
+    savedAtLoad = null;
+  }
+
+  window.__cancelEvaluationLocationRestore = cancelRestore;
+
+  if(window.__cancelEvaluationLocationRestoreRequested){
+    window.__cancelEvaluationLocationRestoreRequested = false;
+    cancelRestore();
   }
 
   function textOf(node){
@@ -793,7 +836,7 @@ enableHistoryFullCardClick();
   }
 
   function syncFromDom(){
-    if(restoring) return;
+    if(restoring || !ownerKey) return;
 
     if(dashboardIsVisible()){
       writeState({
@@ -856,11 +899,16 @@ enableHistoryFullCardClick();
     });
   }
 
-  function waitFor(test, timeout=MAX_WAIT_MS, interval=80){
+  function waitFor(test, timeout=MAX_WAIT_MS, interval=70){
     return new Promise(resolve => {
       const started = Date.now();
 
       const check = () => {
+        if(restoreCancelled){
+          resolve(null);
+          return;
+        }
+
         let value = null;
 
         try{
@@ -885,6 +933,7 @@ enableHistoryFullCardClick();
   }
 
   async function ensureFormVisible(){
+    if(restoreCancelled) return false;
     if(formIsVisible()) return true;
 
     const button = document.getElementById("drawerEvaluation");
@@ -892,27 +941,27 @@ enableHistoryFullCardClick();
 
     const started = Date.now();
 
-    while(Date.now() - started < MAX_WAIT_MS){
+    while(!restoreCancelled && Date.now() - started < MAX_WAIT_MS){
       if(formIsVisible()) return true;
       button.click();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 90));
     }
 
-    return formIsVisible();
+    return !restoreCancelled && formIsVisible();
   }
 
   async function restoreMine(state){
-    if(!state.employeeName) return;
+    if(restoreCancelled || !state.employeeName) return;
 
     const input = await waitFor(() => document.getElementById("empName"));
-    if(!input) return;
+    if(!input || restoreCancelled) return;
 
     input.value = state.employeeName;
     input.dispatchEvent(new Event("change", {bubbles:true}));
   }
 
   async function restoreResults(state){
-    if(!state.employeeName) return;
+    if(restoreCancelled || !state.employeeName) return;
 
     const wanted = state.employeeName.toLowerCase();
 
@@ -923,73 +972,94 @@ enableHistoryFullCardClick();
         ) || null;
     });
 
-    row?.click();
+    if(!restoreCancelled) row?.click();
   }
 
   async function restoreHistory(state){
+    if(restoreCancelled) return;
+
     const row = await waitFor(() => {
       return [...document.querySelectorAll("#hisList .his-row")]
         .find(item => historyMatches(item, state)) || null;
     });
 
-    row?.querySelector(".his-main")?.click();
+    if(!restoreCancelled) row?.querySelector(".his-main")?.click();
   }
 
   async function restoreLocation(){
     const state = savedAtLoad;
 
-    if(!state){
+    if(!restoring || !state){
       restoring = false;
+      savedAtLoad = null;
       syncFromDom();
       return;
     }
 
-    // Wait until Supabase has authenticated the page and revealed the app.
-    await waitFor(() => {
-      const wrap = document.getElementById("wrap");
-      return wrap && !wrap.classList.contains("hide") ? wrap : null;
+    const wrap = await waitFor(() => {
+      const node = document.getElementById("wrap");
+      return node && !node.classList.contains("hide") ? node : null;
     });
 
-    if(state.view === "form"){
-      const opened = await ensureFormVisible();
+    if(!wrap || restoreCancelled){
+      restoring = false;
+      savedAtLoad = null;
+      return;
+    }
 
-      if(opened){
-        if(state.mode === "history"){
-          await restoreHistory(state);
-        }else if(state.mode === "results"){
-          await restoreResults(state);
-        }else{
-          await restoreMine(state);
-        }
+    const opened = await ensureFormVisible();
+
+    if(opened && !restoreCancelled){
+      if(state.mode === "history"){
+        await restoreHistory(state);
+      }else if(state.mode === "results"){
+        await restoreResults(state);
+      }else{
+        await restoreMine(state);
       }
+    }
+
+    if(restoreCancelled){
+      restoring = false;
+      savedAtLoad = null;
+      return;
     }
 
     if(Number.isFinite(Number(state.scrollY))){
       setTimeout(() => {
+        if(restoreCancelled) return;
         window.scrollTo({
           top:Math.max(0, Number(state.scrollY)),
           left:0,
           behavior:"auto"
         });
-      }, 180);
+      }, 120);
     }
 
     restoring = false;
     savedAtLoad = null;
-
-    // Let all app handlers finish changing Results/History/form state first.
-    setTimeout(syncFromDom, 220);
+    setTimeout(syncFromDom, 120);
   }
 
-  // Record the exact History card before its existing handler opens it.
+  // Record the user's explicit navigation before the app's own handlers run.
   document.addEventListener("click", event => {
-    if(restoring) return;
-
     const signOut = event.target?.closest?.("#signOut");
     if(signOut){
       clearState();
+      cancelRestore();
       return;
     }
+
+    const navigationTarget = event.target?.closest?.(
+      "#drawerDashboard,#drawerEvaluation,#headerActionBtn,#backToDashboard," +
+      "#resList .res-row,#hisList .his-row"
+    );
+
+    if(event.isTrusted && restoring && navigationTarget){
+      cancelRestore();
+    }
+
+    if(restoring) return;
 
     const historyRow = event.target?.closest?.("#hisList .his-row");
     if(historyRow && !event.target.closest(".his-del")){
@@ -1017,20 +1087,21 @@ enableHistoryFullCardClick();
       return;
     }
 
-    // Dashboard / Evaluation navigation is synchronized after the app's own
-    // click handlers have changed the visible view.
     if(
       event.target?.closest?.(
         "#drawerDashboard,#drawerEvaluation,#headerActionBtn,#backToDashboard"
       )
     ){
-      setTimeout(syncFromDom, 120);
+      setTimeout(syncFromDom, 80);
     }
   }, true);
 
   const empName = document.getElementById("empName");
-  empName?.addEventListener("change", () => setTimeout(syncFromDom, 120));
-  empName?.addEventListener("blur", () => setTimeout(syncFromDom, 120));
+  empName?.addEventListener("input", event => {
+    if(event.isTrusted && restoring) cancelRestore();
+  });
+  empName?.addEventListener("change", () => setTimeout(syncFromDom, 80));
+  empName?.addEventListener("blur", () => setTimeout(syncFromDom, 80));
 
   const watched = [
     document.getElementById("dashboardView"),
@@ -1042,7 +1113,7 @@ enableHistoryFullCardClick();
 
   if(watched.length){
     const observer = new MutationObserver(() => {
-      if(!restoring) setTimeout(syncFromDom, 60);
+      if(!restoring) setTimeout(syncFromDom, 40);
     });
 
     watched.forEach(node => {
@@ -1062,7 +1133,7 @@ enableHistoryFullCardClick();
     clearTimeout(scrollTimer);
     scrollTimer = setTimeout(() => {
       writeState({scrollY:window.scrollY || 0});
-    }, 180);
+    }, 140);
   }, {passive:true});
 
   window.addEventListener("beforeunload", () => {
@@ -1070,6 +1141,216 @@ enableHistoryFullCardClick();
   });
 
   restoreLocation();
+})();
+
+
+/* =========================================================
+   ELIGIBLE EVALUATOR COUNT CORRECTION
+   No-login roster entries remain valid evaluatees, but they are
+   not expected evaluators. Patch the reviewer UI after its normal
+   Supabase rendering without changing RLS, database rows, or the
+   core evaluation handlers.
+   ========================================================= */
+(function installEligibleEvaluatorCountCorrection(){
+  const CACHE_MS = 30000;
+  let rosterCache = null;
+  let rosterAt = 0;
+  let rosterPromise = null;
+  let patchTimer = null;
+
+  const norm = value => String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+  async function getRoster(){
+    if(rosterCache && Date.now() - rosterAt < CACHE_MS){
+      return rosterCache;
+    }
+
+    if(rosterPromise) return rosterPromise;
+
+    rosterPromise = (async () => {
+      const { data, error } = await db.rpc("get_evaluation_roster");
+      if(error || !Array.isArray(data)) return null;
+
+      rosterCache = data;
+      rosterAt = Date.now();
+      return rosterCache;
+    })();
+
+    try{
+      return await rosterPromise;
+    }finally{
+      rosterPromise = null;
+    }
+  }
+
+  function patchResults(roster){
+    const rows = [...document.querySelectorAll("#resList .res-row")];
+    if(!rows.length) return;
+
+    const byName = new Map(
+      roster
+        .filter(person => person?.full_name)
+        .map(person => [norm(person.full_name), person])
+    );
+
+    const eligibleCount = roster.filter(person => person?.has_login !== false).length;
+    let complete = 0;
+
+    rows.forEach(row => {
+      const name = row.querySelector(".res-nm")?.textContent || "";
+      const person = byName.get(norm(name));
+      if(!person) return;
+
+      const total = Math.max(
+        eligibleCount - (person.has_login !== false ? 1 : 0),
+        0
+      );
+
+      const countEl = row.querySelector(".res-ct");
+      const current = String(countEl?.textContent || "");
+      const submitted = Math.max(0, Number.parseInt(current, 10) || 0);
+      const full = total > 0 && submitted >= total;
+
+      if(countEl){
+        const next = submitted + "/" + total;
+        if(countEl.textContent !== next) countEl.textContent = next;
+      }
+
+      row.classList.toggle("full", full);
+      if(full) complete++;
+
+      const bar = row.querySelector(".res-bar > span");
+      if(bar){
+        bar.style.width = (total ? Math.min(100, submitted / total * 100) : 0) + "%";
+      }
+
+      row.title = full
+        ? "Everyone who can sign in has scored " + name
+        : Math.max(total - submitted, 0) + " still to score " + name;
+    });
+
+    const done = document.getElementById("resDone");
+    if(done) done.textContent = complete + "/" + rows.length;
+  }
+
+  function patchProgress(roster){
+    const whoKind = document.getElementById("whoK")?.textContent?.trim();
+    const archive = document.getElementById("archNote");
+    const archived = !!archive && !archive.classList.contains("hide");
+
+    if(whoKind !== "Results for" || archived) return;
+
+    const noLogin = new Set(
+      roster
+        .filter(person => person?.has_login === false)
+        .map(person => norm(person.full_name))
+    );
+
+    const chips = [...document.querySelectorAll("#progList .prog-chip")];
+    if(!chips.length) return;
+
+    const totalCriteria = Number(window.evalApi?.criteriaCount?.()) || 10;
+    let eligible = 0;
+    let scoredCells = 0;
+    let submitted = 0;
+
+    chips.forEach(chip => {
+      const name = norm(chip.querySelector(".prog-chip-name")?.textContent);
+      const excluded = noLogin.has(name);
+      chip.hidden = excluded;
+      if(excluded) return;
+
+      eligible++;
+      const countText = chip.querySelector(".prog-chip-count")?.textContent?.trim() || "";
+
+      if(countText === "✓"){
+        submitted++;
+        scoredCells += totalCriteria;
+      }else{
+        const count = Math.max(0, Number.parseInt(countText, 10) || 0);
+        scoredCells += Math.min(count, totalCriteria);
+      }
+    });
+
+    const totalCells = eligible * totalCriteria;
+    const percent = totalCells ? scoredCells / totalCells * 100 : 0;
+
+    const num = document.getElementById("progNum");
+    if(num){
+      num.textContent =
+        Math.round(percent) + "% · " + submitted + "/" + eligible + " submitted";
+    }
+
+    const fill = document.getElementById("progFill");
+    if(fill) fill.style.width = percent + "%";
+
+    document.getElementById("progBar")?.classList.toggle(
+      "done",
+      eligible > 0 && submitted === eligible
+    );
+
+    const state = document.getElementById("whoState");
+    if(
+      state &&
+      /^\d+\s+of\s+\d+\s+submitted(?:\s+·\s+complete)?$/.test(state.textContent.trim())
+    ){
+      const complete = eligible > 0 && submitted === eligible;
+      state.textContent =
+        submitted + " of " + eligible + " submitted" + (complete ? " · complete" : "");
+      state.className = "pill-state " + (complete ? "locked" : "saved");
+    }
+  }
+
+  async function patch(){
+    const section = document.getElementById("secResults");
+    if(!section || section.classList.contains("hide")) return;
+
+    const roster = await getRoster();
+    if(!roster) return;
+
+    patchResults(roster);
+    patchProgress(roster);
+  }
+
+  function schedulePatch(delay=60){
+    clearTimeout(patchTimer);
+    patchTimer = setTimeout(() => {
+      patch().catch(() => {});
+    }, delay);
+  }
+
+  const results = document.getElementById("resList");
+  const progress = document.getElementById("progList");
+  const section = document.getElementById("secResults");
+
+  const observer = new MutationObserver(() => schedulePatch());
+
+  if(results){
+    observer.observe(results, {childList:true, subtree:true});
+  }
+
+  if(progress){
+    observer.observe(progress, {childList:true, subtree:true});
+  }
+
+  if(section){
+    observer.observe(section, {attributes:true, attributeFilter:["class"]});
+  }
+
+  // Do not block authentication/reload. Correct counts shortly after the app
+  // becomes usable, and then reuse the cached roster for subsequent rerenders.
+  const readyTimer = setInterval(() => {
+    const wrap = document.getElementById("wrap");
+    if(!wrap || wrap.classList.contains("hide")) return;
+
+    clearInterval(readyTimer);
+    schedulePatch(180);
+  }, 80);
+
+  setTimeout(() => clearInterval(readyTimer), 5000);
 })();
 
 window.addEventListener("profile-avatar-updated", () => {

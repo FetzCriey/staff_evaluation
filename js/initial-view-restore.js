@@ -1,17 +1,48 @@
 /* =========================================================
    INITIAL VIEW RESTORE
-   Apply the saved main view before the authenticated app is shown.
-   dashboard-loader.js keeps dashboard.js unloaded during a form
-   reload, so no MutationObserver / forced-view fight is needed.
+   Apply an account-owned saved main view before the authenticated
+   app is shown. Stale/legacy state is ignored instead of allowing
+   another signed-in account to inherit the previous location.
    ========================================================= */
 (() => {
   const STORAGE_KEY = "bp-staff-evaluation-location-v1";
+  const AUTH_STORAGE_KEY = "sb-giosjwjhalhmwcuyzfos-auth-token";
 
+  function currentOwnerKey(){
+    try{
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+      const auth = raw ? JSON.parse(raw) : null;
+      const id = auth?.user?.id;
+      if(id) return "uid:" + String(id);
+    }catch(_){}
+
+    try{
+      const email = String(sessionStorage.getItem("staff_email") || "")
+        .trim()
+        .toLowerCase();
+      if(email) return "email:" + email;
+    }catch(_){}
+
+    return "";
+  }
+
+  const ownerKey = currentOwnerKey();
   let state = null;
+
   try{
     const raw = sessionStorage.getItem(STORAGE_KEY);
     state = raw ? JSON.parse(raw) : null;
-  }catch(_){}
+
+    if(
+      state &&
+      (!ownerKey || !state.ownerKey || state.ownerKey !== ownerKey)
+    ){
+      sessionStorage.removeItem(STORAGE_KEY);
+      state = null;
+    }
+  }catch(_){
+    state = null;
+  }
 
   if(!state || state.view !== "form") return;
 
