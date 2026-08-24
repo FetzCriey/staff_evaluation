@@ -646,80 +646,112 @@ function enableHistoryFullCardClick(){
       #hisList .his-row .his-del{cursor:pointer}
 
       #hisList .his-date-group{
-        margin:7px 0;
-        border:1px solid rgba(30,122,161,.16);
-        border-radius:12px;
+        margin:0 0 9px;
+        border:1.5px solid var(--line);
+        border-radius:13px;
         overflow:hidden;
-        background:rgba(255,255,255,.62);
+        background:#fff;
+      }
+
+      #hisList .his-date-group:last-child{
+        margin-bottom:0;
       }
 
       #hisList .his-date-sum{
-        width:100%;
-        border:0;
-        background:rgba(235,247,252,.92);
-        color:inherit;
         display:flex;
         align-items:center;
-        justify-content:space-between;
-        gap:10px;
-        padding:10px 11px;
-        text-align:left;
+        gap:9px;
+        width:100%;
+        padding:11px 12px;
         cursor:pointer;
+        background:#f7fbfd;
+        border:0;
+        font-family:inherit;
+        color:var(--ink-soft);
+        text-align:left;
+        font-size:11.5px;
+        font-weight:700;
+        transition:background .15s ease,color .15s ease;
       }
 
       #hisList .his-date-sum:hover{
-        background:rgba(223,242,250,.98);
+        background:#eef6fb;
       }
 
       #hisList .his-date-sum:focus-visible{
-        outline:2px solid rgba(21,172,227,.5);
-        outline-offset:-2px;
+        outline:3px solid var(--lagoon-dark);
+        outline-offset:-3px;
       }
 
       #hisList .his-date-copy{
+        flex:1 1 auto;
         min-width:0;
         display:flex;
-        flex-direction:column;
-        gap:2px;
+        align-items:center;
+        gap:9px;
       }
 
       #hisList .his-date-label{
-        font-size:12px;
-        font-weight:800;
-        line-height:1.25;
-        color:var(--ink);
+        flex:1 1 auto;
+        min-width:0;
+        font-size:11.5px;
+        font-weight:700;
+        line-height:1.3;
+        color:inherit;
       }
 
       #hisList .his-date-count{
+        flex:0 0 auto;
         font-size:10px;
+        letter-spacing:.04em;
         font-weight:700;
-        line-height:1.2;
-        color:var(--muted);
+        line-height:1.4;
+        padding:2px 7px;
+        border-radius:999px;
+        background:var(--accent-soft);
+        color:var(--lagoon-deep);
+        white-space:nowrap;
       }
 
       #hisList .his-date-chev{
         flex:0 0 auto;
-        font-size:16px;
-        line-height:1;
-        transition:transform .18s ease;
-        transform:rotate(0deg);
+        width:9px;
+        height:9px;
+        margin-right:2px;
+        border-right:2px solid currentColor;
+        border-bottom:2px solid currentColor;
+        font-size:0;
+        line-height:0;
+        opacity:.65;
+        transform:rotate(45deg);
+        transition:transform .2s ease;
       }
 
-      #hisList .his-date-sum[aria-expanded="true"] .his-date-chev{
-        transform:rotate(180deg);
+      #hisList .his-date-group.open .his-date-sum{
+        background:var(--accent-soft);
+        color:var(--lagoon-deep);
+      }
+
+      #hisList .his-date-group.open .his-date-chev{
+        transform:rotate(225deg);
       }
 
       #hisList .his-date-body{
-        padding:5px;
-        background:rgba(255,255,255,.76);
+        padding:11px;
+        background:#fff;
+        border-top:1px solid var(--line);
       }
 
       #hisList .his-date-body[hidden]{
         display:none !important;
       }
 
-      #hisList .his-date-body .his-row + .his-row{
-        margin-top:5px;
+      #hisList .his-date-body .his-row{
+        margin-bottom:7px;
+      }
+
+      #hisList .his-date-body .his-row:last-child{
+        margin-bottom:0;
       }
     `;
     document.head.appendChild(style);
