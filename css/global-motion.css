@@ -22,6 +22,275 @@ html{
 }
 
 /* ---------------------------------------------------------
+   Animated brand background — company logo as the main moving
+   visual object across the site.
+   --------------------------------------------------------- */
+
+body{
+  position:relative;
+  overflow-x:hidden;
+  isolation:isolate;
+}
+
+body::before,
+body::after{
+  content:"";
+  position:fixed;
+  inset:auto;
+  pointer-events:none;
+  z-index:-2;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  opacity:0;
+  filter:drop-shadow(0 16px 42px rgba(21,172,227,.16));
+}
+
+body::before{
+  width:min(34vw, 300px);
+  height:min(34vw, 300px);
+  top:9vh;
+  right:-2.5rem;
+  background-image:url("../Better Practice Consulting Inc.png");
+}
+
+body::after{
+  width:min(42vw, 380px);
+  height:min(42vw, 380px);
+  bottom:8vh;
+  left:-4.5rem;
+  background-image:url("../Better Practice Consulting Inc.png");
+}
+
+body.motion-ready::before{
+  opacity:.17;
+  animation:
+    bpLogoFloatOne 19s ease-in-out infinite alternate,
+    bpLogoBreath 7.2s ease-in-out infinite;
+}
+
+body.motion-ready::after{
+  opacity:.11;
+  animation:
+    bpLogoFloatTwo 23s ease-in-out infinite alternate,
+    bpLogoSpin 26s linear infinite;
+}
+
+body.motion-ready .wrap,
+body.motion-ready .shell{
+  position:relative;
+  z-index:1;
+}
+
+body.motion-ready .wrap::before,
+body.motion-ready .shell::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 12% 22%, rgba(21,172,227,.10), transparent 0 15%),
+    radial-gradient(circle at 88% 18%, rgba(21,172,227,.12), transparent 0 13%),
+    radial-gradient(circle at 22% 82%, rgba(11,127,176,.10), transparent 0 14%),
+    radial-gradient(circle at 78% 76%, rgba(21,172,227,.10), transparent 0 12%);
+  opacity:.95;
+  animation:bpLightShift 18s ease-in-out infinite alternate;
+}
+
+body.motion-ready .wrap::after,
+body.motion-ready .shell::after{
+  content:"";
+  position:absolute;
+  inset:-28px;
+  pointer-events:none;
+  border-radius:inherit;
+  z-index:-1;
+  opacity:.45;
+  background-image:
+    radial-gradient(circle, rgba(21,172,227,.18) 1px, transparent 1.3px),
+    radial-gradient(circle, rgba(11,127,176,.12) 1px, transparent 1.3px);
+  background-size:24px 24px, 38px 38px;
+  background-position:0 0, 18px 14px;
+  mask-image:radial-gradient(circle at center, #000 52%, transparent 100%);
+  -webkit-mask-image:radial-gradient(circle at center, #000 52%, transparent 100%);
+  animation:bpDotDrift 24s linear infinite;
+}
+
+/* Moving highlight rings around the main content area. */
+body.motion-ready .top::before,
+body.motion-ready .brand::before{
+  content:"";
+  position:absolute;
+  inset:auto;
+  width:168px;
+  height:168px;
+  right:-40px;
+  bottom:-62px;
+  border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.18);
+  box-shadow:
+    0 0 0 18px rgba(255,255,255,.05),
+    0 0 0 42px rgba(255,255,255,.035);
+  pointer-events:none;
+  animation:bpRingDrift 15s ease-in-out infinite alternate;
+}
+
+body.motion-ready .top::after,
+body.motion-ready .brand::after{
+  content:"";
+  position:absolute;
+  width:110px;
+  height:110px;
+  left:-32px;
+  top:18px;
+  border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.12);
+  pointer-events:none;
+  animation:bpRingDriftSmall 11s ease-in-out infinite alternate;
+}
+
+/* Make the visible company logos feel more alive and noticeable. */
+body.motion-ready :where(
+  .logo,
+  .drawer-brand-logo,
+  .brand-top .logo
+){
+  transform-origin:center;
+  animation:
+    bpBadgeFloat 6.6s ease-in-out infinite,
+    motionImageIn 260ms ease both;
+}
+
+body.motion-ready .drawer-brand-logo{
+  animation-duration:7.4s, 260ms;
+}
+
+body.motion-ready .drawer-brand,
+body.motion-ready .brand-top{
+  position:relative;
+}
+
+body.motion-ready .drawer-brand::after,
+body.motion-ready .brand-top::after{
+  content:"";
+  position:absolute;
+  width:72px;
+  height:72px;
+  left:-12px;
+  top:-10px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(21,172,227,.16), rgba(21,172,227,0) 68%);
+  pointer-events:none;
+  animation:bpLogoGlow 4.6s ease-in-out infinite;
+}
+
+@keyframes bpLogoFloatOne{
+  0%{
+    transform:translate3d(0,0,0) scale(.96) rotate(-7deg);
+  }
+  50%{
+    transform:translate3d(-28px,18px,0) scale(1.02) rotate(2deg);
+  }
+  100%{
+    transform:translate3d(-54px,50px,0) scale(1.06) rotate(8deg);
+  }
+}
+
+@keyframes bpLogoFloatTwo{
+  0%{
+    transform:translate3d(0,0,0) scale(1) rotate(0deg);
+  }
+  50%{
+    transform:translate3d(36px,-24px,0) scale(1.06) rotate(-4deg);
+  }
+  100%{
+    transform:translate3d(76px,-72px,0) scale(1.12) rotate(-10deg);
+  }
+}
+
+@keyframes bpLogoBreath{
+  0%,100%{filter:drop-shadow(0 16px 42px rgba(21,172,227,.10)) blur(0)}
+  50%{filter:drop-shadow(0 20px 48px rgba(21,172,227,.24)) blur(.4px)}
+}
+
+@keyframes bpLogoSpin{
+  from{transform:translate3d(0,0,0) rotate(0deg)}
+  to{transform:translate3d(76px,-72px,0) rotate(360deg)}
+}
+
+@keyframes bpLightShift{
+  0%{transform:translate3d(0,0,0) scale(1)}
+  100%{transform:translate3d(10px,-8px,0) scale(1.03)}
+}
+
+@keyframes bpDotDrift{
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(26px,-22px,0)}
+}
+
+@keyframes bpRingDrift{
+  0%{transform:translate3d(0,0,0) scale(1)}
+  100%{transform:translate3d(-14px,-10px,0) scale(1.08)}
+}
+
+@keyframes bpRingDriftSmall{
+  0%{transform:translate3d(0,0,0) scale(.96)}
+  100%{transform:translate3d(8px,6px,0) scale(1.06)}
+}
+
+@keyframes bpBadgeFloat{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  25%{transform:translateY(-2px) rotate(-1.2deg)}
+  50%{transform:translateY(-5px) rotate(0deg)}
+  75%{transform:translateY(-2px) rotate(1.2deg)}
+}
+
+@keyframes bpLogoGlow{
+  0%,100%{opacity:.42; transform:scale(.92)}
+  50%{opacity:.8; transform:scale(1.08)}
+}
+
+/* Mobile tuning for noticeable but clean movement. */
+@media (max-width:760px){
+  body::before{
+    width:170px;
+    height:170px;
+    top:8vh;
+    right:-2.8rem;
+  }
+
+  body::after{
+    width:210px;
+    height:210px;
+    bottom:5vh;
+    left:-4.8rem;
+  }
+
+  body.motion-ready .wrap::after,
+  body.motion-ready .shell::after{
+    inset:-12px;
+    opacity:.34;
+  }
+
+  body.motion-ready .top::before,
+  body.motion-ready .brand::before{
+    width:126px;
+    height:126px;
+    right:-34px;
+    bottom:-48px;
+  }
+
+  body.motion-ready .top::after,
+  body.motion-ready .brand::after{
+    width:84px;
+    height:84px;
+    left:-22px;
+  }
+}
+
+/* ---------------------------------------------------------
    Universal interactive transitions
    --------------------------------------------------------- */
 
@@ -287,9 +556,7 @@ body.motion-ready :where(
   .avatar img,
   .dash-live-avatar img,
   .dash-rank-avatar img,
-  .settings-avatar-preview img,
-  .logo,
-  .drawer-brand-logo
+  .settings-avatar-preview img
 ){
   animation:motionImageIn 260ms ease both;
 }
@@ -332,101 +599,28 @@ body.motion-ready > .shell .card > *:nth-child(5){--motion-delay:120ms}
 }
 
 /* ---------------------------------------------------------
-   Animated background graphics
-   --------------------------------------------------------- */
-
-/*
-  Two fixed decorative layers sit behind every page. They use only CSS
-  gradients and transform animation, so no new markup, images, or app logic
-  are required. The first layer is the soft light field; the second layer is
-  the thin ring / dot-grid graphic treatment.
-*/
-body{
-  position:relative;
-  z-index:0;
-  isolation:isolate;
-  overflow-x:hidden;
-}
-
-body::before,
-body::after{
-  content:"";
-  position:fixed;
-  inset:-14vmax;
-  pointer-events:none;
-  transform:translate3d(0,0,0);
-  transform-origin:center;
-  will-change:transform;
-}
-
-body::before{
-  z-index:-2;
-  background:
-    radial-gradient(circle at 17% 21%, rgba(21,172,227,.35) 0 7%, rgba(21,172,227,.12) 15%, transparent 32%),
-    radial-gradient(circle at 83% 27%, rgba(255,255,255,.66) 0 5%, rgba(119,208,240,.20) 16%, transparent 35%),
-    radial-gradient(circle at 67% 83%, rgba(11,127,176,.22) 0 8%, rgba(11,127,176,.07) 17%, transparent 31%),
-    conic-gradient(from 118deg at 51% 47%, transparent 0 18%, rgba(255,255,255,.16) 18.5% 20%, transparent 20.5% 48%, rgba(21,172,227,.08) 48.5% 50%, transparent 50.5% 100%);
-  opacity:.96;
-  animation:bpAmbientDrift 26s cubic-bezier(.45,0,.2,1) infinite alternate;
-}
-
-body::after{
-  z-index:-1;
-  background:
-    radial-gradient(circle at 17% 77%, transparent 0 95px, rgba(11,127,176,.14) 96px 98px, transparent 99px 150px, rgba(21,172,227,.08) 151px 153px, transparent 154px),
-    radial-gradient(circle at 86% 18%, transparent 0 135px, rgba(8,52,76,.11) 136px 138px, transparent 139px 205px, rgba(21,172,227,.06) 206px 208px, transparent 209px),
-    linear-gradient(135deg, transparent 0 47.8%, rgba(255,255,255,.18) 48% 48.25%, transparent 48.45% 100%),
-    radial-gradient(circle, rgba(8,52,76,.10) 1px, transparent 1.35px);
-  background-size:auto,auto,100% 100%,36px 36px;
-  background-position:center,center,center,0 0;
-  opacity:.48;
-  animation:bpGraphicGlide 38s linear infinite;
-}
-
-@keyframes bpAmbientDrift{
-  0%{
-    transform:translate3d(-1.5%,-1%,0) scale(1) rotate(0deg);
-  }
-  50%{
-    transform:translate3d(2.2%,-2.1%,0) scale(1.035) rotate(1deg);
-  }
-  100%{
-    transform:translate3d(-1.2%,2.5%,0) scale(1.055) rotate(-1.2deg);
-  }
-}
-
-@keyframes bpGraphicGlide{
-  from{
-    transform:translate3d(0,0,0) rotate(0deg);
-  }
-  to{
-    transform:translate3d(36px,36px,0) rotate(.6deg);
-  }
-}
-
-@media (max-width:760px){
-  body::before,
-  body::after{
-    inset:-22vmax;
-  }
-
-  body::before{
-    opacity:.82;
-  }
-
-  body::after{
-    opacity:.34;
-    background-size:auto,auto,100% 100%,30px 30px;
-  }
-}
-
-/* ---------------------------------------------------------
    Accessibility
    --------------------------------------------------------- */
 
 @media (prefers-reduced-motion:reduce){
   html{
     scroll-behavior:auto !important;
+  }
+
+  body::before,
+  body::after,
+  .wrap::before,
+  .wrap::after,
+  .shell::before,
+  .shell::after,
+  .top::before,
+  .top::after,
+  .brand::before,
+  .brand::after,
+  .drawer-brand::after,
+  .brand-top::after{
+    animation:none !important;
+    transform:none !important;
   }
 
   *,
@@ -437,13 +631,6 @@ body::after{
     animation-iteration-count:1 !important;
     transition-duration:.01ms !important;
     scroll-behavior:auto !important;
-  }
-
-  body::before,
-  body::after{
-    animation:none !important;
-    transform:none !important;
-    will-change:auto;
   }
 
   :where(
