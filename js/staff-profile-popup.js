@@ -644,6 +644,83 @@ function enableHistoryFullCardClick(){
     style.textContent = `
       #hisList .his-row{cursor:pointer}
       #hisList .his-row .his-del{cursor:pointer}
+
+      #hisList .his-date-group{
+        margin:7px 0;
+        border:1px solid rgba(30,122,161,.16);
+        border-radius:12px;
+        overflow:hidden;
+        background:rgba(255,255,255,.62);
+      }
+
+      #hisList .his-date-sum{
+        width:100%;
+        border:0;
+        background:rgba(235,247,252,.92);
+        color:inherit;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        padding:10px 11px;
+        text-align:left;
+        cursor:pointer;
+      }
+
+      #hisList .his-date-sum:hover{
+        background:rgba(223,242,250,.98);
+      }
+
+      #hisList .his-date-sum:focus-visible{
+        outline:2px solid rgba(21,172,227,.5);
+        outline-offset:-2px;
+      }
+
+      #hisList .his-date-copy{
+        min-width:0;
+        display:flex;
+        flex-direction:column;
+        gap:2px;
+      }
+
+      #hisList .his-date-label{
+        font-size:12px;
+        font-weight:800;
+        line-height:1.25;
+        color:var(--ink);
+      }
+
+      #hisList .his-date-count{
+        font-size:10px;
+        font-weight:700;
+        line-height:1.2;
+        color:var(--muted);
+      }
+
+      #hisList .his-date-chev{
+        flex:0 0 auto;
+        font-size:16px;
+        line-height:1;
+        transition:transform .18s ease;
+        transform:rotate(0deg);
+      }
+
+      #hisList .his-date-sum[aria-expanded="true"] .his-date-chev{
+        transform:rotate(180deg);
+      }
+
+      #hisList .his-date-body{
+        padding:5px;
+        background:rgba(255,255,255,.76);
+      }
+
+      #hisList .his-date-body[hidden]{
+        display:none !important;
+      }
+
+      #hisList .his-date-body .his-row + .his-row{
+        margin-top:5px;
+      }
     `;
     document.head.appendChild(style);
   }
