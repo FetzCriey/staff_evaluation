@@ -143,6 +143,9 @@ if(!session){
         const { users } = await admin({ action:'list' });
         renderList(users);
         window.setRoster(users);
+        // After initial evaluation setup this also refreshes the live ID and
+        // eligible-evaluator maps, so Add/Remove/Role changes do not require reload.
+        window.__syncEvaluationRoster?.(users);
       }catch(err){ say('Could not load staff: ' + err.message, 'err'); }
     }
 
@@ -320,6 +323,25 @@ if(!session){
   let idByName = new Map();
   let nameById = new Map();
   let eligibleEvaluatorIds = new Set();
+
+  function replaceRosterMaps(profiles, rosterRows=null){
+    idByName.clear();
+    nameById.clear();
+
+    (profiles || []).forEach(p => {
+      if(!p?.id || !p?.full_name) return;
+      idByName.set(p.full_name.toLowerCase(), p.id);
+      nameById.set(p.id, p.full_name);
+    });
+
+    const eligibilitySource = Array.isArray(rosterRows) ? rosterRows : profiles;
+    eligibleEvaluatorIds = new Set(
+      (eligibilitySource || [])
+        .filter(p => p?.id && p.has_login !== false)
+        .map(p => p.id)
+    );
+  }
+
   async function loadIds(){
     const [profilesResult, rosterResult] = await Promise.all([
       supabase.from('profiles').select('id, full_name'),
@@ -327,21 +349,15 @@ if(!session){
     ]);
 
     const profiles = profilesResult.data ?? [];
-    profiles.forEach(p => {
-      idByName.set(p.full_name.toLowerCase(), p.id);
-      nameById.set(p.id, p.full_name);
-    });
 
     // No-login roster entries may still be evaluated, but they cannot be
     // required evaluators because there is no Auth account that can sign in.
     if(!rosterResult.error && Array.isArray(rosterResult.data)){
-      eligibleEvaluatorIds = new Set(
-        rosterResult.data.filter(p => p.has_login !== false).map(p => p.id)
-      );
+      replaceRosterMaps(profiles, rosterResult.data);
     }else{
       // Safe fallback for a transient RPC/network failure: preserve the old
       // behavior rather than blocking the whole evaluation screen.
-      eligibleEvaluatorIds = new Set(nameById.keys());
+      replaceRosterMaps(profiles, profiles);
     }
   }
   await loadIds();
@@ -358,6 +374,42 @@ if(!session){
   let lastWarn = 0;       // throttles the finish-first warning
   let reviewRemarkDrafts = new Map();
   let reviewSummaryDraft = '';
+  let targetLoadVersion = 0;
+
+  function invalidateTargetLoads(){
+    targetLoadVersion += 1;
+    return targetLoadVersion;
+  }
+
+  function isCurrentTargetLoad(id, version){
+    return version === targetLoadVersion && target === id;
+  }
+
+  // Staff Administration can update its roster without reloading the page.
+  // Rebuild every name/id/eligibility map atomically so autocomplete validation,
+  // Results counts, progress, and the next-colleague queue use the same roster.
+  window.__syncEvaluationRoster = rows => {
+    if(!Array.isArray(rows)) return;
+    replaceRosterMaps(rows, rows);
+
+    if(target && !nameById.has(target)){
+      invalidateTargetLoads();
+      target = null;
+      targetName = '';
+      dirty = false;
+      anyLocked = false;
+      api.setEmployee('');
+      api.clearScores();
+      api.setComments('');
+      api.setColumns([ me?.full_name || 'You' ]);
+      api.setReadOnly(false);
+      setState('No employee selected');
+    }
+
+    if(typeof window.__refreshResults === 'function'){
+      window.__refreshResults();
+    }
+  };
 
   // Preview-mode remarks editor. The normal comment textarea stays as the
   // merged source used by Print/PDF/Word, while reviewers get one editable
@@ -612,9 +664,17 @@ if(!session){
       else setState(stop, 'dirty');
       return;
     }
+
+    const loadVersion = invalidateTargetLoads();
     target = id;
     targetName = api.employeeName();
     dirty = false;
+    liveEditVersion = 0;
+    liveSavedVersion = 0;
+    clearTimeout(liveSaveTimer);
+    liveSaveTimer = null;
+    liveSaveAgain = false;
+
     if(reviewing()) el('whoV').textContent = targetName || '—';
     api.clearScores();
     api.setComments('');
@@ -630,17 +690,22 @@ if(!session){
       api.setReadOnly(true);
       return;
     }
-    reviewing() ? await loadAll(id) : await loadMine(id);
+    reviewing() ? await loadAll(id, loadVersion) : await loadMine(id, loadVersion);
   }
 
   // ----- staff: their own single column -----
-  async function loadMine(id){
+  async function loadMine(id, loadVersion=targetLoadVersion){
     setReviewRemarksVisible(false);
     api.clearColumns();
     api.setColumns([ me?.full_name || 'You' ]);
     const { data, error } = await supabase.from('evaluations')
       .select('id, scores, comments, locked')
       .eq('employee_id', id).eq('evaluator_id', uid).eq('archived', false).maybeSingle();
+
+    // A slower response for an employee that is no longer selected must never
+    // repaint the grid or become the source of a later autosave.
+    if(!isCurrentTargetLoad(id, loadVersion)) return;
+
     if(error){ setState('Could not load your evaluation', 'locked'); return; }
     myRow = data || null;
     if(myRow){
@@ -661,10 +726,13 @@ if(!session){
   }
 
   // ----- reviewer: every submitted column -----
-  async function loadAll(id){
+  async function loadAll(id, loadVersion=targetLoadVersion){
     const { data, error } = await supabase.from('evaluations')
       .select('id, evaluator_id, scores, comments, manager_summary, locked, updated_at')
       .eq('employee_id', id).eq('archived', false);
+
+    if(!isCurrentTargetLoad(id, loadVersion)) return;
+
     if(error){ setState('Could not load evaluations', 'locked'); return; }
     // Show an evaluator in Manager/Senior Preview as soon as they have either
     // started scoring OR entered a comment. This keeps comment-first workflows
@@ -694,8 +762,12 @@ if(!session){
     // in the same overall scores, progress and remarks as every other evaluator.
     renderReviewRemarks(rows);
 
-    const expectedCount = Math.max(idByName.size - 1, 0);
-    const submittedCount = rows.filter(r => r.locked).length;
+    const expectedCount = expectedEvaluatorIds(id).length;
+    const submittedCount = rows.filter(r =>
+      r.locked &&
+      eligibleEvaluatorIds.has(r.evaluator_id) &&
+      r.evaluator_id !== id
+    ).length;
 
     // Complete means every expected evaluator submitted, not merely that every
     // row currently present happens to be locked.
@@ -722,7 +794,9 @@ if(!session){
     if(!reviewing()) return;
     el('progWrap').classList.remove('hide');
 
-    const expected = [...nameById.entries()].filter(([pid]) => pid !== employeeId);
+    const expected = [...nameById.entries()].filter(
+      ([pid]) => pid !== employeeId && eligibleEvaluatorIds.has(pid)
+    );
     const totalEvaluators = expected.length;
     const totalCriteria = api.criteriaCount();
     const rowByEvaluator = new Map(rows.map(r => [r.evaluator_id, r]));
@@ -817,19 +891,43 @@ if(!session){
   let liveSaveTimer = null;
   let liveSaveRunning = false;
   let liveSaveAgain = false;
+  let liveEditVersion = 0;
+  let liveSavedVersion = 0;
+
+  function waitForLiveSaveIdle(timeout=8000){
+    return new Promise(resolve => {
+      const started = Date.now();
+
+      const check = () => {
+        if(!liveSaveRunning){
+          resolve(true);
+          return;
+        }
+        if(Date.now() - started >= timeout){
+          resolve(false);
+          return;
+        }
+        setTimeout(check, 30);
+      };
+
+      check();
+    });
+  }
 
   async function saveLiveDraft(){
-    if(reviewing() || anyLocked) return;
+    if(reviewing() || anyLocked) return false;
 
     const id = targetId();
-    if(!id || id === uid) return;
+    if(!id || id === uid || id !== target) return false;
 
     if(liveSaveRunning){
       liveSaveAgain = true;
-      return;
+      return false;
     }
 
     liveSaveRunning = true;
+    const saveVersion = liveEditVersion;
+    const saveTargetVersion = targetLoadVersion;
 
     try{
       const scores = api.getColumnScores(0);
@@ -859,20 +957,36 @@ if(!session){
 
       if(error) throw error;
 
-      myRow = existing ? { ...(myRow || {}), id: existing.id, ...payload } : { ...payload };
-      dirty = false;
+      // The row was saved successfully, but only update the visible state if
+      // the same employee is still open. Database writes are never redirected
+      // to a newer target.
+      if(isCurrentTargetLoad(id, saveTargetVersion)){
+        myRow = existing ? { ...(myRow || {}), id: existing.id, ...payload } : { ...payload };
+        liveSavedVersion = Math.max(liveSavedVersion, saveVersion);
+        dirty = liveSavedVersion < liveEditVersion;
 
-      const filled = Object.keys(scores).length;
-      const total = api.criteriaCount();
-      setState('Live saved · ' + filled + ' of ' + total + ' scored', 'saved');
+        const filled = Object.keys(scores).length;
+        const total = api.criteriaCount();
 
+        if(dirty){
+          setState('Saving latest changes…', 'dirty');
+        }else{
+          setState('Live saved · ' + filled + ' of ' + total + ' scored', 'saved');
+        }
+      }
+
+      return true;
     }catch(err){
       console.error('Live save failed:', err);
-      setState('Could not live-save · use Submit to retry', 'dirty');
+      if(isCurrentTargetLoad(id, saveTargetVersion)){
+        dirty = true;
+        setState('Could not live-save · use Submit to retry', 'dirty');
+      }
+      return false;
     }finally{
       liveSaveRunning = false;
 
-      if(liveSaveAgain){
+      if(liveSaveAgain && !reviewing() && !anyLocked){
         liveSaveAgain = false;
         saveLiveDraft();
       }
@@ -884,6 +998,52 @@ if(!session){
     liveSaveTimer = setTimeout(saveLiveDraft, 500);
   }
 
+  // Before a final/manual save, let any older autosave finish and cancel its
+  // pending timer. The manual write then runs last, so locked:true cannot be
+  // overwritten later by an older locked:false request.
+  async function settleLiveSaveBeforeManualSave(){
+    clearTimeout(liveSaveTimer);
+    liveSaveTimer = null;
+    liveSaveAgain = false;
+    return await waitForLiveSaveIdle();
+  }
+
+  // Results and History are read-only navigation. Save the latest draft first
+  // instead of bypassing the finish-first guard by lying about the score count.
+  async function flushLiveDraftBeforeReview(){
+    if(reviewing() || !target || anyLocked) return true;
+
+    // Freeze the current scoring controls during the short hand-off so no new
+    // edit can appear after the draft snapshot but before review mode opens.
+    api.setReadOnly(true);
+
+    clearTimeout(liveSaveTimer);
+    liveSaveTimer = null;
+    liveSaveAgain = false;
+
+    if(liveSaveRunning && !await waitForLiveSaveIdle()){
+      api.setReadOnly(false);
+      return false;
+    }
+
+    if(!dirty && liveSavedVersion >= liveEditVersion) return true;
+
+    const saved = await saveLiveDraft();
+    if(!saved){
+      api.setReadOnly(false);
+      return false;
+    }
+
+    if(liveSaveRunning && !await waitForLiveSaveIdle()){
+      api.setReadOnly(false);
+      return false;
+    }
+
+    const clean = !dirty && liveSavedVersion >= liveEditVersion;
+    if(!clean) api.setReadOnly(false);
+    return clean;
+  }
+
   // ----- live remarks saving -----
   const commentBox = el('comment');
 
@@ -893,6 +1053,7 @@ if(!session){
       if(anyLocked) return;
       if(!target) return;
 
+      liveEditVersion += 1;
       dirty = true;
       setState('Saving remarks…', 'dirty');
       queueLiveSave();
@@ -904,15 +1065,39 @@ if(!session){
     const id = targetId();
     if(!id){ uiAlert('No employee chosen', 'Pick the colleague you are evaluating first.'); return; }
     if(id === uid){ uiAlert('Not allowed', 'You cannot evaluate yourself.'); return; }
+
+    const btn = el('saveBtn');
+    if(btn.disabled) return;
+
+    // Freeze this draft while old autosaves settle. This prevents a new edit
+    // from scheduling locked:false after the final/manual write starts.
+    btn.disabled = true;
+    api.setReadOnly(true);
+
     // A complete column is a final submission: it locks, and only reopens when
     // a reviewer archives the round (or resets this submission). An incomplete
     // one saves as an editable draft.
     const complete = api.columnComplete(0);
+
+    if(!await settleLiveSaveBeforeManualSave()){
+      btn.disabled = false;
+      api.setReadOnly(false);
+      await uiAlert(
+        'Please try again',
+        'The latest automatic save is still finishing. Your scores were not submitted yet.'
+      );
+      return;
+    }
+
     if(complete && !await uiConfirm('Submit your evaluation of ' + targetName + '?',
         'Your scores are final once submitted — you will not be able to change them. ' +
-        'A reviewer can reopen them if something is wrong.', { ok: 'Submit' })) return;
-    const btn = el('saveBtn');
-    btn.disabled = true; el('status').textContent = 'Saving…';
+        'A reviewer can reopen them if something is wrong.', { ok: 'Submit' })){
+      btn.disabled = false;
+      api.setReadOnly(false);
+      return;
+    }
+
+    el('status').textContent = 'Saving…';
     const payload = {
       employee_id: id,
       evaluator_id: uid,
@@ -936,8 +1121,9 @@ if(!session){
       : existing
         ? await supabase.from('evaluations').update(payload).eq('id', existing.id)
         : await supabase.from('evaluations').insert(payload);
-    btn.disabled = false;
     if(error){
+      btn.disabled = false;
+      api.setReadOnly(false);
       el('status').textContent = '';
       setState('Save failed', 'locked');
       uiAlert('Could not save', error.message);
@@ -945,6 +1131,7 @@ if(!session){
     }
     el('status').textContent = 'Saved.';
     setTimeout(() => { if(el('status').textContent === 'Saved.') el('status').textContent = ''; }, 2500);
+    liveSavedVersion = liveEditVersion;
     dirty = false;
     if(complete){
       anyLocked = true;
@@ -953,6 +1140,8 @@ if(!session){
       setState('Submitted — locked', 'locked');
       await goToNextColleague();
     }else{
+      api.setReadOnly(false);
+      btn.disabled = false;
       setState('Draft saved (incomplete)', 'saved');
     }
     if(window.__refreshResults) window.__refreshResults();
@@ -979,6 +1168,7 @@ if(!session){
       api.clearScores(); api.setComments('');
       api.setEmployee('');
       target = null; targetName = ''; dirty = false;
+      invalidateTargetLoads();
       setState('All colleagues evaluated', 'saved');
       await uiAlert('All done', 'You have evaluated everyone. Thank you.');
       return;
@@ -987,6 +1177,7 @@ if(!session){
     await uiAlert('Saved', 'Next up: ' + nextName + '.');
     api.setEmployee(nextName);
     target = null;                 // force a fresh load for the new person
+    invalidateTargetLoads();
     await onEmployeeChange();
     document.querySelector('.score-in')?.focus();
   }
@@ -1096,6 +1287,7 @@ if(!session){
         return;
       }
       if(anyLocked || !target) return;
+      liveEditVersion += 1;
       dirty = true;
       const filled = filledCount(), total = api.criteriaCount();
       setState(
@@ -1171,8 +1363,14 @@ if(!session){
       let complete = 0;
 
       people.forEach(([pid, name]) => {
-        const total = people.length - 1;               // everyone but themselves
-        const n = (byEmployee.get(pid) || new Set()).size;
+        const total = Math.max(
+          eligibleEvaluatorIds.size - (eligibleEvaluatorIds.has(pid) ? 1 : 0),
+          0
+        );
+        const n = [...(byEmployee.get(pid) || new Set())]
+          .filter(evaluatorId =>
+            evaluatorId !== pid && eligibleEvaluatorIds.has(evaluatorId)
+          ).length;
         const full = total > 0 && n >= total;
         if(full) complete++;
 
@@ -1193,8 +1391,13 @@ if(!session){
 
     // open one person's collected scores in the main form
     async function openResults(pid, name){
-      const stop = blockedFromLeaving();
-      if(stop){ uiAlert('Not finished yet', stop); return; }
+      if(!reviewing() && !await flushLiveDraftBeforeReview()){
+        await uiAlert(
+          'Could not save latest changes',
+          'Your current draft could not be saved, so Results was not opened. Please try again.'
+        );
+        return;
+      }
 
       if(reviewing() && fixDirty && !archiveCtx){
         uiAlert(
@@ -1209,6 +1412,7 @@ if(!session){
       api.setEmployee(name);
       applyMode();
       target = null;                 // force a reload for this person
+      invalidateTargetLoads();
       await onEmployeeChange();
       loadResults();
       openDrawer(false);
@@ -1217,10 +1421,14 @@ if(!session){
     el('backBtn').addEventListener('click', async () => {
       mode = 'mine';
       applyMode();
+      invalidateTargetLoads();
       api.clearColumns();
       api.setEmployee('');
       target = null; targetName = ''; dirty = false;
+      liveEditVersion = 0; liveSavedVersion = 0;
+      clearTimeout(liveSaveTimer); liveSaveTimer = null; liveSaveAgain = false;
       api.clearScores(); api.setComments(''); api.setReadOnly(false);
+      api.setColumns([ me?.full_name || 'You' ]);
       setState('No employee selected');
     });
 
@@ -1257,6 +1465,7 @@ if(!session){
       await loadHistory();
       if(window.__refreshResults) window.__refreshResults();
       target = null;
+      invalidateTargetLoads();
       await onEmployeeChange();
     }
 
@@ -1379,14 +1588,21 @@ if(!session){
     }
     window.__deleteArchive = deleteArchiveRecord;
 
-    function openArchive(pid, name, when, rs, rowEl){
-      const stop = blockedFromLeaving();
-      if(stop){ uiAlert('Not finished yet', stop); return; }
+    async function openArchive(pid, name, when, rs, rowEl){
+      if(!reviewing() && !await flushLiveDraftBeforeReview()){
+        await uiAlert(
+          'Could not save latest changes',
+          'Your current draft could not be saved, so History was not opened. Please try again.'
+        );
+        return;
+      }
+
       mode = 'review';
       viewingArchive = when;
       archiveCtx = { pid, name, when };
       api.setEmployee(name);
       applyMode();
+      invalidateTargetLoads();
       target = pid; targetName = name;
       rs.sort((a,b) => (nameById.get(a.evaluator_id)||'').localeCompare(nameById.get(b.evaluator_id)||''));
       api.clearScores();
@@ -1507,6 +1723,7 @@ if(!session){
     async function refreshAfterReset(){
       if(window.__refreshResults) window.__refreshResults();
       const id = target; target = null;
+      invalidateTargetLoads();
       el('empName').value = nameById.get(id) || '';
       await onEmployeeChange();
     }
