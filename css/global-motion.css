@@ -1,651 +1,306 @@
 /* =========================================================
-   BETTER PRACTICE — SITE-WIDE MOTION SYSTEM
-   Shared micro-interactions for the dashboard, evaluation form,
-   sidebar, modal UI, dynamic lists, and login page.
-
-   This file adds motion only. It does not change app state,
-   permissions, evaluation logic, Supabase behavior, or layout.
+   BETTER PRACTICE — SITE-WIDE MOTION CONTROLLER
+   Adds reusable click, value-change, and dynamic-entry feedback.
+   Pure presentation: no business logic or Supabase writes.
    ========================================================= */
 
-:root{
-  --motion-instant:110ms;
-  --motion-fast:160ms;
-  --motion-base:240ms;
-  --motion-slow:360ms;
-  --motion-ease:cubic-bezier(.2,.75,.25,1);
-  --motion-spring:cubic-bezier(.18,1.25,.32,1);
-}
+(() => {
+  /*
+    History has a second-level date dropdown. Supabase keeps the newest
+    date open by default on first render. Close that first open date through
+    the existing click handler so its internal openHistoryDateKey is also
+    cleared. After that, normal user-opened History dates are left alone.
+  */
+  const historyList = document.getElementById('hisList');
 
-/* Smooth page movement for anchors / programmatic scrolling. */
-html{
-  scroll-behavior:smooth;
-}
+  if(historyList){
+    let historyDefaultSettled = false;
+    let historyObserver = null;
 
-/* ---------------------------------------------------------
-   Animated brand background — company logo as the main moving
-   visual object across the site.
-   --------------------------------------------------------- */
+    const closeInitialHistoryDate = () => {
+      if(historyDefaultSettled) return;
 
-body{
-  position:relative;
-  overflow-x:hidden;
-  isolation:isolate;
-}
+      const firstGroup =
+        historyList.querySelector('.his-date-group');
 
-body::before,
-body::after{
-  content:"";
-  position:fixed;
-  inset:auto;
-  pointer-events:none;
-  z-index:-2;
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:contain;
-  opacity:0;
-  filter:drop-shadow(0 16px 42px rgba(21,172,227,.16));
-}
+      if(!firstGroup) return;
 
-body::before{
-  width:min(34vw, 300px);
-  height:min(34vw, 300px);
-  top:9vh;
-  right:-2.5rem;
-  background-image:url("../Better Practice Consulting Inc.png");
-}
+      const openSummary =
+        historyList.querySelector('.his-date-group.open .his-date-sum');
 
-body::after{
-  width:min(42vw, 380px);
-  height:min(42vw, 380px);
-  bottom:8vh;
-  left:-4.5rem;
-  background-image:url("../Better Practice Consulting Inc.png");
-}
+      if(openSummary){
+        // Use the app's own handler so openHistoryDateKey becomes empty too.
+        openSummary.click();
+      }else{
+        // Safety fallback if the markup is rendered closed already.
+        historyList.querySelectorAll('.his-date-group').forEach(group => {
+          group.classList.remove('open');
 
-body.motion-ready::before{
-  opacity:.17;
-  animation:
-    bpLogoFloatOne 19s ease-in-out infinite alternate,
-    bpLogoBreath 7.2s ease-in-out infinite;
-}
+          group
+            .querySelector('.his-date-sum')
+            ?.setAttribute('aria-expanded', 'false');
 
-body.motion-ready::after{
-  opacity:.11;
-  animation:
-    bpLogoFloatTwo 23s ease-in-out infinite alternate,
-    bpLogoSpin 26s linear infinite;
-}
+          const body = group.querySelector('.his-date-body');
+          if(body) body.hidden = true;
+        });
+      }
 
-body.motion-ready .wrap,
-body.motion-ready .shell{
-  position:relative;
-  z-index:1;
-}
+      historyDefaultSettled = true;
+      historyObserver?.disconnect();
+    };
 
-body.motion-ready .wrap::before,
-body.motion-ready .shell::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  border-radius:inherit;
-  z-index:-1;
-  background:
-    radial-gradient(circle at 12% 22%, rgba(21,172,227,.10), transparent 0 15%),
-    radial-gradient(circle at 88% 18%, rgba(21,172,227,.12), transparent 0 13%),
-    radial-gradient(circle at 22% 82%, rgba(11,127,176,.10), transparent 0 14%),
-    radial-gradient(circle at 78% 76%, rgba(21,172,227,.10), transparent 0 12%);
-  opacity:.95;
-  animation:bpLightShift 18s ease-in-out infinite alternate;
-}
+    historyObserver = new MutationObserver(closeInitialHistoryDate);
+    historyObserver.observe(historyList, {
+      childList:true,
+      subtree:true
+    });
 
-body.motion-ready .wrap::after,
-body.motion-ready .shell::after{
-  content:"";
-  position:absolute;
-  inset:-28px;
-  pointer-events:none;
-  border-radius:inherit;
-  z-index:-1;
-  opacity:.45;
-  background-image:
-    radial-gradient(circle, rgba(21,172,227,.18) 1px, transparent 1.3px),
-    radial-gradient(circle, rgba(11,127,176,.12) 1px, transparent 1.3px);
-  background-size:24px 24px, 38px 38px;
-  background-position:0 0, 18px 14px;
-  mask-image:radial-gradient(circle at center, #000 52%, transparent 100%);
-  -webkit-mask-image:radial-gradient(circle at center, #000 52%, transparent 100%);
-  animation:bpDotDrift 24s linear infinite;
-}
-
-/* Moving highlight rings around the main content area. */
-body.motion-ready .top::before,
-body.motion-ready .brand::before{
-  content:"";
-  position:absolute;
-  inset:auto;
-  width:168px;
-  height:168px;
-  right:-40px;
-  bottom:-62px;
-  border-radius:50%;
-  border:1.5px solid rgba(255,255,255,.18);
-  box-shadow:
-    0 0 0 18px rgba(255,255,255,.05),
-    0 0 0 42px rgba(255,255,255,.035);
-  pointer-events:none;
-  animation:bpRingDrift 15s ease-in-out infinite alternate;
-}
-
-body.motion-ready .top::after,
-body.motion-ready .brand::after{
-  content:"";
-  position:absolute;
-  width:110px;
-  height:110px;
-  left:-32px;
-  top:18px;
-  border-radius:50%;
-  border:1.5px solid rgba(255,255,255,.12);
-  pointer-events:none;
-  animation:bpRingDriftSmall 11s ease-in-out infinite alternate;
-}
-
-/* Make the visible company logos feel more alive and noticeable. */
-body.motion-ready :where(
-  .logo,
-  .drawer-brand-logo,
-  .brand-top .logo
-){
-  transform-origin:center;
-  animation:
-    bpBadgeFloat 6.6s ease-in-out infinite,
-    motionImageIn 260ms ease both;
-}
-
-body.motion-ready .drawer-brand-logo{
-  animation-duration:7.4s, 260ms;
-}
-
-body.motion-ready .drawer-brand,
-body.motion-ready .brand-top{
-  position:relative;
-}
-
-body.motion-ready .drawer-brand::after,
-body.motion-ready .brand-top::after{
-  content:"";
-  position:absolute;
-  width:72px;
-  height:72px;
-  left:-12px;
-  top:-10px;
-  border-radius:50%;
-  background:radial-gradient(circle, rgba(21,172,227,.16), rgba(21,172,227,0) 68%);
-  pointer-events:none;
-  animation:bpLogoGlow 4.6s ease-in-out infinite;
-}
-
-@keyframes bpLogoFloatOne{
-  0%{
-    transform:translate3d(0,0,0) scale(.96) rotate(-7deg);
-  }
-  50%{
-    transform:translate3d(-28px,18px,0) scale(1.02) rotate(2deg);
-  }
-  100%{
-    transform:translate3d(-54px,50px,0) scale(1.06) rotate(8deg);
-  }
-}
-
-@keyframes bpLogoFloatTwo{
-  0%{
-    transform:translate3d(0,0,0) scale(1) rotate(0deg);
-  }
-  50%{
-    transform:translate3d(36px,-24px,0) scale(1.06) rotate(-4deg);
-  }
-  100%{
-    transform:translate3d(76px,-72px,0) scale(1.12) rotate(-10deg);
-  }
-}
-
-@keyframes bpLogoBreath{
-  0%,100%{filter:drop-shadow(0 16px 42px rgba(21,172,227,.10)) blur(0)}
-  50%{filter:drop-shadow(0 20px 48px rgba(21,172,227,.24)) blur(.4px)}
-}
-
-@keyframes bpLogoSpin{
-  from{transform:translate3d(0,0,0) rotate(0deg)}
-  to{transform:translate3d(76px,-72px,0) rotate(360deg)}
-}
-
-@keyframes bpLightShift{
-  0%{transform:translate3d(0,0,0) scale(1)}
-  100%{transform:translate3d(10px,-8px,0) scale(1.03)}
-}
-
-@keyframes bpDotDrift{
-  from{transform:translate3d(0,0,0)}
-  to{transform:translate3d(26px,-22px,0)}
-}
-
-@keyframes bpRingDrift{
-  0%{transform:translate3d(0,0,0) scale(1)}
-  100%{transform:translate3d(-14px,-10px,0) scale(1.08)}
-}
-
-@keyframes bpRingDriftSmall{
-  0%{transform:translate3d(0,0,0) scale(.96)}
-  100%{transform:translate3d(8px,6px,0) scale(1.06)}
-}
-
-@keyframes bpBadgeFloat{
-  0%,100%{transform:translateY(0) rotate(0deg)}
-  25%{transform:translateY(-2px) rotate(-1.2deg)}
-  50%{transform:translateY(-5px) rotate(0deg)}
-  75%{transform:translateY(-2px) rotate(1.2deg)}
-}
-
-@keyframes bpLogoGlow{
-  0%,100%{opacity:.42; transform:scale(.92)}
-  50%{opacity:.8; transform:scale(1.08)}
-}
-
-/* Mobile tuning for noticeable but clean movement. */
-@media (max-width:760px){
-  body::before{
-    width:170px;
-    height:170px;
-    top:8vh;
-    right:-2.8rem;
+    queueMicrotask(closeInitialHistoryDate);
   }
 
-  body::after{
-    width:210px;
-    height:210px;
-    bottom:5vh;
-    left:-4.8rem;
+  const reduceMotion =
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  if(reduceMotion){
+    document.body.classList.add('motion-ready');
+    return;
   }
 
-  body.motion-ready .wrap::after,
-  body.motion-ready .shell::after{
-    inset:-12px;
-    opacity:.34;
+  const CLICKABLE = [
+    'button:not(:disabled)',
+    'a[href]',
+    '[role="button"]',
+    '.ac-item',
+    '.bp-select-option',
+    '.res-row',
+    '.his-main',
+    '.dash-live-eval-row'
+  ].join(',');
+
+  const ENTERABLE = [
+    '.ac-item',
+    '.bp-select-option',
+    '.his-row',
+    '.mgr-row',
+    '.dash-rank-row',
+    '.prog-chip',
+    '.c-card'
+  ].join(',');
+
+  // Evaluation Results is rebuilt as a complete list whenever its counts or
+  // selected person refresh. Re-running the entrance animation on every rebuilt
+  // .res-row causes the brief whole-list flash users can see after a review
+  // opens. Keep their click/hover transitions, but animate each staff name only
+  // once per page session.
+  const animatedResultNames = new Set();
+
+  function resultRowName(row){
+    return row?.querySelector?.('.res-nm')?.textContent?.trim().toLowerCase() || '';
   }
 
-  body.motion-ready .top::before,
-  body.motion-ready .brand::before{
-    width:126px;
-    height:126px;
-    right:-34px;
-    bottom:-48px;
+  function animateResultRowOnce(row){
+    const key = resultRowName(row);
+    if(!key || animatedResultNames.has(key)) return;
+
+    animatedResultNames.add(key);
+    animateEnter(row);
   }
 
-  body.motion-ready .top::after,
-  body.motion-ready .brand::after{
-    width:84px;
-    height:84px;
-    left:-22px;
-  }
-}
+  // Dashboard Recent Evaluations is also rebuilt as a whole list on refresh.
+  // Animate each evaluator → employee pair only once per page session, so the
+  // periodic/realtime refresh does not make the activity card blink.
+  const animatedRecentPairs = new Set();
 
-/* ---------------------------------------------------------
-   Universal interactive transitions
-   --------------------------------------------------------- */
+  function recentRowKey(row){
+    const evaluator =
+      row?.querySelector?.('.dash-live-evaluator')?.textContent?.trim().toLowerCase() || '';
+    const employee =
+      row?.querySelector?.('.dash-live-employee')?.textContent?.trim().toLowerCase() || '';
 
-body.motion-ready :where(
-  button,
-  a[href],
-  [role="button"],
-  input,
-  textarea,
-  select,
-  .ac-item,
-  .bp-select-option,
-  .res-row,
-  .his-main,
-  .mgr-row,
-  .dash-live-eval-row,
-  .dash-rank-row,
-  .prog-chip,
-  .dash-metric,
-  .dash-panel-card,
-  .score-in
-){
-  transition:
-    color var(--motion-fast) ease,
-    background-color var(--motion-fast) ease,
-    border-color var(--motion-fast) ease,
-    box-shadow var(--motion-base) var(--motion-ease),
-    opacity var(--motion-fast) ease,
-    filter var(--motion-fast) ease,
-    translate var(--motion-fast) var(--motion-ease),
-    scale var(--motion-fast) var(--motion-ease);
-}
-
-/* Clickable controls get a small lift before the press. */
-@media (hover:hover){
-  body.motion-ready :where(
-    button:not(:disabled),
-    a[href],
-    [role="button"],
-    .ac-item,
-    .bp-select-option,
-    .res-row,
-    .his-main,
-    .dash-live-eval-row
-  ):hover{
-    translate:0 -1px;
+    return evaluator && employee
+      ? evaluator + '|' + employee
+      : '';
   }
 
-  /* Non-click dashboard content moves more gently. */
-  body.motion-ready :where(
-    .dash-metric,
-    .dash-panel-card,
-    .dash-rank-row,
-    .prog-chip
-  ):hover{
-    translate:0 -2px;
-  }
-}
+  function animateRecentRowOnce(row){
+    const key = recentRowKey(row);
+    if(!key || animatedRecentPairs.has(key)) return;
 
-/* Physical press feedback. */
-body.motion-ready :where(
-  button:not(:disabled),
-  a[href],
-  [role="button"],
-  .ac-item,
-  .bp-select-option,
-  .res-row,
-  .his-main,
-  .dash-live-eval-row
-):active{
-  scale:.975;
-  translate:0 0;
-}
-
-/* JS reapplies this for mouse, touch and pen clicks. */
-.motion-click{
-  animation:motionPress 210ms var(--motion-ease);
-}
-
-@keyframes motionPress{
-  0%{scale:1}
-  42%{scale:.965}
-  100%{scale:1}
-}
-
-/* ---------------------------------------------------------
-   Fields / score inputs
-   --------------------------------------------------------- */
-
-body.motion-ready :where(input,textarea,select,.score-in):focus{
-  scale:1.004;
-}
-
-.motion-value-change{
-  animation:motionValue 260ms var(--motion-spring);
-}
-
-@keyframes motionValue{
-  0%{scale:.96;opacity:.72}
-  65%{scale:1.025}
-  100%{scale:1;opacity:1}
-}
-
-/* ---------------------------------------------------------
-   Dynamic rows / autocomplete / realtime content
-   --------------------------------------------------------- */
-
-.motion-enter{
-  animation:motionEnter 300ms var(--motion-ease) both;
-}
-
-@keyframes motionEnter{
-  from{
-    opacity:0;
-    translate:0 7px;
-    scale:.992;
-  }
-  to{
-    opacity:1;
-    translate:0 0;
-    scale:1;
-  }
-}
-
-/* Slight staggering is assigned by JS with --motion-delay. */
-.motion-enter{
-  animation-delay:var(--motion-delay,0ms);
-}
-
-/* ---------------------------------------------------------
-   Panels, cards and progress
-   --------------------------------------------------------- */
-
-body.motion-ready :where(
-  .dash-progress-track > span,
-  .dash-live-progress > span,
-  .dash-rank-bar > span,
-  .res-bar > span,
-  .prog-chip-fill,
-  #progFill
-){
-  transition:
-    width var(--motion-slow) var(--motion-ease),
-    background-color var(--motion-fast) ease,
-    opacity var(--motion-fast) ease;
-}
-
-body.motion-ready :where(
-  .dash-metric,
-  .dash-panel-card
-){
-  transform-origin:center;
-}
-
-@media (hover:hover){
-  body.motion-ready .dash-metric:hover{
-    box-shadow:
-      0 2px 4px rgba(8,52,76,.06),
-      0 18px 38px -18px rgba(8,52,76,.32);
+    animatedRecentPairs.add(key);
+    animateEnter(row);
   }
 
-  body.motion-ready .dash-panel-card:hover{
-    box-shadow:
-      0 2px 4px rgba(8,52,76,.05),
-      0 18px 42px -22px rgba(8,52,76,.30);
-  }
-}
+  const VALUE_TARGET = [
+    '.dash-big-score',
+    '.dash-rank-score',
+    '.res-ct',
+    '.cnt',
+    '.pill-state',
+    '.dash-live-status',
+    '.dash-live-progress-line strong',
+    '#progNum',
+    '#completionPercent',
+    '#completionText'
+  ].join(',');
 
-/* ---------------------------------------------------------
-   Dropdown / accordion / sidebar movement
-   --------------------------------------------------------- */
-
-body.motion-ready :where(
-  .lay-menu,
-  .ac-box,
-  .bp-select-menu
-){
-  transform-origin:top center;
-}
-
-body.motion-ready .ac-box.open{
-  animation:motionMenuOpen 180ms var(--motion-ease) both;
-}
-
-body.motion-ready .lay-menu.open{
-  animation:motionMenuOpen 180ms var(--motion-ease) both;
-}
-
-body.motion-ready .bp-select.open .bp-select-menu{
-  animation:motionMenuOpen 180ms var(--motion-ease) both;
-}
-
-@keyframes motionMenuOpen{
-  from{
-    opacity:0;
-    translate:0 -5px;
-    scale:.985;
-  }
-  to{
-    opacity:1;
-    translate:0 0;
-    scale:1;
-  }
-}
-
-body.motion-ready :where(
-  .drawer,
-  .scrim,
-  .mgr-panel-body,
-  .chev,
-  .lay-chev,
-  .bp-select-arrow
-){
-  transition-duration:var(--motion-base);
-  transition-timing-function:var(--motion-ease);
-}
-
-/* ---------------------------------------------------------
-   Modal / dialog transitions
-   --------------------------------------------------------- */
-
-body.motion-ready :where(
-  .staff-add-modal:not([hidden]) .staff-add-dialog,
-  .account-settings-modal:not([hidden]) .account-settings-dialog,
-  .profile-crop-modal:not([hidden]) .profile-crop-dialog,
-  .rm-box
-){
-  animation:motionDialogIn 280ms var(--motion-spring) both;
-}
-
-body.motion-ready :where(
-  .staff-add-backdrop,
-  .account-settings-backdrop,
-  .profile-crop-backdrop,
-  .rm-scrim
-){
-  animation:motionFadeIn 200ms ease both;
-}
-
-@keyframes motionDialogIn{
-  from{
-    opacity:0;
-    translate:0 12px;
-    scale:.965;
-  }
-  to{
-    opacity:1;
-    translate:0 0;
-    scale:1;
-  }
-}
-
-@keyframes motionFadeIn{
-  from{opacity:0}
-  to{opacity:1}
-}
-
-/* ---------------------------------------------------------
-   Images / avatars
-   --------------------------------------------------------- */
-
-body.motion-ready :where(
-  .avatar img,
-  .dash-live-avatar img,
-  .dash-rank-avatar img,
-  .settings-avatar-preview img
-){
-  animation:motionImageIn 260ms ease both;
-}
-
-@keyframes motionImageIn{
-  from{opacity:0;scale:.94}
-  to{opacity:1;scale:1}
-}
-
-/* ---------------------------------------------------------
-   Login page entrance
-   --------------------------------------------------------- */
-
-body.motion-ready > .shell{
-  animation:motionPageIn 420ms var(--motion-ease) both;
-}
-
-body.motion-ready > .shell .brand-top,
-body.motion-ready > .shell .brand-middle,
-body.motion-ready > .shell .card > *{
-  animation:motionEnter 360ms var(--motion-ease) both;
-}
-
-body.motion-ready > .shell .card > *:nth-child(2){--motion-delay:35ms}
-body.motion-ready > .shell .card > *:nth-child(3){--motion-delay:65ms}
-body.motion-ready > .shell .card > *:nth-child(4){--motion-delay:90ms}
-body.motion-ready > .shell .card > *:nth-child(5){--motion-delay:120ms}
-
-@keyframes motionPageIn{
-  from{
-    opacity:0;
-    translate:0 10px;
-    scale:.988;
-  }
-  to{
-    opacity:1;
-    translate:0 0;
-    scale:1;
-  }
-}
-
-/* ---------------------------------------------------------
-   Accessibility
-   --------------------------------------------------------- */
-
-@media (prefers-reduced-motion:reduce){
-  html{
-    scroll-behavior:auto !important;
+  function replayClass(el, className){
+    if(!el) return;
+    el.classList.remove(className);
+    // Force a fresh animation even when the same control is clicked repeatedly.
+    void el.offsetWidth;
+    el.classList.add(className);
   }
 
-  body::before,
-  body::after,
-  .wrap::before,
-  .wrap::after,
-  .shell::before,
-  .shell::after,
-  .top::before,
-  .top::after,
-  .brand::before,
-  .brand::after,
-  .drawer-brand::after,
-  .brand-top::after{
-    animation:none !important;
-    transform:none !important;
+  function clearOnAnimationEnd(el, className){
+    const done = () => {
+      el.classList.remove(className);
+      el.removeEventListener('animationend', done);
+    };
+    el.addEventListener('animationend', done);
   }
 
-  *,
-  *::before,
-  *::after{
-    animation-duration:.01ms !important;
-    animation-delay:0ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:.01ms !important;
-    scroll-behavior:auto !important;
+  /* ---------------------------------------------------------
+     Universal click feedback
+     --------------------------------------------------------- */
+
+  document.addEventListener('pointerdown', event => {
+    const control = event.target.closest?.(CLICKABLE);
+    if(!control) return;
+
+    replayClass(control, 'motion-click');
+    clearOnAnimationEnd(control, 'motion-click');
+  }, true);
+
+  /* ---------------------------------------------------------
+     Scores and form field value changes
+     --------------------------------------------------------- */
+
+  document.addEventListener('input', event => {
+    const field = event.target;
+
+    // Login fields must remain steady while typing.
+    // Other form/input animations in the main evaluation site are unchanged.
+    if(field?.closest?.('#loginForm')) return;
+
+    if(
+      field?.matches?.('.score-in,input,textarea,select') &&
+      !field.matches('[type="range"]')
+    ){
+      replayClass(field, 'motion-value-change');
+      clearOnAnimationEnd(field, 'motion-value-change');
+    }
+  }, true);
+
+  document.addEventListener('change', event => {
+    const field = event.target;
+    if(!field?.matches?.('select,.bp-native-select')) return;
+
+    replayClass(field, 'motion-value-change');
+    clearOnAnimationEnd(field, 'motion-value-change');
+  }, true);
+
+  /* ---------------------------------------------------------
+     Dynamic content / realtime rows
+     --------------------------------------------------------- */
+
+  let enterSequence = 0;
+
+  function animateEnter(el){
+    if(
+      !el ||
+      el.nodeType !== Node.ELEMENT_NODE ||
+      el.classList.contains('motion-enter')
+    ) return;
+
+    const delay = Math.min(enterSequence++ * 18, 126);
+    el.style.setProperty('--motion-delay', delay + 'ms');
+
+    replayClass(el, 'motion-enter');
+
+    const done = () => {
+      el.classList.remove('motion-enter');
+      el.style.removeProperty('--motion-delay');
+      el.removeEventListener('animationend', done);
+    };
+
+    el.addEventListener('animationend', done);
   }
 
-  :where(
-    button,
-    a,
-    [role="button"],
-    input,
-    textarea,
-    select,
-    .dash-metric,
-    .dash-panel-card,
-    .dash-live-eval-row,
-    .dash-rank-row
-  ){
-    translate:none !important;
-    scale:1 !important;
+  function scanAddedNode(node){
+    if(node.nodeType !== Node.ELEMENT_NODE) return;
+
+    // Evaluation Results rows are special: the entire list is frequently
+    // reconstructed by Supabase, so only the first DOM instance for each
+    // staff name receives the entrance animation.
+    if(node.matches?.('.res-row')){
+      animateResultRowOnce(node);
+    }
+
+    [...node.querySelectorAll?.('.res-row') || []]
+      .forEach(animateResultRowOnce);
+
+    // Recent Evaluations is periodically/realtime rebuilt by dashboard.js.
+    // Do not replay the entrance animation on unchanged activity rows.
+    if(node.matches?.('.dash-live-eval-row')){
+      animateRecentRowOnce(node);
+    }
+
+    [...node.querySelectorAll?.('.dash-live-eval-row') || []]
+      .forEach(animateRecentRowOnce);
+
+    if(node.matches?.(ENTERABLE)){
+      animateEnter(node);
+    }
+
+    // Cap each mutation scan so a full table rebuild remains smooth.
+    [...node.querySelectorAll?.(ENTERABLE) || []]
+      .slice(0, 18)
+      .forEach(animateEnter);
   }
-}
+
+  const observer = new MutationObserver(mutations => {
+    enterSequence = 0;
+
+    for(const mutation of mutations){
+      if(mutation.type === 'childList'){
+        mutation.addedNodes.forEach(scanAddedNode);
+
+        const valueHost =
+          mutation.target.nodeType === Node.ELEMENT_NODE
+            ? mutation.target.closest?.(VALUE_TARGET)
+            : null;
+
+        if(valueHost){
+          replayClass(valueHost, 'motion-value-change');
+          clearOnAnimationEnd(valueHost, 'motion-value-change');
+        }
+      }
+
+      if(mutation.type === 'characterData'){
+        const valueHost =
+          mutation.target.parentElement?.closest?.(VALUE_TARGET);
+
+        if(valueHost){
+          replayClass(valueHost, 'motion-value-change');
+          clearOnAnimationEnd(valueHost, 'motion-value-change');
+        }
+      }
+    }
+  });
+
+  observer.observe(document.documentElement, {
+    childList:true,
+    subtree:true,
+    characterData:true
+  });
+
+  /*
+    Enable transition rules after the initial DOM has painted. This avoids
+    browser-default elements visibly tweening from unstyled startup values.
+  */
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.body.classList.add('motion-ready');
+    });
+  });
+})();
