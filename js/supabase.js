@@ -119,8 +119,25 @@ if(!session){
     if(!isManager){
       // Senior staff administer employees only.
       const acc = document.getElementById('mgrAccess');
-      const mgrOpt = acc.querySelector('option[value="manager"]');
+      const mgrOpt = acc?.querySelector('option[value="manager"]');
       if(mgrOpt) mgrOpt.remove();
+
+      // add-staff-modal.js enhances this native select before the deferred
+      // Supabase module runs. Remove the matching custom option too, otherwise
+      // Senior Staff can still see a stale "Manager access" choice.
+      const customAccess =
+        acc?.nextElementSibling?.classList?.contains('bp-select')
+          ? acc.nextElementSibling
+          : null;
+      customAccess
+        ?.querySelector('.bp-select-option[data-value="manager"]')
+        ?.remove();
+
+      if(acc){
+        if(acc.value === 'manager') acc.value = 'employee';
+        acc.dispatchEvent(new Event('change', { bubbles:true }));
+      }
+
       const hint = panel.querySelector('.mgr-hint');
       if(hint) hint.textContent = 'Senior staff can add and remove employees. Manager accounts are managed by a manager.';
     }
@@ -643,12 +660,22 @@ if(!session){
   }
 
   // Staff must finish and submit one colleague before starting another.
+  // A remark counts as started work too. Also keep the current employee selected
+  // while a score-clear/comment edit is still waiting for its autosave, even when
+  // the visible score count has temporarily returned to zero.
   function blockedFromLeaving(){
     if(reviewing() || !target || anyLocked) return null;
-    const filled = filledCount(), total = api.criteriaCount();
-    if(filled === 0) return null;                  // nothing started yet
+
+    const filled = filledCount();
+    const total = api.criteriaCount();
+    const hasComment = !!String(api.comments() || '').trim();
+    const hasStarted = filled > 0 || hasComment || dirty;
+
+    if(!hasStarted) return null;
+
     if(filled < total)
       return 'Finish scoring ' + targetName + ' first — ' + filled + ' of ' + total + ' criteria done.';
+
     // A complete live-saved draft is still not a final submission.
     return 'Submit your scores for ' + targetName + ' before moving on.';
   }
@@ -995,7 +1022,10 @@ if(!session){
 
   function queueLiveSave(){
     clearTimeout(liveSaveTimer);
-    liveSaveTimer = setTimeout(saveLiveDraft, 500);
+    liveSaveTimer = setTimeout(() => {
+      liveSaveTimer = null;
+      saveLiveDraft();
+    }, 500);
   }
 
   // Before a final/manual save, let any older autosave finish and cancel its
@@ -1504,62 +1534,214 @@ if(!session){
       });
     }
 
+    let openHistoryDateKey = '';
+
+    function historyDateKey(when){
+      const d = new Date(when);
+      if(Number.isNaN(d.getTime())) return 'unknown';
+
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function historyDateLabel(when){
+      const d = new Date(when);
+      if(Number.isNaN(d.getTime())) return 'Unknown date';
+
+      return d.toLocaleDateString(undefined, {
+        weekday:'short',
+        month:'long',
+        day:'numeric',
+        year:'numeric'
+      });
+    }
+
+    function setHistoryDateGroupOpen(group, open){
+      if(!group) return;
+
+      const button = group.querySelector('.his-date-sum');
+      const body = group.querySelector('.his-date-body');
+
+      group.classList.toggle('open', open);
+      button?.setAttribute('aria-expanded', String(open));
+      if(body) body.hidden = !open;
+
+      if(open){
+        openHistoryDateKey = group.dataset.historyDateKey || '';
+      }else if(openHistoryDateKey === group.dataset.historyDateKey){
+        openHistoryDateKey = '';
+      }
+    }
+
+    function openOnlyHistoryDate(group){
+      const list = el('hisList');
+      list?.querySelectorAll('.his-date-group').forEach(other => {
+        setHistoryDateGroupOpen(other, other === group);
+      });
+    }
+
     async function loadHistory(){
       const { data, error } = await supabase.from('evaluations')
         .select('employee_id, evaluator_id, scores, comments, manager_summary, average, archived_at, form_role')
         .eq('archived', true).order('archived_at', { ascending: false });
+
       const list = el('hisList');
-      if(error){ list.innerHTML = '<div class="his-empty">Could not load history.</div>'; return; }
+      if(error){
+        list.innerHTML = '<div class="his-empty">Could not load history.</div>';
+        return;
+      }
+
       const rows = data ?? [];
-      // group by employee + the moment it was archived
-      const groups = new Map();
+
+      // First group each finalized round by employee + archive timestamp.
+      const rounds = new Map();
       rows.forEach(r => {
         const key = r.employee_id + '|' + r.archived_at;
-        if(!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(r);
+        if(!rounds.has(key)) rounds.set(key, []);
+        rounds.get(key).push(r);
       });
+
       list.innerHTML = '';
-      el('hisCount').textContent = groups.size;
-      if(!groups.size){ list.innerHTML = '<div class="his-empty">Nothing archived yet.</div>'; return; }
-      [...groups.entries()].forEach(([key, rs]) => {
+      el('hisCount').textContent = rounds.size;
+
+      if(!rounds.size){
+        openHistoryDateKey = '';
+        list.innerHTML = '<div class="his-empty">Nothing archived yet.</div>';
+        return;
+      }
+
+      // Then group those rounds by the calendar date already shown in History.
+      // This adds a second-level dropdown without changing stored evaluation data.
+      const byDate = new Map();
+
+      [...rounds.entries()].forEach(([key, rs]) => {
         const [pid, when] = key.split('|');
-        const name = nameById.get(pid) || 'Unknown';
-        const avg = rs.length
-          ? Math.round(rs.reduce((a,r) => a + (Number(r.average)||0), 0) / rs.length * 10) / 10
-          : 0;
-        const d = new Date(when);
-        const row = document.createElement('div');
-        row.className = 'his-row';
-        const b = document.createElement('button');
-        b.type = 'button'; b.className = 'his-main';
-        b.innerHTML = `<div class="his-nm">${esc(name)}</div>` +
-          `<div class="his-meta"><span>${d.toLocaleDateString()}</span>` +
-          `<span class="dot">·</span>` +
-          `<span>${rs.length} evaluator${rs.length===1?'':'s'}</span></div>`;
-        b.addEventListener('click', () => openArchive(pid, name, when, rs, row));
-        row.appendChild(b);
-        // average sits on the same centre line as the delete icon
-        const avgEl = document.createElement('div');
-        avgEl.className = 'his-avg';
-        avgEl.title = 'Average score';
-        avgEl.textContent = avg;
-        row.appendChild(avgEl);
-        // only admins may remove a finalised round
-        if(isAdmin){
-          const del = document.createElement('button');
-          del.type = 'button'; del.className = 'his-del';
-          del.title = 'Delete this history record';
-          del.setAttribute('aria-label', 'Delete ' + name + "'s archived evaluation");
-          del.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
-            'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
-            '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg>';
-          del.addEventListener('click', e => {
-            e.stopPropagation();
-            deleteArchiveRecord({ pid, name, when });
+        const dateKey = historyDateKey(when);
+
+        if(!byDate.has(dateKey)){
+          byDate.set(dateKey, {
+            when,
+            label:historyDateLabel(when),
+            rounds:[]
           });
-          row.appendChild(del);
         }
-        list.appendChild(row);
+
+        byDate.get(dateKey).rounds.push({ pid, when, rs });
+      });
+
+      // Keep the previously opened date when possible. If that date no longer
+      // exists, open the newest available date by default.
+      const dateEntries = [...byDate.entries()];
+      if(!byDate.has(openHistoryDateKey)){
+        openHistoryDateKey = dateEntries[0]?.[0] || '';
+      }
+
+      dateEntries.forEach(([dateKey, dateGroup]) => {
+        const group = document.createElement('section');
+        group.className = 'his-date-group';
+        group.dataset.historyDateKey = dateKey;
+
+        const summary = document.createElement('button');
+        summary.type = 'button';
+        summary.className = 'his-date-sum';
+        summary.setAttribute('aria-expanded', 'false');
+
+        const labelWrap = document.createElement('span');
+        labelWrap.className = 'his-date-copy';
+
+        const label = document.createElement('span');
+        label.className = 'his-date-label';
+        label.textContent = dateGroup.label;
+
+        const count = document.createElement('span');
+        count.className = 'his-date-count';
+        count.textContent =
+          dateGroup.rounds.length +
+          ' evaluation' +
+          (dateGroup.rounds.length === 1 ? '' : 's');
+
+        labelWrap.append(label, count);
+
+        const chevron = document.createElement('span');
+        chevron.className = 'his-date-chev';
+        chevron.setAttribute('aria-hidden', 'true');
+        chevron.textContent = '⌄';
+
+        summary.append(labelWrap, chevron);
+
+        const body = document.createElement('div');
+        body.className = 'his-date-body';
+        body.id = 'his-date-body-' + dateKey.replace(/[^a-z0-9_-]/gi, '-');
+        body.hidden = true;
+        summary.setAttribute('aria-controls', body.id);
+
+        dateGroup.rounds.forEach(({ pid, when, rs }) => {
+          const name = nameById.get(pid) || 'Unknown';
+          const avg = rs.length
+            ? Math.round(rs.reduce((a,r) => a + (Number(r.average)||0), 0) / rs.length * 10) / 10
+            : 0;
+          const d = new Date(when);
+
+          const row = document.createElement('div');
+          row.className = 'his-row';
+
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'his-main';
+          b.innerHTML =
+            `<div class="his-nm">${esc(name)}</div>` +
+            `<div class="his-meta"><span>${d.toLocaleDateString()}</span>` +
+            `<span class="dot">·</span>` +
+            `<span>${rs.length} evaluator${rs.length===1?'':'s'}</span></div>`;
+          b.addEventListener('click', () => openArchive(pid, name, when, rs, row));
+          row.appendChild(b);
+
+          const avgEl = document.createElement('div');
+          avgEl.className = 'his-avg';
+          avgEl.title = 'Average score';
+          avgEl.textContent = avg;
+          row.appendChild(avgEl);
+
+          if(isAdmin){
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'his-del';
+            del.title = 'Delete this history record';
+            del.setAttribute('aria-label', 'Delete ' + name + "'s archived evaluation");
+            del.innerHTML =
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+              'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg>';
+
+            del.addEventListener('click', e => {
+              e.stopPropagation();
+              deleteArchiveRecord({ pid, name, when });
+            });
+
+            row.appendChild(del);
+          }
+
+          body.appendChild(row);
+        });
+
+        summary.addEventListener('click', () => {
+          const opening = summary.getAttribute('aria-expanded') !== 'true';
+
+          if(opening){
+            openOnlyHistoryDate(group);
+          }else{
+            setHistoryDateGroupOpen(group, false);
+          }
+        });
+
+        group.append(summary, body);
+        list.appendChild(group);
+
+        if(dateKey === openHistoryDateKey){
+          setHistoryDateGroupOpen(group, true);
+        }
       });
     }
 
@@ -1617,7 +1799,7 @@ if(!session){
         ' — read only. Print and export still work.';
       show('progWrap', false);
       setState('Archived record', 'locked');
-      [...el('hisList').children].forEach(c => c.classList.remove('on'));
+      el('hisList').querySelectorAll('.his-row').forEach(c => c.classList.remove('on'));
       if(rowEl) rowEl.classList.add('on');
       openDrawer(false);
     }
@@ -1628,7 +1810,7 @@ if(!session){
       fixDirty = false;
       el('archNote').classList.add('hide');
       el('resetBtn').textContent = reviewing() ? 'Reset a submission' : 'Clear scores';
-      [...el('hisList').children].forEach(c => c.classList.remove('on'));
+      el('hisList').querySelectorAll('.his-row').forEach(c => c.classList.remove('on'));
     });
     window.__clearArchiveView = () => {
       viewingArchive = null; archiveCtx = null;
