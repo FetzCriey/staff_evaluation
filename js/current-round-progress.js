@@ -176,6 +176,37 @@ function injectStyles(){
       color:var(--muted,#5b7080);
     }
 
+    /* Status colors match each evaluator's progress bar. */
+    .round-progress-summary-card.not-started{
+      background:#f1f5f7;
+      border-color:#d9e3e8;
+    }
+
+    .round-progress-summary-card.not-started strong,
+    .round-progress-summary-card.not-started span{
+      color:#6c7d88;
+    }
+
+    .round-progress-summary-card.evaluating{
+      background:var(--accent-soft,#e2f4fc);
+      border-color:#bfe4f5;
+    }
+
+    .round-progress-summary-card.evaluating strong,
+    .round-progress-summary-card.evaluating span{
+      color:var(--lagoon-deep,#0b7fb0);
+    }
+
+    .round-progress-summary-card.completed{
+      background:#eaf7f0;
+      border-color:#bfe3ce;
+    }
+
+    .round-progress-summary-card.completed strong,
+    .round-progress-summary-card.completed span{
+      color:#1f7a4d;
+    }
+
     .round-progress-list{
       display:flex;
       flex-direction:column;
@@ -187,6 +218,21 @@ function injectStyles(){
       border:1.5px solid var(--line,#c9dfee);
       border-radius:14px;
       background:#fff;
+    }
+
+    .round-progress-person.not-started{
+      background:#fbfcfd;
+      border-color:#d9e3e8;
+    }
+
+    .round-progress-person.evaluating{
+      background:#f8fcfe;
+      border-color:#bfe4f5;
+    }
+
+    .round-progress-person.completed{
+      background:#fbfefc;
+      border-color:#bfe3ce;
     }
 
     .round-progress-person-head{
@@ -663,15 +709,15 @@ function renderProgress(items){
 
   body.innerHTML = `
     <div class="round-progress-summary">
-      <div class="round-progress-summary-card">
+      <div class="round-progress-summary-card evaluating">
         <strong>${counts["evaluating"] || 0}</strong>
         <span>Evaluating</span>
       </div>
-      <div class="round-progress-summary-card">
+      <div class="round-progress-summary-card not-started">
         <strong>${counts["not-started"] || 0}</strong>
         <span>Not started</span>
       </div>
-      <div class="round-progress-summary-card">
+      <div class="round-progress-summary-card completed">
         <strong>${counts["completed"] || 0}</strong>
         <span>Completed</span>
       </div>
