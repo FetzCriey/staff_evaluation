@@ -70,12 +70,23 @@ function injectStyles(){
   style.textContent = `
     .round-progress-person.has-drilldown{
       overflow:hidden;
+      cursor:pointer;
       transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+    }
+
+    .round-progress-person.has-drilldown:not(.drilldown-open):hover{
+      border-color:var(--lagoon,#15ace3);
+      box-shadow:0 10px 28px -22px rgba(8,52,76,.38);
     }
 
     .round-progress-person.has-drilldown.drilldown-open{
       border-color:var(--lagoon,#15ace3);
       box-shadow:0 10px 28px -20px rgba(8,52,76,.45);
+    }
+
+    .round-progress-person.has-drilldown > .round-drilldown-panel,
+    .round-progress-person.has-drilldown > .round-drilldown-panel *{
+      cursor:default;
     }
 
     .round-progress-person-head.round-drilldown-toggle{
@@ -790,6 +801,9 @@ function decorateRow(row){
     row.appendChild(hint);
   }
 
+  // Keep the header keyboard-accessible, but make the whole evaluator card
+  // respond to pointer/touch clicks. The expanded assignment panel is excluded
+  // so users can interact with or scroll its content without collapsing it.
   head.addEventListener("click",event => {
     event.stopPropagation();
     toggleDetails(row);
@@ -799,6 +813,12 @@ function decorateRow(row){
     if(event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     event.stopPropagation();
+    toggleDetails(row);
+  });
+
+  row.addEventListener("click",event => {
+    if(event.target.closest(".round-drilldown-panel")) return;
+    if(event.target.closest(".round-drilldown-toggle")) return;
     toggleDetails(row);
   });
 }
