@@ -1,0 +1,191 @@
+/* =========================================================
+   STAFF PROFILE POPUP — MOBILE VIEWPORT FIT
+   Keeps the profile dialog inside the visible phone viewport
+   and prevents child content from forcing horizontal overflow.
+   ========================================================= */
+
+@media (max-width: 600px){
+  .staff-profile-modal{
+    box-sizing:border-box;
+    width:100vw;
+    height:100vh;
+    height:100dvh;
+    min-height:0;
+    padding:8px;
+    padding-top:max(8px, env(safe-area-inset-top));
+    padding-right:max(8px, env(safe-area-inset-right));
+    padding-bottom:max(8px, env(safe-area-inset-bottom));
+    padding-left:max(8px, env(safe-area-inset-left));
+    overflow:hidden;
+  }
+
+  .staff-profile-card{
+    box-sizing:border-box;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    max-height:100%;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    border-radius:16px;
+  }
+
+  #staffProfileContent,
+  .staff-profile-hero,
+  .staff-profile-heading,
+  .staff-profile-body,
+  .staff-profile-stats,
+  .staff-profile-stat,
+  .staff-profile-progress-card,
+  .staff-profile-history,
+  .staff-profile-history-list,
+  .staff-profile-history-row{
+    box-sizing:border-box;
+    min-width:0;
+    max-width:100%;
+  }
+
+  .staff-profile-hero{
+    padding:20px 46px 18px 16px;
+    min-height:0;
+    gap:12px;
+  }
+
+  .staff-profile-avatar{
+    flex:0 0 62px;
+    width:62px;
+    height:62px;
+    border-radius:17px;
+    font-size:20px;
+  }
+
+  .staff-profile-name{
+    font-size:19px;
+    line-height:1.12;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .staff-profile-position{
+    margin-top:5px;
+    font-size:12px;
+  }
+
+  .staff-profile-badges{
+    margin-top:8px;
+    gap:5px;
+  }
+
+  .staff-profile-badge{
+    min-height:23px;
+    padding:3px 8px;
+    font-size:9.5px;
+  }
+
+  .staff-profile-close{
+    top:10px;
+    right:10px;
+    width:34px;
+    height:34px;
+  }
+
+  .staff-profile-body{
+    padding:15px 14px 18px;
+  }
+
+  .staff-profile-stats{
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:8px;
+  }
+
+  .staff-profile-stat{
+    min-height:78px;
+    padding:10px;
+    border-radius:12px;
+  }
+
+  .staff-profile-stat-label{
+    min-height:24px;
+    font-size:8.5px;
+  }
+
+  .staff-profile-stat-value{
+    margin-top:4px;
+    font-size:20px;
+  }
+
+  .staff-profile-progress-card{
+    margin-top:14px;
+    padding:12px;
+  }
+
+  .staff-profile-history{
+    margin-top:16px;
+  }
+
+  .staff-profile-history-row{
+    grid-template-columns:minmax(0,1fr) 34px;
+    gap:6px 8px;
+  }
+
+  .staff-profile-history-date{
+    grid-column:1 / -1;
+    min-width:0;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+
+  .staff-profile-history-bar{
+    grid-column:1;
+  }
+
+  .staff-profile-history-score{
+    grid-column:2;
+    min-width:0;
+  }
+
+  .staff-profile-loading{
+    min-height:min(260px, 60dvh);
+    padding:24px 16px;
+  }
+
+  .staff-profile-error{
+    padding:30px 18px;
+  }
+}
+
+@media (max-width: 350px){
+  .staff-profile-modal{
+    padding:6px;
+  }
+
+  .staff-profile-hero{
+    padding:18px 42px 16px 13px;
+  }
+
+  .staff-profile-avatar{
+    flex-basis:54px;
+    width:54px;
+    height:54px;
+    border-radius:15px;
+    font-size:18px;
+  }
+
+  .staff-profile-name{
+    font-size:17px;
+  }
+
+  .staff-profile-body{
+    padding:13px 11px 16px;
+  }
+
+  .staff-profile-stats{
+    gap:6px;
+  }
+
+  .staff-profile-stat{
+    padding:9px 8px;
+  }
+}
