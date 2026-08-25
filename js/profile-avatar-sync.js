@@ -196,22 +196,100 @@ const roundProgressObserver = new MutationObserver(mutations => {
     });
   });
 
-  if(relevant) queuePaint();
+  if(relevant){
+    queuePaint();
+    syncRoundProfileRefresh();
+  }
 });
 
 roundProgressObserver.observe(document.body, {
   childList:true,
   subtree:true,
-  characterData:true
+  characterData:true,
+  attributes:true,
+  attributeFilter:['hidden','aria-hidden']
 });
+
+/* =========================================================
+   CROSS-USER AVATAR SYNC
+   Realtime makes another staff member's upload/removal appear
+   immediately. A short popup-only poll is retained as a safe
+   fallback if Realtime is unavailable for the profiles table.
+   ========================================================= */
+
+let profileRealtimeChannel = null;
+let roundProfilePollTimer = null;
+
+function roundProgressIsOpen(){
+  const shell = document.querySelector('.round-progress-modal');
+  return !!shell && !shell.hidden && shell.getAttribute('aria-hidden') !== 'true';
+}
+
+function stopRoundProfileRefresh(){
+  if(!roundProfilePollTimer) return;
+  clearInterval(roundProfilePollTimer);
+  roundProfilePollTimer = null;
+}
+
+function syncRoundProfileRefresh(){
+  const shouldRun =
+    roundProgressIsOpen() &&
+    document.visibilityState === 'visible';
+
+  if(!shouldRun){
+    stopRoundProfileRefresh();
+    return;
+  }
+
+  if(roundProfilePollTimer) return;
+
+  // Opening the popup always gets the newest avatar_path immediately.
+  refreshProfiles(true);
+
+  // Realtime should normally update first. This bounds the fallback delay
+  // to roughly five seconds without adding another permanent site-wide poll.
+  roundProfilePollTimer = setInterval(() => {
+    if(!roundProgressIsOpen() || document.visibilityState !== 'visible'){
+      stopRoundProfileRefresh();
+      return;
+    }
+    refreshProfiles(true);
+  }, 5000);
+}
+
+function startProfileRealtime(){
+  if(profileRealtimeChannel) return;
+
+  profileRealtimeChannel = db
+    .channel('profile-avatar-sync')
+    .on(
+      'postgres_changes',
+      { event:'UPDATE', schema:'public', table:'profiles' },
+      () => refreshProfiles(true)
+    )
+    .subscribe();
+}
 
 window.addEventListener('profile-avatar-updated', () => refreshProfiles(true));
 window.addEventListener('focus', () => refreshProfiles());
+
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible') refreshProfiles();
+  syncRoundProfileRefresh();
 });
 
-// Other users' changed pictures are picked up without needing a full page reload.
+window.addEventListener('pagehide', () => {
+  stopRoundProfileRefresh();
+  if(profileRealtimeChannel){
+    db.removeChannel(profileRealtimeChannel);
+    profileRealtimeChannel = null;
+  }
+}, { once:true });
+
+startProfileRealtime();
+syncRoundProfileRefresh();
+
+// Long-interval fallback for Dashboard avatars outside the progress popup.
 setInterval(() => refreshProfiles(true), 60000);
 
 refreshProfiles(true);
