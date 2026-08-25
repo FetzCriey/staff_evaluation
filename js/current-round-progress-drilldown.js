@@ -117,25 +117,6 @@ function injectStyles(){
       transform:rotate(225deg);
     }
 
-    .round-drilldown-hint{
-      margin-top:8px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      gap:5px;
-      color:var(--lagoon-deep,#0b7fb0);
-      font-size:9px;
-      line-height:1;
-      font-weight:800;
-      letter-spacing:.06em;
-      text-transform:uppercase;
-      opacity:.68;
-    }
-
-    .round-progress-person.drilldown-open .round-drilldown-hint{
-      display:none;
-    }
-
     .round-drilldown-panel{
       margin:12px -13px -12px;
       padding:13px;
@@ -792,13 +773,6 @@ function decorateRow(row){
     chevron.className = "round-drilldown-chevron";
     chevron.setAttribute("aria-hidden","true");
     head.appendChild(chevron);
-  }
-
-  if(!row.querySelector(":scope > .round-drilldown-hint")){
-    const hint = document.createElement("div");
-    hint.className = "round-drilldown-hint";
-    hint.innerHTML = `<span>View assignments</span>`;
-    row.appendChild(hint);
   }
 
   // Keep the header keyboard-accessible, but make the whole evaluator card
