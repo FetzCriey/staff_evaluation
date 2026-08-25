@@ -1631,12 +1631,11 @@ if(!session){
         byDate.get(dateKey).rounds.push({ pid, when, rs });
       });
 
-      // Keep the previously opened date when possible. If that date no longer
-      // exists, open the newest available date by default.
+      // Every time History is rendered, all date sub-dropdowns start closed.
+      // A user may open one manually; openOnlyHistoryDate still keeps the
+      // date accordion to one open group at a time.
       const dateEntries = [...byDate.entries()];
-      if(!byDate.has(openHistoryDateKey)){
-        openHistoryDateKey = dateEntries[0]?.[0] || '';
-      }
+      openHistoryDateKey = '';
 
       dateEntries.forEach(([dateKey, dateGroup]) => {
         const group = document.createElement('section');
