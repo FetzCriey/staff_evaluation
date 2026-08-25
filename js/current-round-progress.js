@@ -9,6 +9,16 @@ let modal = null;
 let previousOverflow = "";
 let lastFocused = null;
 
+let cachedPeople = null;
+let cachedRoster = null;
+let liveRefreshTimer = null;
+let livePollTimer = null;
+let liveRefreshRunning = false;
+let liveRefreshAgain = false;
+let realtimeHooked = false;
+let lastRenderSignature = "";
+const previousProgressPct = new Map();
+
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 const initials = name => {
@@ -25,33 +35,6 @@ function injectStyles(){
   const style = document.createElement("style");
   style.id = "round-progress-detail-style";
   style.textContent = `
-    #completionText.closest-placeholder{}
-
-    .dash-round-progress-card{
-      cursor:pointer;
-      position:relative;
-    }
-
-    .dash-round-progress-card::after{
-      content:"View details";
-      position:absolute;
-      right:15px;
-      bottom:11px;
-      font-size:9px;
-      font-weight:800;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:var(--lagoon-deep,#0b7fb0);
-      opacity:.72;
-      transition:opacity .15s ease,transform .15s ease;
-      pointer-events:none;
-    }
-
-    .dash-round-progress-card:hover::after{
-      opacity:1;
-      transform:translateX(2px);
-    }
-
     .dash-round-progress-card:focus-visible{
       outline:3px solid var(--lagoon-dark,#08344c);
       outline-offset:3px;
@@ -412,10 +395,6 @@ function injectStyles(){
         text-align:center;
       }
 
-      .dash-round-progress-card::after{
-        right:12px;
-        bottom:8px;
-      }
     }
 
     @media(prefers-reduced-motion:reduce){
@@ -427,9 +406,6 @@ function injectStyles(){
         transition:none;
       }
 
-      .dash-round-progress-card::after{
-        transition:none;
-      }
     }
   `;
   document.head.appendChild(style);
@@ -478,6 +454,7 @@ function closeModal(){
   if(!modal || modal.hidden) return;
   modal.hidden = true;
   modal.setAttribute("aria-hidden", "true");
+  stopLiveSync();
   document.body.style.overflow = previousOverflow;
   lastFocused?.focus?.({preventScroll:true});
   lastFocused = null;
@@ -642,9 +619,27 @@ function buildProgress(people, rows, roster){
   });
 }
 
+function progressSignature(items){
+  return JSON.stringify(
+    items.map(item => [
+      item.id,
+      item.required,
+      item.submitted,
+      Math.round(item.pct * 100) / 100,
+      item.state,
+      item.activeEmployee,
+      item.activeScores
+    ])
+  );
+}
+
 function renderProgress(items){
   const body = document.getElementById("roundProgressBody");
   if(!body) return;
+
+  const signature = progressSignature(items);
+  if(signature === lastRenderSignature) return;
+  lastRenderSignature = signature;
 
   if(!items.length){
     body.innerHTML = `
@@ -654,6 +649,9 @@ function renderProgress(items){
     `;
     return;
   }
+
+  const scrollBox = modal?.querySelector(".round-progress-dialog");
+  const previousScrollTop = scrollBox?.scrollTop || 0;
 
   const counts = items.reduce(
     (acc,item) => {
@@ -701,6 +699,10 @@ function renderProgress(items){
           : "");
     }
 
+    const previousPct = previousProgressPct.has(item.id)
+      ? previousProgressPct.get(item.id)
+      : item.pct;
+
     row.innerHTML = `
       <div class="round-progress-person-head">
         <span class="round-progress-avatar" aria-hidden="true">${initials(item.name)}</span>
@@ -720,19 +722,46 @@ function renderProgress(items){
         aria-valuemin="0"
         aria-valuemax="100"
         aria-valuenow="${Math.round(item.pct)}">
-        <span style="width:${item.pct}%"></span>
+        <span style="width:${previousPct}%"></span>
       </div>
     `;
 
     row.querySelector(".round-progress-name").textContent = item.name;
     row.querySelector(".round-progress-meta").textContent = detailText;
     list.appendChild(row);
+
+    const fill = row.querySelector(".round-progress-track > span");
+    previousProgressPct.set(item.id, item.pct);
+
+    if(fill && Math.abs(previousPct - item.pct) > .01){
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if(fill.isConnected) fill.style.width = `${item.pct}%`;
+      }));
+    }else if(fill){
+      fill.style.width = `${item.pct}%`;
+    }
   });
+
+  if(scrollBox){
+    scrollBox.scrollTop = Math.min(
+      previousScrollTop,
+      Math.max(0, scrollBox.scrollHeight - scrollBox.clientHeight)
+    );
+  }
 }
 
-async function loadProgress(){
+async function loadProgress({full=false, showLoading=false}={}){
+  if(liveRefreshRunning){
+    liveRefreshAgain = true;
+    return;
+  }
+
+  liveRefreshRunning = true;
+
   const body = document.getElementById("roundProgressBody");
-  if(body){
+  const hadRenderedData = !!lastRenderSignature;
+
+  if(showLoading && body && !hadRenderedData){
     body.innerHTML = `
       <div class="round-progress-loading" role="status">
         Loading current round progress…
@@ -744,55 +773,133 @@ async function loadProgress(){
     const { data:{ session } } = await db.auth.getSession();
     if(!session) throw new Error("No active staff session.");
 
-    const [profilesResult, evaluationsResult, rosterResult] =
-      await Promise.all([
-        db.from("profiles")
-          .select("id,full_name,position,role,form_role")
-          .order("full_name"),
-        db.rpc("get_dashboard_evaluations"),
-        db.rpc("get_evaluation_roster")
-      ]);
+    let evaluationsResult;
 
-    if(evaluationsResult.error) throw evaluationsResult.error;
+    if(full || !cachedPeople || !cachedRoster){
+      const [profilesResult, evaluations, rosterResult] =
+        await Promise.all([
+          db.from("profiles")
+            .select("id,full_name,position,role,form_role")
+            .order("full_name"),
+          db.rpc("get_dashboard_evaluations"),
+          db.rpc("get_evaluation_roster")
+        ]);
 
-    const profiles = !profilesResult.error
-      ? (profilesResult.data || [])
-      : [];
+      evaluationsResult = evaluations;
+      if(evaluationsResult.error) throw evaluationsResult.error;
 
-    const roster = (
-      !rosterResult.error &&
-      Array.isArray(rosterResult.data)
-    )
-      ? rosterResult.data
-      : profiles.map(person => ({...person, has_login:true}));
+      const profiles = !profilesResult.error
+        ? (profilesResult.data || [])
+        : [];
 
-    // Roster is the safe fallback if profile visibility is narrower for an account.
-    const people = profiles.length
-      ? profiles
-      : roster;
+      const roster = (
+        !rosterResult.error &&
+        Array.isArray(rosterResult.data)
+      )
+        ? rosterResult.data
+        : profiles.map(person => ({...person, has_login:true}));
+
+      cachedPeople = profiles.length ? profiles : roster;
+      cachedRoster = roster;
+    }else{
+      evaluationsResult = await db.rpc("get_dashboard_evaluations");
+      if(evaluationsResult.error) throw evaluationsResult.error;
+    }
 
     const items = buildProgress(
-      people,
+      cachedPeople || [],
       evaluationsResult.data || [],
-      roster
+      cachedRoster || []
     );
 
     renderProgress(items);
   }catch(error){
     console.error("Current round progress failed:", error);
-    if(body){
+
+    // Keep already-visible progress on screen during a transient network error.
+    // Only show an error card when the initial load itself fails.
+    if(body && !hadRenderedData){
       body.innerHTML = `
         <div class="round-progress-error">
           Could not load evaluator progress. Please close this window and try again.
         </div>
       `;
     }
+  }finally{
+    liveRefreshRunning = false;
+
+    if(liveRefreshAgain && modal && !modal.hidden){
+      liveRefreshAgain = false;
+      scheduleLiveRefresh(40);
+    }
   }
+}
+
+function scheduleLiveRefresh(delay=80){
+  clearTimeout(liveRefreshTimer);
+  liveRefreshTimer = setTimeout(() => {
+    liveRefreshTimer = null;
+    if(!modal || modal.hidden) return;
+    loadProgress({full:false, showLoading:false});
+  }, delay);
+}
+
+function hookAuthenticatedRealtime(){
+  const current = window.__refreshResults;
+  if(typeof current !== "function") return false;
+
+  if(current.__roundProgressRealtimeHook){
+    realtimeHooked = true;
+    return true;
+  }
+
+  const wrapped = function(...args){
+    let result;
+
+    try{
+      result = current.apply(this, args);
+    }finally{
+      if(modal && !modal.hidden){
+        scheduleLiveRefresh(70);
+      }
+    }
+
+    return result;
+  };
+
+  wrapped.__roundProgressRealtimeHook = true;
+  wrapped.__roundProgressRealtimeOriginal = current;
+  window.__refreshResults = wrapped;
+  realtimeHooked = true;
+  return true;
+}
+
+function startLiveSync(){
+  hookAuthenticatedRealtime();
+
+  clearInterval(livePollTimer);
+  livePollTimer = setInterval(() => {
+    if(!modal || modal.hidden) return;
+    if(document.visibilityState !== "visible") return;
+    scheduleLiveRefresh(0);
+  }, 5000);
+}
+
+function stopLiveSync(){
+  clearTimeout(liveRefreshTimer);
+  liveRefreshTimer = null;
+  clearInterval(livePollTimer);
+  livePollTimer = null;
+  liveRefreshAgain = false;
 }
 
 function openProgress(){
   openShell();
-  loadProgress();
+  startLiveSync();
+  loadProgress({
+    full: !cachedPeople || !cachedRoster,
+    showLoading: true
+  });
 }
 
 function makeCardInteractive(){
@@ -806,9 +913,9 @@ function makeCardInteractive(){
   card.setAttribute("aria-haspopup", "dialog");
   card.setAttribute(
     "aria-label",
-    "View details for current round evaluator progress"
+    "Current Round Progress. Open evaluator progress details."
   );
-  card.title = "View evaluator progress";
+  card.removeAttribute("title");
 
   card.addEventListener("click", openProgress);
   card.addEventListener("keydown", event => {
@@ -820,6 +927,29 @@ function makeCardInteractive(){
 
 injectStyles();
 makeCardInteractive();
+
+const realtimeHookTimer = setInterval(() => {
+  if(hookAuthenticatedRealtime()) clearInterval(realtimeHookTimer);
+}, 100);
+
+setTimeout(() => {
+  if(!realtimeHooked) hookAuthenticatedRealtime();
+  clearInterval(realtimeHookTimer);
+}, 8000);
+
+document.addEventListener("visibilitychange", () => {
+  if(
+    document.visibilityState === "visible" &&
+    modal &&
+    !modal.hidden
+  ){
+    scheduleLiveRefresh(0);
+  }
+});
+
+window.addEventListener("focus", () => {
+  if(modal && !modal.hidden) scheduleLiveRefresh(0);
+});
 
 document.addEventListener("keydown", event => {
   if(event.key === "Escape" && modal && !modal.hidden){
