@@ -16,6 +16,22 @@ let painting = false;
 let refreshPromise = null;
 let lastRefresh = 0;
 
+const avatarSyncStyle = document.createElement('style');
+avatarSyncStyle.textContent = `
+  .round-progress-avatar.has-avatar-photo{
+    overflow:hidden;
+    padding:0;
+  }
+
+  .round-progress-avatar.has-avatar-photo img{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+`;
+document.head.appendChild(avatarSyncStyle);
+
 const normalize = value => String(value || '')
   .toLowerCase()
   .replace(/\s+/g,' ')
@@ -78,6 +94,12 @@ function paintAll(){
     document.querySelectorAll('.dash-rank-row').forEach(row => {
       const name = row.querySelector('.dash-rank-name')?.textContent?.trim();
       const host = row.querySelector('.dash-rank-avatar');
+      paintHost(host, name);
+    });
+
+    document.querySelectorAll('.round-progress-person').forEach(row => {
+      const name = row.querySelector('.round-progress-name')?.textContent?.trim();
+      const host = row.querySelector('.round-progress-avatar');
       paintHost(host, name);
     });
 
@@ -157,6 +179,31 @@ if(accountName){
     characterData:true
   });
 }
+
+const roundProgressObserver = new MutationObserver(mutations => {
+  const relevant = mutations.some(mutation => {
+    const target = mutation.target;
+    if(target?.nodeType === 1 && target.closest?.('.round-progress-modal')){
+      return true;
+    }
+
+    return [...mutation.addedNodes].some(node => {
+      if(node?.nodeType !== 1) return false;
+      return (
+        node.matches?.('.round-progress-modal,.round-progress-person,.round-progress-avatar') ||
+        node.querySelector?.('.round-progress-modal,.round-progress-person,.round-progress-avatar')
+      );
+    });
+  });
+
+  if(relevant) queuePaint();
+});
+
+roundProgressObserver.observe(document.body, {
+  childList:true,
+  subtree:true,
+  characterData:true
+});
 
 window.addEventListener('profile-avatar-updated', () => refreshProfiles(true));
 window.addEventListener('focus', () => refreshProfiles());
