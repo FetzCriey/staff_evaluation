@@ -375,38 +375,84 @@ function injectStyles(){
     }
 
     @media(max-width:600px){
+      /* Same mobile viewport containment used by the staff profile popup.
+         The modal owns the full dynamic viewport; only the dialog scrolls. */
       .round-progress-modal{
-        align-items:center;
-        padding:
-          max(10px,env(safe-area-inset-top))
-          max(10px,env(safe-area-inset-right))
-          max(10px,env(safe-area-inset-bottom))
-          max(10px,env(safe-area-inset-left));
+        box-sizing:border-box;
+        width:100vw;
+        height:100vh;
+        height:100dvh;
+        min-height:0;
+        place-items:center;
+        padding:8px;
+        padding-top:max(8px,env(safe-area-inset-top));
+        padding-right:max(8px,env(safe-area-inset-right));
+        padding-bottom:max(8px,env(safe-area-inset-bottom));
+        padding-left:max(8px,env(safe-area-inset-left));
+        overflow:hidden;
       }
 
       .round-progress-dialog{
+        box-sizing:border-box;
         width:100%;
         max-width:100%;
-        max-height:calc(100dvh - max(20px,env(safe-area-inset-top) + env(safe-area-inset-bottom)));
-        border-radius:18px;
+        min-width:0;
+        max-height:100%;
+        overflow-y:auto;
         overflow-x:hidden;
+        overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch;
+        border-radius:16px;
+      }
+
+      .round-progress-head,
+      .round-progress-body,
+      .round-progress-summary,
+      .round-progress-summary-card,
+      .round-progress-list,
+      .round-progress-person,
+      .round-progress-person-head,
+      .round-progress-person-copy,
+      .round-progress-line,
+      .round-progress-track{
+        box-sizing:border-box;
+        min-width:0;
+        max-width:100%;
       }
 
       .round-progress-head{
-        padding:18px 16px 15px;
+        padding:17px 15px 14px;
+      }
+
+      .round-progress-head > div{
+        min-width:0;
       }
 
       .round-progress-title{
         font-size:20px;
+        overflow-wrap:anywhere;
+      }
+
+      .round-progress-subtitle{
+        max-width:100%;
+        font-size:11px;
+        overflow-wrap:anywhere;
+      }
+
+      .round-progress-close{
+        flex-basis:35px;
+        width:35px;
+        height:35px;
       }
 
       .round-progress-body{
-        padding:14px;
+        padding:13px;
       }
 
       .round-progress-summary{
         grid-template-columns:1fr;
         gap:7px;
+        margin-bottom:13px;
       }
 
       .round-progress-summary-card{
@@ -414,7 +460,7 @@ function injectStyles(){
         align-items:center;
         justify-content:space-between;
         gap:12px;
-        padding:9px 11px;
+        padding:8px 10px;
       }
 
       .round-progress-summary-card strong{
@@ -435,12 +481,56 @@ function injectStyles(){
         align-items:flex-start;
       }
 
+      .round-progress-name,
+      .round-progress-meta{
+        overflow-wrap:anywhere;
+        word-break:break-word;
+      }
+
       .round-progress-state{
         max-width:94px;
         white-space:normal;
         text-align:center;
       }
 
+      .round-progress-line{
+        flex-wrap:wrap;
+      }
+    }
+
+    @media(max-width:350px){
+      .round-progress-modal{
+        padding:6px;
+      }
+
+      .round-progress-head{
+        padding:15px 13px 12px;
+      }
+
+      .round-progress-title{
+        font-size:18px;
+      }
+
+      .round-progress-body{
+        padding:11px;
+      }
+
+      .round-progress-person{
+        padding:10px;
+      }
+
+      .round-progress-avatar{
+        flex-basis:34px;
+        width:34px;
+        height:34px;
+        border-radius:10px;
+      }
+
+      .round-progress-state{
+        max-width:82px;
+        padding:3px 6px;
+        font-size:8px;
+      }
     }
 
     @media(prefers-reduced-motion:reduce){
