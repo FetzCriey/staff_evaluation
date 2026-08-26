@@ -160,11 +160,41 @@ function injectStyles(){
       box-shadow:inset 0 1px 0 rgba(255,255,255,.72);
     }
 
-    .round-exemption-sidebar-label{
+    .round-exemption-sidebar-copy{
       flex:1 1 auto;
       min-width:0;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:2px;
       text-align:left;
+      overflow:visible;
+    }
+
+    .round-exemption-sidebar-kicker{
+      display:block;
+      width:100%;
+      color:var(--muted,#5b7080);
+      font-size:8px;
+      line-height:1.2;
       font-weight:800;
+      letter-spacing:.09em;
+      text-transform:uppercase;
+      white-space:normal;
+    }
+
+    .round-exemption-sidebar-label{
+      display:block;
+      width:100%;
+      min-width:0;
+      color:var(--ink,#0a2233);
+      font-size:11.5px;
+      line-height:1.25;
+      font-weight:800;
+      white-space:normal;
+      overflow:visible;
+      text-overflow:clip;
+      overflow-wrap:anywhere;
     }
 
     .round-exemption-sidebar-count{
@@ -249,34 +279,47 @@ function injectStyles(){
     .round-exemption-summary-stats{
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:8px;
+      gap:0;
+      overflow:hidden;
+      border:1.5px solid #d5e8f2;
+      border-radius:13px;
+      background:#fff;
     }
 
     .round-exemption-stat{
-      padding:10px 11px;
-      border:1px solid #d5e8f2;
-      border-radius:12px;
-      background:#fff;
+      min-width:0;
+      padding:11px 7px 10px;
+      border:0;
+      border-right:1px solid #dceaf2;
+      border-radius:0;
+      background:transparent;
+      text-align:center;
+    }
+
+    .round-exemption-stat:last-child{
+      border-right:0;
     }
 
     .round-exemption-stat strong{
       display:block;
       color:var(--ink,#0a2233);
       font-family:"Bricolage Grotesque","Inter",sans-serif;
-      font-size:17px;
+      font-size:19px;
       line-height:1;
       font-weight:800;
+      font-variant-numeric:tabular-nums;
     }
 
     .round-exemption-stat span{
       display:block;
       margin-top:5px;
       color:var(--muted,#5b7080);
-      font-size:9px;
-      line-height:1.3;
-      font-weight:700;
+      font-size:8px;
+      line-height:1.25;
+      font-weight:800;
       text-transform:uppercase;
-      letter-spacing:.04em;
+      letter-spacing:.035em;
+      overflow-wrap:anywhere;
     }
 
     .round-exempted-list{
@@ -535,6 +578,8 @@ function injectStyles(){
       border-radius:14px;
       background:#fff;
       box-shadow:0 10px 24px -24px rgba(8,52,76,.35);
+      cursor:pointer;
+      outline:none;
       transition:border-color .16s ease, box-shadow .16s ease, background .16s ease;
     }
 
@@ -542,6 +587,16 @@ function injectStyles(){
       border-color:#bfe0ef;
       box-shadow:0 14px 28px -24px rgba(8,52,76,.42);
       background:#fbfdff;
+    }
+
+    .round-exemption-row:focus-visible{
+      border-color:var(--lagoon,#15ace3);
+      box-shadow:0 0 0 4px rgba(21,172,227,.13);
+    }
+
+    .round-exemption-row[aria-busy="true"]{
+      pointer-events:none;
+      opacity:.58;
     }
 
     .round-exemption-row.active{
@@ -577,28 +632,28 @@ function injectStyles(){
       color:#826d43;
     }
 
-    .round-exemption-row-side{
+    .round-exemption-card-chevron{
       flex:0 0 auto;
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-
-    .round-exemption-action{
-      border:1.5px solid #bfe4f5;
-      border-radius:10px;
-      padding:8px 11px;
-      background:linear-gradient(180deg,#eef9fe 0%,#e0f4fc 100%);
+      display:grid;
+      place-items:center;
+      width:26px;
+      height:26px;
+      border-radius:9px;
+      background:#eef8fd;
       color:var(--lagoon-deep,#0b7fb0);
-      font:800 9px/1 "Inter",sans-serif;
-      cursor:pointer;
-      white-space:nowrap;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.72);
+      font-size:18px;
+      line-height:1;
+      font-weight:800;
+      transition:transform .16s ease,background .16s ease;
     }
 
-    .round-exemption-action.restore{
-      border-color:#ead7a6;
-      background:linear-gradient(180deg,#fff7e2 0%,#fff1cb 100%);
+    .round-exemption-row:hover .round-exemption-card-chevron{
+      transform:translateX(2px);
+      background:#e1f3fb;
+    }
+
+    .round-exemption-row.active .round-exemption-card-chevron{
+      background:#fff1c9;
       color:#8a641d;
     }
 
@@ -727,8 +782,7 @@ function injectStyles(){
       color:#fff;
     }
 
-    .round-exemption-primary:disabled,
-    .round-exemption-action:disabled{
+    .round-exemption-primary:disabled{
       opacity:.55;
       cursor:wait;
     }
@@ -745,7 +799,40 @@ function injectStyles(){
       }
 
       .round-exemption-summary-stats{
-        grid-template-columns:1fr;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+
+      .round-exemption-stat{
+        padding:10px 4px 9px;
+      }
+
+      .round-exemption-stat strong{
+        font-size:18px;
+      }
+
+      .round-exemption-stat span{
+        font-size:7.2px;
+        letter-spacing:.02em;
+      }
+
+      .round-exemption-sidebar-launch{
+        gap:8px;
+        padding:11px 10px;
+      }
+
+      .round-exemption-sidebar-launch .mgr-add-launch-icon{
+        flex-basis:30px;
+        width:30px;
+        height:30px;
+      }
+
+      .round-exemption-sidebar-label{
+        font-size:11px;
+      }
+
+      .round-exemption-sidebar-count{
+        min-width:24px;
+        padding:3px 6px;
       }
 
       .round-exempted-person{
@@ -801,15 +888,6 @@ function injectStyles(){
         flex-direction:column;
       }
 
-      .round-exemption-row-side{
-        width:100%;
-        justify-content:space-between;
-      }
-
-      .round-exemption-action{
-        justify-self:start;
-      }
-
       .round-exemption-editor-hero{
         align-items:flex-start;
       }
@@ -843,325 +921,6 @@ function injectStyles(){
       overflow-wrap:anywhere;
     }
 
-    .round-exemption-modal[hidden]{
-      display:none !important;
-    }
-
-    .round-exemption-modal{
-      position:fixed;
-      inset:0;
-      z-index:100030;
-      display:grid;
-      place-items:center;
-      padding:18px;
-    }
-
-    .round-exemption-backdrop{
-      position:absolute;
-      inset:0;
-      background:rgba(4,24,36,.62);
-      backdrop-filter:blur(5px);
-      -webkit-backdrop-filter:blur(5px);
-    }
-
-    .round-exemption-dialog{
-      position:relative;
-      z-index:1;
-      width:min(620px,100%);
-      max-height:min(88vh,760px);
-      overflow:auto;
-      overscroll-behavior:contain;
-      border:1.5px solid var(--line,#c9dfee);
-      border-radius:20px;
-      background:#fff;
-      box-shadow:0 28px 80px -22px rgba(4,32,50,.52);
-    }
-
-    .round-exemption-head{
-      position:sticky;
-      top:0;
-      z-index:2;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:14px;
-      padding:19px 20px 16px;
-      color:#fff;
-      background:
-        radial-gradient(100% 150% at 100% 0%,rgba(21,172,227,.48),transparent 60%),
-        linear-gradient(145deg,#0b536f 0%,#08344c 58%,#051f30 100%);
-    }
-
-    .round-exemption-kicker{
-      margin-bottom:4px;
-      color:rgba(218,242,252,.78);
-      font-size:9px;
-      font-weight:800;
-      letter-spacing:.16em;
-      text-transform:uppercase;
-    }
-
-    .round-exemption-title{
-      margin:0;
-      font-family:"Bricolage Grotesque","Inter",sans-serif;
-      font-size:21px;
-      line-height:1.1;
-      font-weight:800;
-    }
-
-    .round-exemption-sub{
-      margin-top:5px;
-      max-width:48ch;
-      color:rgba(229,245,252,.84);
-      font-size:10.5px;
-      line-height:1.4;
-    }
-
-    .round-exemption-close{
-      flex:0 0 36px;
-      width:36px;
-      height:36px;
-      display:grid;
-      place-items:center;
-      border:1px solid rgba(255,255,255,.28);
-      border-radius:10px;
-      background:rgba(255,255,255,.14);
-      color:#fff;
-      font:700 21px/1 inherit;
-      cursor:pointer;
-    }
-
-    .round-exemption-body{
-      padding:15px 17px 19px;
-    }
-
-    .round-exemption-list{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-
-    .round-exemption-row{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      gap:10px;
-      align-items:center;
-      padding:11px 12px;
-      border:1.5px solid var(--line,#c9dfee);
-      border-radius:12px;
-      background:#fff;
-    }
-
-    .round-exemption-row.active{
-      border-color:#ecd9a6;
-      background:#fffdf7;
-    }
-
-    .round-exemption-row-name{
-      color:var(--ink,#0a2233);
-      font-size:11.5px;
-      line-height:1.3;
-      font-weight:800;
-      overflow-wrap:anywhere;
-    }
-
-    .round-exemption-row-meta{
-      margin-top:3px;
-      color:var(--muted,#5b7080);
-      font-size:9.5px;
-      line-height:1.35;
-      overflow-wrap:anywhere;
-    }
-
-    .round-exemption-row.active .round-exemption-row-meta{
-      color:#826d43;
-    }
-
-    .round-exemption-action{
-      border:1.5px solid #bfe4f5;
-      border-radius:9px;
-      padding:7px 9px;
-      background:var(--accent-soft,#e2f4fc);
-      color:var(--lagoon-deep,#0b7fb0);
-      font:800 9px/1 "Inter",sans-serif;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-
-    .round-exemption-action.restore{
-      border-color:#d9e3e8;
-      background:#f1f5f7;
-      color:#5f737f;
-    }
-
-    .round-exemption-editor{
-      padding:2px 0;
-    }
-
-    .round-exemption-back{
-      margin:0 0 12px;
-      padding:0;
-      border:0;
-      background:transparent;
-      color:var(--lagoon-deep,#0b7fb0);
-      font:800 10px/1.2 "Inter",sans-serif;
-      cursor:pointer;
-    }
-
-    .round-exemption-editor-card{
-      padding:14px;
-      border:1.5px solid var(--line,#c9dfee);
-      border-radius:14px;
-      background:#f8fcfe;
-    }
-
-    .round-exemption-editor-name{
-      margin-bottom:5px;
-      color:var(--ink,#0a2233);
-      font-family:"Bricolage Grotesque","Inter",sans-serif;
-      font-size:17px;
-      font-weight:800;
-    }
-
-    .round-exemption-editor-note{
-      margin-bottom:12px;
-      color:var(--muted,#5b7080);
-      font-size:10px;
-      line-height:1.45;
-    }
-
-    .round-exemption-label{
-      display:block;
-      margin-bottom:6px;
-      color:var(--ink-soft,#28455c);
-      font-size:9.5px;
-      font-weight:800;
-      letter-spacing:.07em;
-      text-transform:uppercase;
-    }
-
-    .round-exemption-reason-input{
-      width:100%;
-      min-height:92px;
-      resize:vertical;
-      padding:10px 11px;
-      border:1.5px solid var(--line,#c9dfee);
-      border-radius:10px;
-      outline:none;
-      background:#fff;
-      color:var(--ink,#0a2233);
-      font:500 11px/1.45 "Inter",sans-serif;
-    }
-
-    .round-exemption-reason-input:focus{
-      border-color:var(--lagoon,#15ace3);
-      box-shadow:0 0 0 4px rgba(21,172,227,.13);
-      scale:1;
-    }
-
-    /* Keep the exemption reason field steady while typing even though
-       global-motion.js animates ordinary textarea input events. */
-    .round-exemption-reason-input.motion-value-change{
-      animation:none !important;
-      scale:1 !important;
-      translate:0 0 !important;
-      opacity:1 !important;
-    }
-
-    .round-exemption-editor-actions{
-      display:flex;
-      justify-content:flex-end;
-      gap:8px;
-      margin-top:11px;
-    }
-
-    .round-exemption-secondary,
-    .round-exemption-primary{
-      border-radius:9px;
-      padding:8px 11px;
-      font:800 9.5px/1 "Inter",sans-serif;
-      cursor:pointer;
-    }
-
-    .round-exemption-secondary{
-      border:1.5px solid var(--line,#c9dfee);
-      background:#fff;
-      color:var(--ink-soft,#28455c);
-    }
-
-    .round-exemption-primary{
-      border:1.5px solid var(--lagoon-deep,#0b7fb0);
-      background:var(--lagoon-deep,#0b7fb0);
-      color:#fff;
-    }
-
-    .round-exemption-primary:disabled,
-    .round-exemption-action:disabled{
-      opacity:.55;
-      cursor:wait;
-    }
-
-    @media(max-width:600px){
-      .round-progress-summary.has-exemptions{
-        grid-template-columns:1fr;
-      }
-
-      .round-exempted-person{
-        padding:11px;
-      }
-
-      .round-exempted-state{
-        max-width:82px;
-        white-space:normal;
-        text-align:center;
-      }
-
-      .round-exemption-modal{
-        box-sizing:border-box;
-        width:100vw;
-        height:100vh;
-        height:100dvh;
-        min-height:0;
-        padding:8px;
-        padding-top:max(8px,env(safe-area-inset-top));
-        padding-right:max(8px,env(safe-area-inset-right));
-        padding-bottom:max(8px,env(safe-area-inset-bottom));
-        padding-left:max(8px,env(safe-area-inset-left));
-        overflow:hidden;
-      }
-
-      .round-exemption-dialog{
-        box-sizing:border-box;
-        width:100%;
-        max-width:100%;
-        min-width:0;
-        max-height:100%;
-        overflow-y:auto;
-        overflow-x:hidden;
-        -webkit-overflow-scrolling:touch;
-        border-radius:16px;
-      }
-
-      .round-exemption-head{
-        padding:16px 14px 13px;
-      }
-
-      .round-exemption-title{
-        font-size:19px;
-      }
-
-      .round-exemption-body{
-        padding:12px;
-      }
-
-      .round-exemption-row{
-        grid-template-columns:minmax(0,1fr);
-      }
-
-      .round-exemption-action{
-        justify-self:start;
-      }
-    }
   `;
   document.head.appendChild(style);
 }
@@ -2021,8 +1780,8 @@ async function renderManageList(){
         </div>
         <div class="round-exemption-summary-stats">
           <div class="round-exemption-stat"><strong>${profiles.length}</strong><span>Total staff</span></div>
-          <div class="round-exemption-stat"><strong>${activeRecords.length}</strong><span>Currently exempted</span></div>
-          <div class="round-exemption-stat"><strong>${Math.max(profiles.length - activeRecords.length, 0)}</strong><span>Participating now</span></div>
+          <div class="round-exemption-stat"><strong>${activeRecords.length}</strong><span>Exempted</span></div>
+          <div class="round-exemption-stat"><strong>${Math.max(profiles.length - activeRecords.length, 0)}</strong><span>Participating</span></div>
         </div>
       </section>
       <div class="round-exemption-list"></div>
@@ -2053,10 +1812,7 @@ async function renderManageList(){
               <div class="round-exemption-row-meta"></div>
             </div>
           </div>
-          <div class="round-exemption-row-side">
-            <button class="round-exemption-action${record ? " restore" : ""}"
-              type="button"></button>
-          </div>
+          <span class="round-exemption-card-chevron" aria-hidden="true">›</span>
         `;
 
         setText(row.querySelector(".round-exemption-row-name"),profile.full_name || "Unknown");
@@ -2071,15 +1827,30 @@ async function renderManageList(){
 
         paintExemptedAvatar(row.querySelector(".round-exemption-row-avatar"), profile);
 
-        const action = row.querySelector(".round-exemption-action");
-        setText(action,record ? "Restore" : "Exempt");
+        row.setAttribute("role","button");
+        row.setAttribute("tabindex","0");
+        row.setAttribute(
+          "aria-label",
+          record
+            ? `Restore ${profile.full_name || "staff member"} to the current round`
+            : `Exempt ${profile.full_name || "staff member"} from the current round`
+        );
 
-        action.addEventListener("click",async () => {
+        const activate = async () => {
+          if(row.getAttribute("aria-busy") === "true") return;
+
           if(record){
-            await restoreStaff(record,profile,action);
+            await restoreStaff(record,profile,row);
           }else{
             openReasonEditor(profile);
           }
+        };
+
+        row.addEventListener("click",activate);
+        row.addEventListener("keydown",event => {
+          if(event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          activate();
         });
 
         list.appendChild(row);
@@ -2206,14 +1977,14 @@ function openReasonEditor(profile){
   input?.focus();
 }
 
-async function restoreStaff(record,profile,button){
+async function restoreStaff(record,profile,control){
   if(!await askConfirm(
     "Restore " + (profile.full_name || "this staff member") + "?",
     "They will again be included as an evaluatee and, if they have a login account, as a required evaluator in the current round.",
     "Restore"
   )) return;
 
-  button.disabled = true;
+  control?.setAttribute?.("aria-busy","true");
 
   try{
     const { error } = await db
@@ -2242,7 +2013,7 @@ async function restoreStaff(record,profile,button){
       error?.message || "The exemption could not be removed."
     );
   }finally{
-    button.disabled = false;
+    control?.removeAttribute?.("aria-busy");
   }
 }
 
