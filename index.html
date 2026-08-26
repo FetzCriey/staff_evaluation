@@ -97,6 +97,19 @@
         <button class="mgr-sum" id="sumRoles" aria-expanded="false" aria-controls="bodyRoles"><span class="lbl">Form roles</span><span class="cnt" id="rolesCount">0</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="mgr-panel-body" id="bodyRoles"><div class="mgr-list" id="mgrList"></div></div>
       </div>
+      <div class="mgr-sec mgr-add-button-sec hide" id="secRoundExemptions">
+        <button class="mgr-add-launch round-exemption-sidebar-launch" id="openRoundExemptions" type="button">
+          <span class="mgr-add-launch-icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3a9 9 0 109 9"/>
+              <path d="M16 3h5v5"/>
+              <path d="M21 3l-7 7"/>
+            </svg>
+          </span>
+          <span class="round-exemption-sidebar-label">Current round exemptions</span>
+          <span class="round-exemption-sidebar-count" id="roundExemptionCount">0</span>
+        </button>
+      </div>
       <div class="mgr-sec mgr-add-button-sec" id="secAdd">
         <button class="mgr-add-launch" id="openAddStaff" type="button">
           <span class="mgr-add-launch-icon" aria-hidden="true">
@@ -299,7 +312,7 @@
 <script src="js/global-motion.js?v=20260822-1250"></script>
 <script type="module" src="js/current-round-progress.js?v=20260825-1816"></script>
 <script type="module" src="js/current-round-progress-drilldown.js?v=20260825-1819"></script>
-<script type="module" src="js/round-exemptions.js?v=20260826-1344"></script>
+<script type="module" src="js/round-exemptions.js?v=20260826-1528"></script>
 <script type="module" src="js/staff-profile-popup.js?v=20260824-1448"></script>
 
 </body>
