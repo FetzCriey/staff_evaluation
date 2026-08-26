@@ -35,6 +35,7 @@ let patchAgain = false;
 let refreshPromise = null;
 let manageModal = null;
 let realtimeChannel = null;
+let sidebarLauncherBound = false;
 
 const normalize = value => String(value || "")
   .toLowerCase()
@@ -121,52 +122,38 @@ function injectStyles(){
       color:#8a641d;
     }
 
-    .round-exemption-toolbar{
+    /* Management now lives in Staff Administration, not inside
+       Current Round Progress. Reuse the site's existing sidebar action style. */
+    .round-exemption-sidebar-launch{
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin:0 0 12px;
-      padding:9px 10px;
-      border:1.5px solid var(--line,#c9dfee);
-      border-radius:12px;
-      background:#f7fbfd;
+      width:100%;
+      gap:9px;
     }
 
-    .round-exemption-toolbar-copy{
+    .round-exemption-sidebar-label{
+      flex:1 1 auto;
       min-width:0;
+      text-align:left;
     }
 
-    .round-exemption-toolbar-copy strong{
-      display:block;
-      color:var(--ink,#0a2233);
-      font-size:10.5px;
-      line-height:1.25;
-      font-weight:800;
-    }
-
-    .round-exemption-toolbar-copy span{
-      display:block;
-      margin-top:2px;
-      color:var(--muted,#5b7080);
-      font-size:9px;
-      line-height:1.3;
-    }
-
-    .round-exemption-manage-btn{
+    .round-exemption-sidebar-count{
       flex:0 0 auto;
-      border:1.5px solid #bfe4f5;
-      border-radius:9px;
-      padding:7px 9px;
+      min-width:22px;
+      padding:2px 6px;
+      border-radius:999px;
       background:var(--accent-soft,#e2f4fc);
       color:var(--lagoon-deep,#0b7fb0);
-      font:800 9.5px/1 "Inter",sans-serif;
-      cursor:pointer;
+      font-size:9px;
+      line-height:1.4;
+      font-weight:800;
+      text-align:center;
     }
 
-    .round-exemption-manage-btn:hover{
-      border-color:var(--lagoon,#15ace3);
-      background:#d7f0fb;
+    .round-exemption-sidebar-launch.has-exemptions
+      .round-exemption-sidebar-count{
+      background:#fff3d1;
+      color:#8a641d;
     }
 
     .round-exempted-list{
@@ -501,6 +488,16 @@ function injectStyles(){
     .round-exemption-reason-input:focus{
       border-color:var(--lagoon,#15ace3);
       box-shadow:0 0 0 4px rgba(21,172,227,.13);
+      scale:1;
+    }
+
+    /* Keep the exemption reason field steady while typing even though
+       global-motion.js animates ordinary textarea input events. */
+    .round-exemption-reason-input.motion-value-change{
+      animation:none !important;
+      scale:1 !important;
+      translate:0 0 !important;
+      opacity:1 !important;
     }
 
     .round-exemption-editor-actions{
@@ -539,14 +536,6 @@ function injectStyles(){
     @media(max-width:600px){
       .round-progress-summary.has-exemptions{
         grid-template-columns:1fr;
-      }
-
-      .round-exemption-toolbar{
-        align-items:flex-start;
-      }
-
-      .round-exemption-toolbar-copy span{
-        max-width:24ch;
       }
 
       .round-exempted-person{
@@ -814,6 +803,45 @@ async function syncInternalEligibility(){
   }
 }
 
+function closeSidebarDrawer(){
+  const drawer = document.getElementById("drawer");
+  const scrim = document.getElementById("scrim");
+  const burger = document.getElementById("burger");
+
+  drawer?.classList.remove("open");
+  drawer?.setAttribute("aria-hidden","true");
+  scrim?.classList.remove("open");
+  burger?.setAttribute("aria-expanded","false");
+
+  // The exemption modal is about to take over the screen.
+  document.body.style.overflow = "";
+}
+
+function syncSidebarLauncher(){
+  const section = document.getElementById("secRoundExemptions");
+  const button = document.getElementById("openRoundExemptions");
+  const count = document.getElementById("roundExemptionCount");
+
+  if(!section || !button) return;
+
+  section.classList.toggle("hide",!canManage);
+  setText(count,exemptedIds.size);
+  button.classList.toggle("has-exemptions",exemptedIds.size > 0);
+
+  button.title = exemptedIds.size
+    ? `${exemptedIds.size} staff exempted from the current round`
+    : "Manage current round staff exemptions";
+
+  if(canManage && !sidebarLauncherBound){
+    sidebarLauncherBound = true;
+
+    button.addEventListener("click",async () => {
+      closeSidebarDrawer();
+      await openManageModal();
+    });
+  }
+}
+
 async function refreshState({forceRows=false}={}){
   if(refreshPromise) return refreshPromise;
 
@@ -840,6 +868,7 @@ async function refreshState({forceRows=false}={}){
       canManage = me?.role === "manager" || me?.form_role === "Senior Staff";
 
       rebuildMaps();
+      syncSidebarLauncher();
 
       await getLiveRows(forceRows);
       await syncInternalEligibility();
@@ -1006,32 +1035,6 @@ function paintExemptedAvatar(host,profile){
   host.appendChild(img);
 }
 
-function ensureProgressToolbar(body){
-  const old = body.querySelector(":scope > .round-exemption-toolbar");
-
-  if(!canManage){
-    old?.remove();
-    return;
-  }
-
-  if(old) return;
-
-  const bar = document.createElement("div");
-  bar.className = "round-exemption-toolbar";
-  bar.innerHTML = `
-    <div class="round-exemption-toolbar-copy">
-      <strong>Current round exemptions</strong>
-      <span>Exclude unavailable staff without changing their roster account.</span>
-    </div>
-    <button class="round-exemption-manage-btn" type="button">
-      Manage
-    </button>
-  `;
-
-  bar.querySelector("button")?.addEventListener("click",openManageModal);
-  body.prepend(bar);
-}
-
 function renderExemptedProgressCards(list){
   let host = list.querySelector(":scope > .round-exempted-list");
 
@@ -1097,8 +1100,6 @@ async function patchCurrentProgress(rows){
   const body = document.getElementById("roundProgressBody");
   const list = body?.querySelector(".round-progress-list");
   if(!body || !list) return;
-
-  ensureProgressToolbar(body);
 
   const counts = {
     evaluating:0,
@@ -1640,6 +1641,7 @@ async function afterExemptionChange(){
     window.__refreshResults();
   }
 
+  syncSidebarLauncher();
   window.dispatchEvent(new CustomEvent("round-exemptions-updated"));
   queuePatch();
 }
