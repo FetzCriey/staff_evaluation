@@ -36,6 +36,7 @@ let refreshPromise = null;
 let manageModal = null;
 let realtimeChannel = null;
 let sidebarLauncherBound = false;
+let stackedDialog = null;
 
 const normalize = value => String(value || "")
   .toLowerCase()
@@ -96,18 +97,132 @@ function reasonForName(name){
   return id ? reasonForId(id) : "Exempted from the current evaluation round.";
 }
 
+function exemptionModalIsOpen(){
+  return !!manageModal &&
+    manageModal.isConnected &&
+    !manageModal.hidden &&
+    manageModal.getAttribute("aria-hidden") !== "true";
+}
+
+function closeStackedDialog(result=false){
+  if(!stackedDialog) return;
+
+  const current = stackedDialog;
+  stackedDialog = null;
+
+  current.cleanup?.();
+  current.host?.remove();
+  current.resolve?.(result);
+}
+
+function showStackedExemptionDialog(
+  title,
+  message,
+  { confirm=false, ok="OK" }={}
+){
+  // Do not let multiple warnings pile up. Resolve the previous one first.
+  if(stackedDialog){
+    closeStackedDialog(false);
+  }
+
+  return new Promise(resolve => {
+    const host = document.createElement("div");
+    host.className = "round-exemption-stacked-dialog";
+
+    host.innerHTML = `
+      <div class="round-exemption-stacked-backdrop"></div>
+      <section class="round-exemption-stacked-card"
+        role="${confirm ? "dialog" : "alertdialog"}"
+        aria-modal="true"
+        aria-labelledby="roundExemptionStackedTitle">
+        <div class="round-exemption-stacked-icon" aria-hidden="true">!</div>
+        <h3 class="round-exemption-stacked-title"
+          id="roundExemptionStackedTitle"></h3>
+        <p class="round-exemption-stacked-message"></p>
+        <div class="round-exemption-stacked-actions">
+          ${confirm
+            ? `<button class="round-exemption-stacked-secondary"
+                 type="button">Cancel</button>`
+            : ""}
+          <button class="round-exemption-stacked-primary"
+            type="button"></button>
+        </div>
+      </section>
+    `;
+
+    setText(
+      host.querySelector(".round-exemption-stacked-title"),
+      title
+    );
+    setText(
+      host.querySelector(".round-exemption-stacked-message"),
+      message
+    );
+    setText(
+      host.querySelector(".round-exemption-stacked-primary"),
+      ok
+    );
+
+    document.body.appendChild(host);
+
+    const primary = host.querySelector(".round-exemption-stacked-primary");
+    const secondary = host.querySelector(".round-exemption-stacked-secondary");
+    const backdrop = host.querySelector(".round-exemption-stacked-backdrop");
+
+    const onKey = event => {
+      if(event.key !== "Escape") return;
+      event.preventDefault();
+      closeStackedDialog(false);
+    };
+
+    const cleanup = () => {
+      document.removeEventListener("keydown",onKey,true);
+    };
+
+    stackedDialog = { host, resolve, cleanup };
+
+    primary?.addEventListener("click",() => closeStackedDialog(true));
+    secondary?.addEventListener("click",() => closeStackedDialog(false));
+
+    backdrop?.addEventListener("click",() => {
+      if(confirm) closeStackedDialog(false);
+    });
+
+    document.addEventListener("keydown",onKey,true);
+
+    requestAnimationFrame(() => {
+      primary?.focus({preventScroll:true});
+    });
+  });
+}
+
 async function showNotice(title,message){
+  if(exemptionModalIsOpen()){
+    await showStackedExemptionDialog(title,message,{ok:"OK"});
+    return;
+  }
+
   if(typeof window.uiAlert === "function"){
     return window.uiAlert(title,message);
   }
-  window.alert(title + "\n\n" + message);
+
+  window.alert(title + "\\n\\n" + message);
 }
 
 async function askConfirm(title,message,ok="Continue"){
+  if(exemptionModalIsOpen()){
+    return showStackedExemptionDialog(
+      title,
+      message,
+      {confirm:true,ok}
+    );
+  }
+
   if(typeof window.uiConfirm === "function"){
     return window.uiConfirm(title,message,{ok});
   }
-  return window.confirm(title + "\n\n" + message);
+
+  return window.confirm(title + "\\n\\n" + message);
 }
 
 function injectStyles(){
@@ -470,6 +585,97 @@ function injectStyles(){
       font-weight:700;
     }
 
+    /* Nested exemption warnings must sit above the exemption manager.
+       This avoids alerts being hidden until the parent modal is closed. */
+    .round-exemption-stacked-dialog{
+      position:fixed;
+      inset:0;
+      z-index:100080;
+      display:grid;
+      place-items:center;
+      box-sizing:border-box;
+      padding:18px;
+    }
+
+    .round-exemption-stacked-backdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(4,24,36,.38);
+      backdrop-filter:blur(2px);
+      -webkit-backdrop-filter:blur(2px);
+    }
+
+    .round-exemption-stacked-card{
+      position:relative;
+      z-index:1;
+      width:min(390px,100%);
+      padding:16px;
+      border:1.5px solid var(--line,#c9dfee);
+      border-radius:16px;
+      background:#fff;
+      box-shadow:0 24px 58px -18px rgba(4,32,50,.55);
+    }
+
+    .round-exemption-stacked-icon{
+      width:30px;
+      height:30px;
+      display:grid;
+      place-items:center;
+      margin-bottom:10px;
+      border:1px solid #ecd9a6;
+      border-radius:10px;
+      background:#fff3d1;
+      color:#8a641d;
+      font-family:"Bricolage Grotesque","Inter",sans-serif;
+      font-size:15px;
+      font-weight:800;
+    }
+
+    .round-exemption-stacked-title{
+      margin:0;
+      color:var(--ink,#0a2233);
+      font-family:"Bricolage Grotesque","Inter",sans-serif;
+      font-size:15px;
+      line-height:1.25;
+      font-weight:800;
+    }
+
+    .round-exemption-stacked-message{
+      margin:7px 0 0;
+      color:var(--muted,#5b7080);
+      font-size:10.5px;
+      line-height:1.5;
+      overflow-wrap:anywhere;
+    }
+
+    .round-exemption-stacked-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:14px;
+    }
+
+    .round-exemption-stacked-secondary,
+    .round-exemption-stacked-primary{
+      min-width:78px;
+      padding:9px 12px;
+      border-radius:9px;
+      font:800 9.5px/1 "Inter",sans-serif;
+      cursor:pointer;
+    }
+
+    .round-exemption-stacked-secondary{
+      border:1.5px solid var(--line,#c9dfee);
+      background:#fff;
+      color:var(--ink-soft,#28455c);
+    }
+
+    .round-exemption-stacked-primary{
+      border:1.5px solid var(--lagoon-deep,#0b7fb0);
+      background:linear-gradient(180deg,#169bd1 0%,#0b7fb0 100%);
+      color:#fff;
+    }
+
     .round-exemption-modal[hidden]{
       display:none !important;
     }
@@ -788,6 +994,28 @@ function injectStyles(){
     }
 
     @media(max-width:600px){
+      .round-exemption-stacked-dialog{
+        padding:12px;
+        padding-top:max(12px,env(safe-area-inset-top));
+        padding-right:max(12px,env(safe-area-inset-right));
+        padding-bottom:max(12px,env(safe-area-inset-bottom));
+        padding-left:max(12px,env(safe-area-inset-left));
+      }
+
+      .round-exemption-stacked-card{
+        width:min(360px,100%);
+        padding:15px;
+        border-radius:15px;
+      }
+
+      .round-exemption-stacked-title{
+        font-size:14px;
+      }
+
+      .round-exemption-stacked-message{
+        font-size:10px;
+      }
+
       .round-progress-summary.has-exemptions{
         grid-template-columns:1fr;
       }
@@ -1739,6 +1967,11 @@ function ensureManageModal(){
 
 function closeManageModal(){
   if(!manageModal) return;
+
+  if(stackedDialog){
+    closeStackedDialog(false);
+  }
+
   manageModal.hidden = true;
   manageModal.setAttribute("aria-hidden","true");
 }
