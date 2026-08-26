@@ -231,6 +231,106 @@ function injectStyles(){
   const style = document.createElement("style");
   style.id = "round-exemption-style";
   style.textContent = `
+    .round-self-exemption-banner[hidden]{
+      display:none !important;
+    }
+
+    .round-self-exemption-banner{
+      display:flex;
+      align-items:flex-start;
+      gap:11px;
+      margin:0 0 12px;
+      padding:12px 13px;
+      border:1.5px solid #ecd9a6;
+      border-radius:14px;
+      background:linear-gradient(180deg,#fffdf7 0%,#fff7e4 100%);
+      box-shadow:0 12px 28px -26px rgba(138,100,29,.32);
+    }
+
+    .round-self-exemption-icon{
+      flex:0 0 36px;
+      width:36px;
+      height:36px;
+      display:grid;
+      place-items:center;
+      border:1px solid #ead7a6;
+      border-radius:11px;
+      background:#fff1c9;
+      color:#8a641d;
+    }
+
+    .round-self-exemption-copy{
+      flex:1 1 auto;
+      min-width:0;
+    }
+
+    .round-self-exemption-kicker{
+      color:#9a7426;
+      font-size:8px;
+      line-height:1.2;
+      font-weight:800;
+      letter-spacing:.11em;
+      text-transform:uppercase;
+    }
+
+    .round-self-exemption-title{
+      margin-top:2px;
+      color:var(--ink,#0a2233);
+      font-family:"Bricolage Grotesque","Inter",sans-serif;
+      font-size:15px;
+      line-height:1.25;
+      font-weight:800;
+    }
+
+    .round-self-exemption-message{
+      margin-top:4px;
+      color:#6f603f;
+      font-size:10px;
+      line-height:1.45;
+      overflow-wrap:anywhere;
+    }
+
+    .round-self-exemption-reason{
+      display:inline-block;
+      margin-top:7px;
+      padding:4px 7px;
+      border:1px solid #eadbb4;
+      border-radius:8px;
+      background:rgba(255,255,255,.72);
+      color:#775d25;
+      font-size:9px;
+      line-height:1.35;
+      font-weight:700;
+      overflow-wrap:anywhere;
+    }
+
+    #formView.round-self-exempted .meta,
+    #formView.round-self-exempted .evaluator-ctl,
+    #formView.round-self-exempted #evtabs,
+    #formView.round-self-exempted #panel,
+    #formView.round-self-exempted .comment{
+      opacity:.48;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    #formView.round-self-exempted #saveBtn,
+    #formView.round-self-exempted #resetBtn{
+      opacity:.48 !important;
+      cursor:not-allowed !important;
+    }
+
+    #headerActionBtn.round-self-exempted-action{
+      border-color:#ead7a6;
+      background:linear-gradient(180deg,#fff7e2 0%,#fff0c8 100%);
+      color:#7e601f;
+    }
+
+    #headerActionBtn.round-self-exempted-action:hover{
+      border-color:#dfc786;
+      background:linear-gradient(180deg,#fff9e9 0%,#ffedbd 100%);
+    }
+
     .round-progress-summary.has-exemptions{
       grid-template-columns:repeat(4,minmax(0,1fr));
     }
@@ -994,6 +1094,25 @@ function injectStyles(){
     }
 
     @media(max-width:600px){
+      .round-self-exemption-banner{
+        padding:11px;
+        gap:9px;
+      }
+
+      .round-self-exemption-icon{
+        flex-basis:33px;
+        width:33px;
+        height:33px;
+      }
+
+      .round-self-exemption-title{
+        font-size:14px;
+      }
+
+      .round-self-exemption-message{
+        font-size:9.5px;
+      }
+
       .round-exemption-stacked-dialog{
         padding:12px;
         padding-top:max(12px,env(safe-area-inset-top));
@@ -1276,7 +1395,7 @@ function refreshAutocompleteRoster(){
   wrapRosterSetter();
 
   if(typeof window.setRoster === "function"){
-    window.setRoster(activePeople());
+    window.setRoster(exemptedIds.has(uid) ? [] : activePeople());
   }
 }
 
@@ -1289,6 +1408,12 @@ function wrapEmployeeSetter(){
 
   const wrapped = function(name){
     const wanted = String(name || "");
+
+    // A fully exempted signed-in user may still view the application, but
+    // cannot enter or advance through the scoring workflow.
+    if(isScoringMode() && exemptedIds.has(uid)){
+      return original("");
+    }
 
     if(
       isScoringMode() &&
@@ -1350,12 +1475,15 @@ function wrapNextUpAlert(){
 }
 
 async function syncInternalEligibility(){
-  const { data, error } = await db.rpc("get_evaluation_roster");
-  if(error || !Array.isArray(data)) return;
+  if(typeof window.__syncEvaluationRoster !== "function") return;
 
-  if(typeof window.__syncEvaluationRoster === "function"){
-    window.__syncEvaluationRoster(data);
-  }
+  const activeRoster = roster.filter(person =>
+    person?.id &&
+    person.exempted !== true &&
+    !exemptedIds.has(person.id)
+  );
+
+  window.__syncEvaluationRoster(activeRoster);
 }
 
 function closeSidebarDrawer(){
@@ -1863,6 +1991,142 @@ async function patchResults(rows){
   );
 }
 
+function selfExemptionActive(){
+  return !!uid && exemptedIds.has(uid);
+}
+
+function ensureSelfExemptionBanner(){
+  const form = document.getElementById("formView");
+  if(!form) return null;
+
+  let banner = document.getElementById("roundSelfExemptionBanner");
+  if(banner) return banner;
+
+  banner = document.createElement("section");
+  banner.id = "roundSelfExemptionBanner";
+  banner.className = "round-self-exemption-banner";
+  banner.hidden = true;
+  banner.setAttribute("role","status");
+  banner.setAttribute("aria-live","polite");
+
+  banner.innerHTML = `
+    <div class="round-self-exemption-icon" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2.1"
+        stroke-linecap="round" stroke-linejoin="round">
+        <rect x="6" y="10" width="12" height="10" rx="2"></rect>
+        <path d="M9 10V7a3 3 0 016 0v3"></path>
+      </svg>
+    </div>
+    <div class="round-self-exemption-copy">
+      <div class="round-self-exemption-kicker">Current round exemption</div>
+      <div class="round-self-exemption-title">Evaluation access paused</div>
+      <div class="round-self-exemption-message">
+        You can continue viewing the Dashboard, Results, History, profile and
+        account settings. Scoring and submission are unavailable until your
+        current-round exemption is restored.
+      </div>
+      <div class="round-self-exemption-reason"></div>
+    </div>
+  `;
+
+  const backRow = form.querySelector(".dash-back-row");
+  if(backRow){
+    backRow.insertAdjacentElement("afterend",banner);
+  }else{
+    form.prepend(banner);
+  }
+
+  return banner;
+}
+
+function setExemptionDisabled(control,locked){
+  if(!control || !("disabled" in control)) return;
+
+  if(locked){
+    if(control.dataset.roundExemptionDisabled === "1") return;
+
+    control.dataset.roundExemptionDisabled = "1";
+    control.dataset.roundExemptionWasDisabled =
+      control.disabled ? "1" : "0";
+    control.disabled = true;
+    return;
+  }
+
+  if(control.dataset.roundExemptionDisabled !== "1") return;
+
+  if(control.dataset.roundExemptionWasDisabled !== "1"){
+    control.disabled = false;
+  }
+
+  delete control.dataset.roundExemptionDisabled;
+  delete control.dataset.roundExemptionWasDisabled;
+}
+
+function patchSelfExemptionAccess(){
+  const form = document.getElementById("formView");
+  if(!form) return;
+
+  const exempted = selfExemptionActive();
+  const scoringLocked = exempted && isScoringMode();
+  const banner = ensureSelfExemptionBanner();
+
+  form.classList.toggle("round-self-exempted",scoringLocked);
+
+  if(banner){
+    banner.hidden = !scoringLocked;
+
+    const reason = banner.querySelector(".round-self-exemption-reason");
+    if(reason){
+      setText(reason,`Reason: ${reasonForId(uid)}`);
+    }
+  }
+
+  // Disable actual form controls as well as using visual/pointer locking.
+  // This blocks keyboard input and programmatic focus paths on mobile.
+  const controls = [
+    ...form.querySelectorAll(
+      ".meta input,.meta select,.meta textarea," +
+      ".evaluator-ctl button,.evaluator-ctl input,.evaluator-ctl select," +
+      "#evtabs button,#panel button,#panel input,#panel select,#panel textarea," +
+      ".comment textarea,#saveBtn,#resetBtn"
+    )
+  ];
+
+  controls.forEach(control =>
+    setExemptionDisabled(control,scoringLocked)
+  );
+
+  const headerAction = document.getElementById("headerActionBtn");
+
+  if(headerAction){
+    if(exempted){
+      if(!headerAction.dataset.roundExemptionOriginalText){
+        headerAction.dataset.roundExemptionOriginalText =
+          headerAction.textContent || "Start Evaluation";
+      }
+
+      setText(headerAction,"Evaluation Paused");
+      headerAction.classList.add("round-self-exempted-action");
+      headerAction.setAttribute(
+        "title",
+        "You are exempted from the current evaluation round. You may open the form in read-only mode."
+      );
+      headerAction.setAttribute("aria-label","Evaluation paused for current round");
+    }else{
+      const original =
+        headerAction.dataset.roundExemptionOriginalText ||
+        "Start Evaluation";
+
+      setText(headerAction,original);
+      headerAction.classList.remove("round-self-exempted-action");
+      headerAction.removeAttribute("title");
+      headerAction.removeAttribute("aria-label");
+      delete headerAction.dataset.roundExemptionOriginalText;
+    }
+  }
+}
+
 function patchScoringAccess(){
   const save = document.getElementById("saveBtn");
   const input = document.getElementById("empName");
@@ -1882,6 +2146,8 @@ function patchScoringAccess(){
       save.removeAttribute("data-round-exemption-blocked");
     }
   }
+
+  patchSelfExemptionAccess();
 }
 
 async function patchAll(){
@@ -2336,8 +2602,8 @@ function installGuards(){
         event.stopImmediatePropagation();
 
         showNotice(
-          "You are exempted from this round",
-          "You are not required to submit evaluations while your current-round exemption is active."
+          "Evaluation access paused",
+          `You are exempted from the current evaluation round and cannot score or submit evaluations until the exemption is restored. Reason: ${reasonForId(uid)}`
         );
         return;
       }
@@ -2379,7 +2645,7 @@ function installObserver(){
       if(
         target?.nodeType === 1 &&
         target.closest?.(
-          "#dashboardView,#resList,.round-progress-modal,.round-drilldown-panel"
+          "#dashboardView,#formView,#backBar,#resList,.round-progress-modal,.round-drilldown-panel"
         )
       ) return true;
 
@@ -2388,10 +2654,10 @@ function installObserver(){
 
         return (
           node.matches?.(
-            "#dashboardView,#resList,.round-progress-modal,.round-progress-person,.round-drilldown-panel"
+            "#dashboardView,#formView,#backBar,#resList,.round-progress-modal,.round-progress-person,.round-drilldown-panel"
           ) ||
           node.querySelector?.(
-            "#resList,.round-progress-modal,.round-progress-person,.round-drilldown-panel"
+            "#formView,#backBar,#resList,.round-progress-modal,.round-progress-person,.round-drilldown-panel"
           )
         );
       });
