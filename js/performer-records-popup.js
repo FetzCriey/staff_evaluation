@@ -76,21 +76,6 @@ function injectStyles(){
       box-shadow:0 0 0 4px rgba(21,172,227,.15);
     }
 
-    .dash-metric.performer-records-trigger
-      .performer-records-card-hint{
-      display:inline-flex;
-      align-items:center;
-      gap:5px;
-      margin-top:7px;
-      color:var(--lagoon-deep,#0b7fb0);
-      font-size:8.5px;
-      line-height:1;
-      font-weight:800;
-      letter-spacing:.06em;
-      text-transform:uppercase;
-      opacity:.72;
-    }
-
     .performer-records-modal[hidden]{
       display:none !important;
     }
@@ -448,11 +433,6 @@ function injectStyles(){
     }
 
     @media(max-width:600px){
-      .dash-metric.performer-records-trigger
-        .performer-records-card-hint{
-        font-size:8px;
-      }
-
       .performer-records-modal{
         width:100vw;
         height:100vh;
@@ -582,16 +562,6 @@ function decorateCards(){
     card.setAttribute("aria-label",label);
     card.title = label;
 
-    const foot = card.querySelector(".dash-metric-foot");
-    if(foot && !card.querySelector(".performer-records-card-hint")){
-      const hint = document.createElement("span");
-      hint.className = "performer-records-card-hint";
-      hint.innerHTML = `
-        <span>View records</span>
-        <span aria-hidden="true">›</span>
-      `;
-      foot.insertAdjacentElement("afterend",hint);
-    }
   });
 }
 
