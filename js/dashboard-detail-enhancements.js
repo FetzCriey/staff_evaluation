@@ -138,6 +138,31 @@ function injectStyles(){
       box-shadow:0 30px 86px -24px rgba(3,31,48,.58);
     }
 
+    .team-average-modal.team-average-site-loading
+      .team-average-dialog{
+      width:min(100%,290px);
+      max-height:none;
+      overflow:visible;
+      border:0;
+      border-radius:0;
+      background:transparent;
+      box-shadow:none;
+    }
+
+    .team-average-modal.team-average-site-loading
+      #teamAverageDetailContent{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .team-average-modal.team-average-site-loading
+      .session-loader{
+      width:min(100%,290px);
+      margin:0;
+    }
+
+
     .team-average-head{
       position:relative;
       padding:20px 56px 18px 20px;
@@ -720,6 +745,16 @@ function injectStyles(){
         border-radius:16px;
       }
 
+      .team-average-modal.team-average-site-loading
+        .team-average-dialog{
+        width:min(100%,260px);
+        max-width:260px;
+        max-height:none;
+        overflow:visible;
+        border-radius:0;
+      }
+
+
       .team-average-head{
         padding:16px 48px 14px 14px;
       }
@@ -901,6 +936,7 @@ function closeTeamModal(){
   if(!teamModal || teamModal.hidden) return;
 
   closeEvaluatorModal();
+  teamModal.classList.remove("team-average-site-loading");
 
   teamModal.hidden = true;
   teamModal.setAttribute("aria-hidden","true");
@@ -911,15 +947,32 @@ function closeTeamModal(){
 
 function showTeamLoading(){
   openTeamShell();
+
+  teamModal.classList.add("team-average-site-loading");
+
   teamModal.querySelector("#teamAverageDetailContent").innerHTML = `
-    <div class="team-average-loading">
-      Loading finalized team averages…
+    <div class="session-loader"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading">
+      <div class="session-loader-mark" aria-hidden="true">
+        <span class="session-loader-ring"></span>
+        <span class="session-loader-core"></span>
+      </div>
+      <div class="session-loader-copy">
+        <div class="session-loader-title">Loading</div>
+        <div class="session-loader-dots" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
     </div>
   `;
 }
 
 function showTeamError(message){
   openTeamShell();
+  teamModal.classList.remove("team-average-site-loading");
+
   teamModal.querySelector("#teamAverageDetailContent").innerHTML = `
     <div class="team-average-error"></div>
   `;
@@ -1406,6 +1459,8 @@ function openEvaluatorModal(period,items,exemptions,trigger){
 }
 
 function renderTeamGraph(data){
+  teamModal?.classList.remove("team-average-site-loading");
+
   const employeeRounds = buildEmployeeRounds(data.evaluations);
   const periods = buildTeamPeriods(employeeRounds);
   const overall = overallTeamAverage(employeeRounds);
