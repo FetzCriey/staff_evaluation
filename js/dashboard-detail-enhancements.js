@@ -14,11 +14,17 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 const CACHE_MS = 9000;
 
 let teamModal = null;
+let evaluatorModal = null;
+let evaluatorModalLastFocused = null;
 let teamCache = null;
 let teamCacheAt = 0;
 let teamPreviousOverflow = "";
 let teamLastFocused = null;
 let teamOpening = false;
+
+let mainViewIntent = null;
+let mainViewIntentTimer = null;
+let mainViewSyncing = false;
 
 let stableProgress = null;
 let progressSyncPromise = null;
@@ -377,6 +383,140 @@ function injectStyles(){
       line-height:1;
     }
 
+    .team-evaluator-modal[hidden]{
+      display:none !important;
+    }
+
+    .team-evaluator-modal{
+      position:fixed;
+      inset:0;
+      z-index:100125;
+      display:grid;
+      place-items:center;
+      box-sizing:border-box;
+      padding:18px;
+    }
+
+    .team-evaluator-backdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(4,24,36,.48);
+      backdrop-filter:blur(3px);
+      -webkit-backdrop-filter:blur(3px);
+    }
+
+    .team-evaluator-dialog{
+      position:relative;
+      z-index:1;
+      width:min(610px,100%);
+      max-height:min(82vh,700px);
+      overflow-y:auto;
+      overflow-x:hidden;
+      overscroll-behavior:contain;
+      border:1.5px solid var(--line,#c9dfee);
+      border-radius:19px;
+      background:#fff;
+      box-shadow:0 30px 76px -24px rgba(3,31,48,.62);
+    }
+
+    .team-evaluator-popup-head{
+      position:relative;
+      padding:17px 52px 15px 17px;
+      color:#fff;
+      background:
+        radial-gradient(
+          105% 150% at 100% 0%,
+          rgba(21,172,227,.46),
+          transparent 60%
+        ),
+        linear-gradient(
+          145deg,
+          #0b536f 0%,
+          #08344c 58%,
+          #051f30 100%
+        );
+    }
+
+    .team-evaluator-popup-close{
+      position:absolute;
+      top:11px;
+      right:11px;
+      width:35px;
+      height:35px;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(255,255,255,.28);
+      border-radius:10px;
+      background:rgba(255,255,255,.14);
+      color:#fff;
+      font:700 20px/1 "Inter",sans-serif;
+      cursor:pointer;
+    }
+
+    .team-evaluator-popup-kicker{
+      color:rgba(213,240,251,.76);
+      font-size:8px;
+      line-height:1.2;
+      font-weight:800;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+    }
+
+    .team-evaluator-popup-title{
+      margin:4px 0 0;
+      color:#fff;
+      font-family:"Bricolage Grotesque","Inter",sans-serif;
+      font-size:20px;
+      line-height:1.15;
+      font-weight:800;
+    }
+
+    .team-evaluator-popup-date{
+      margin-top:5px;
+      color:rgba(229,245,252,.84);
+      font-size:9.5px;
+      line-height:1.4;
+    }
+
+    .team-evaluator-popup-body{
+      padding:13px 14px 15px;
+    }
+
+    .team-evaluator-popup-summary{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:7px;
+      margin-bottom:12px;
+    }
+
+    .team-evaluator-popup-stat{
+      min-width:0;
+      padding:9px 10px;
+      border:1px solid #d5e8f2;
+      border-radius:11px;
+      background:#f9fcfe;
+    }
+
+    .team-evaluator-popup-stat span{
+      display:block;
+      color:var(--muted,#5b7080);
+      font-size:7.5px;
+      line-height:1.2;
+      font-weight:800;
+      letter-spacing:.045em;
+      text-transform:uppercase;
+    }
+
+    .team-evaluator-popup-stat strong{
+      display:block;
+      margin-top:4px;
+      color:var(--ink,#0a2233);
+      font-family:"Bricolage Grotesque","Inter",sans-serif;
+      font-size:16px;
+      line-height:1;
+      font-weight:800;
+    }
+
     .team-average-evaluator-section{
       margin-top:12px;
     }
@@ -588,6 +728,54 @@ function injectStyles(){
       .team-average-evaluator-list{
         grid-template-columns:1fr;
       }
+
+      .team-evaluator-modal{
+        width:100vw;
+        height:100vh;
+        height:100dvh;
+        min-height:0;
+        padding:9px;
+        padding-top:max(9px,env(safe-area-inset-top));
+        padding-right:max(9px,env(safe-area-inset-right));
+        padding-bottom:max(9px,env(safe-area-inset-bottom));
+        padding-left:max(9px,env(safe-area-inset-left));
+        overflow:hidden;
+      }
+
+      .team-evaluator-dialog{
+        box-sizing:border-box;
+        width:100%;
+        max-width:100%;
+        min-width:0;
+        max-height:100%;
+        -webkit-overflow-scrolling:touch;
+        border-radius:16px;
+      }
+
+      .team-evaluator-popup-head{
+        padding:15px 46px 13px 14px;
+      }
+
+      .team-evaluator-popup-title{
+        font-size:18px;
+      }
+
+      .team-evaluator-popup-body{
+        padding:11px;
+      }
+
+      .team-evaluator-popup-summary{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:5px;
+      }
+
+      .team-evaluator-popup-stat{
+        padding:8px 7px;
+      }
+
+      .team-evaluator-popup-stat strong{
+        font-size:14px;
+      }
     }
 
     @media(max-width:350px){
@@ -685,6 +873,8 @@ function openTeamShell(){
 
 function closeTeamModal(){
   if(!teamModal || teamModal.hidden) return;
+
+  closeEvaluatorModal();
 
   teamModal.hidden = true;
   teamModal.setAttribute("aria-hidden","true");
@@ -931,6 +1121,128 @@ function renderEvaluatorAverages(host,items){
   });
 }
 
+function ensureEvaluatorModal(){
+  if(evaluatorModal) return evaluatorModal;
+
+  evaluatorModal = document.createElement("div");
+  evaluatorModal.className = "team-evaluator-modal";
+  evaluatorModal.hidden = true;
+  evaluatorModal.setAttribute("aria-hidden","true");
+
+  evaluatorModal.innerHTML = `
+    <div class="team-evaluator-backdrop"
+      data-team-evaluator-close></div>
+    <section class="team-evaluator-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="teamEvaluatorPopupTitle">
+      <header class="team-evaluator-popup-head">
+        <button class="team-evaluator-popup-close"
+          type="button"
+          aria-label="Close evaluator averages"
+          data-team-evaluator-close>×</button>
+        <div class="team-evaluator-popup-kicker">
+          Selected finalized period
+        </div>
+        <h3 class="team-evaluator-popup-title"
+          id="teamEvaluatorPopupTitle">
+          Evaluator averages
+        </h3>
+        <div class="team-evaluator-popup-date"></div>
+      </header>
+
+      <div class="team-evaluator-popup-body">
+        <div class="team-evaluator-popup-summary">
+          <div class="team-evaluator-popup-stat">
+            <span>Team average</span>
+            <strong data-evaluator-popup-stat="average">—</strong>
+          </div>
+          <div class="team-evaluator-popup-stat">
+            <span>Staff finalized</span>
+            <strong data-evaluator-popup-stat="staff">—</strong>
+          </div>
+          <div class="team-evaluator-popup-stat">
+            <span>Evaluators</span>
+            <strong data-evaluator-popup-stat="evaluators">—</strong>
+          </div>
+        </div>
+
+        <section class="team-average-evaluator-section">
+          <div class="team-average-evaluator-head">
+            <div class="team-average-evaluator-title">
+              Individual evaluator averages
+            </div>
+            <div class="team-average-evaluator-count">
+              0 evaluators
+            </div>
+          </div>
+          <div class="team-average-evaluator-list"></div>
+        </section>
+      </div>
+    </section>
+  `;
+
+  evaluatorModal.addEventListener("click",event => {
+    if(event.target.closest("[data-team-evaluator-close]")){
+      closeEvaluatorModal();
+    }
+  });
+
+  document.body.appendChild(evaluatorModal);
+  return evaluatorModal;
+}
+
+function closeEvaluatorModal(){
+  if(!evaluatorModal || evaluatorModal.hidden) return;
+
+  evaluatorModal.hidden = true;
+  evaluatorModal.setAttribute("aria-hidden","true");
+
+  evaluatorModalLastFocused?.focus?.({
+    preventScroll:true
+  });
+  evaluatorModalLastFocused = null;
+}
+
+function openEvaluatorModal(period,items,trigger){
+  const popup = ensureEvaluatorModal();
+
+  evaluatorModalLastFocused =
+    trigger || document.activeElement;
+
+  popup.querySelector(".team-evaluator-popup-date").textContent =
+    periodDateLabel(period.archived_at);
+
+  popup.querySelector(
+    '[data-evaluator-popup-stat="average"]'
+  ).textContent =
+    `${scoreText(period.average)} / 5`;
+
+  popup.querySelector(
+    '[data-evaluator-popup-stat="staff"]'
+  ).textContent =
+    String(period.staffCount);
+
+  popup.querySelector(
+    '[data-evaluator-popup-stat="evaluators"]'
+  ).textContent =
+    String(items.length);
+
+  renderEvaluatorAverages(
+    popup.querySelector(".team-average-evaluator-section"),
+    items
+  );
+
+  popup.hidden = false;
+  popup.setAttribute("aria-hidden","false");
+
+  requestAnimationFrame(() => {
+    popup
+      .querySelector(".team-evaluator-popup-close")
+      ?.focus({preventScroll:true});
+  });
+}
+
 function renderTeamGraph(data){
   const employeeRounds = buildEmployeeRounds(data.evaluations);
   const periods = buildTeamPeriods(employeeRounds);
@@ -1139,21 +1451,14 @@ function renderTeamGraph(data){
       </div>
     </div>
 
-    <section class="team-average-evaluator-section"
-      id="teamAverageEvaluatorSection">
-      <div class="team-average-evaluator-head">
-        <div class="team-average-evaluator-title">
-          Evaluator averages
-        </div>
-        <div class="team-average-evaluator-count">0 evaluators</div>
-      </div>
-      <div class="team-average-evaluator-list"></div>
-    </section>
   `;
 
   host.appendChild(graph);
 
-  const selectPeriod = index => {
+  const selectPeriod = (
+    index,
+    {showEvaluatorPopup=false,trigger=null}={}
+  ) => {
     const period = periods[index];
     if(!period) return;
 
@@ -1181,25 +1486,34 @@ function renderTeamGraph(data){
     detail.querySelector('[data-period-detail="staff"]').textContent =
       `${period.staffCount} staff`;
 
-    renderEvaluatorAverages(
-      host.querySelector("#teamAverageEvaluatorSection"),
-      buildEvaluatorAverages(
+    if(showEvaluatorPopup){
+      const evaluatorItems = buildEvaluatorAverages(
         data.evaluations,
         period.key,
         data.profiles
-      )
-    );
+      );
+
+      openEvaluatorModal(
+        period,
+        evaluatorItems,
+        trigger
+      );
+    }
   };
 
   host.querySelectorAll(".team-average-dot").forEach(dot => {
     const activate = () =>
-      selectPeriod(Number(dot.dataset.teamPeriodIndex));
+      selectPeriod(
+        Number(dot.dataset.teamPeriodIndex),
+        {
+          showEvaluatorPopup:true,
+          trigger:dot
+        }
+      );
 
     dot.addEventListener("click",event => {
       activate();
 
-      // Pointer clicks should not leave Chromium's SVG focus rectangle
-      // around the selected dot. Keyboard users keep normal focus behavior.
       if(event.detail > 0){
         dot.blur?.();
       }
@@ -1212,6 +1526,8 @@ function renderTeamGraph(data){
     });
   });
 
+  // Select the newest point for context, but do not open the child popup
+  // until the user explicitly chooses a graph point.
   selectPeriod(periods.length - 1);
 
   content.querySelector(".team-average-close")?.focus({preventScroll:true});
@@ -1265,7 +1581,15 @@ document.addEventListener("keydown",event => {
 },true);
 
 document.addEventListener("keydown",event => {
-  if(event.key === "Escape" && teamModal && !teamModal.hidden){
+  if(event.key !== "Escape") return;
+
+  if(evaluatorModal && !evaluatorModal.hidden){
+    event.preventDefault();
+    closeEvaluatorModal();
+    return;
+  }
+
+  if(teamModal && !teamModal.hidden){
     event.preventDefault();
     closeTeamModal();
   }
@@ -1278,24 +1602,36 @@ document.addEventListener("keydown",event => {
    view is actually visible, regardless of which control changed it.
    ========================================================= */
 
-function syncVisibleMainViewState(){
+function mainViewFromDom(){
   const dashboard = document.getElementById("dashboardView");
   const form = document.getElementById("formView");
 
-  if(!dashboard || !form) return;
+  if(!dashboard || !form) return null;
 
-  const dashboardVisible = !dashboard.classList.contains("hide");
-  const formVisible = !form.classList.contains("hide");
+  const dashboardVisible =
+    !dashboard.classList.contains("hide");
 
-  // Do nothing during transition frames where both views may temporarily
-  // share the same visibility state. Synchronize once the target settles.
-  if(dashboardVisible === formVisible) return;
+  const formVisible =
+    !form.classList.contains("hide");
 
-  const onDashboard = dashboardVisible;
+  if(formVisible && !dashboardVisible) return "form";
+  if(dashboardVisible && !formVisible) return "dashboard";
 
+  // During animation/transitional frames, trust explicit navigation intent.
+  return mainViewIntent;
+}
+
+function applyMainViewChrome(mode){
+  if(mode !== "dashboard" && mode !== "form") return;
+
+  const onDashboard = mode === "dashboard";
   const action = document.getElementById("headerActionBtn");
+
   if(action){
-    const nextText = onDashboard ? "Start Evaluation" : "Dashboard";
+    const nextText =
+      onDashboard
+        ? "Start Evaluation"
+        : "Dashboard";
 
     if(action.textContent !== nextText){
       action.textContent = nextText;
@@ -1307,6 +1643,11 @@ function syncVisibleMainViewState(){
         ? "Start Evaluation"
         : "Return to Dashboard"
     );
+
+    action.dataset.mainViewAction =
+      onDashboard
+        ? "open-evaluation"
+        : "open-dashboard";
   }
 
   const title = document.getElementById("pageTitle");
@@ -1334,38 +1675,147 @@ function syncVisibleMainViewState(){
     ?.classList.toggle("hide",onDashboard);
 }
 
+function syncVisibleMainViewState(preferredMode=null){
+  if(mainViewSyncing) return;
+
+  const mode =
+    preferredMode ||
+    mainViewIntent ||
+    mainViewFromDom();
+
+  if(!mode) return;
+
+  mainViewSyncing = true;
+
+  try{
+    applyMainViewChrome(mode);
+  }finally{
+    mainViewSyncing = false;
+  }
+}
+
+function setMainViewIntent(mode){
+  if(mode !== "dashboard" && mode !== "form") return;
+
+  mainViewIntent = mode;
+  syncVisibleMainViewState(mode);
+
+  clearTimeout(mainViewIntentTimer);
+  mainViewIntentTimer = setTimeout(() => {
+    mainViewIntent = null;
+    syncVisibleMainViewState();
+  },700);
+}
+
 function installMainViewStateSync(){
   const dashboard = document.getElementById("dashboardView");
   const form = document.getElementById("formView");
+  const action = document.getElementById("headerActionBtn");
 
-  if(!dashboard || !form) return;
+  if(!dashboard || !form || !action) return;
 
-  const observer = new MutationObserver(() => {
-    queueMicrotask(syncVisibleMainViewState);
+  const viewObserver = new MutationObserver(() => {
+    queueMicrotask(() => {
+      syncVisibleMainViewState();
+    });
   });
 
-  observer.observe(dashboard,{
+  viewObserver.observe(dashboard,{
     attributes:true,
     attributeFilter:["class"]
   });
 
-  observer.observe(form,{
+  viewObserver.observe(form,{
     attributes:true,
     attributeFilter:["class"]
+  });
+
+  // If another module overwrites the header label after navigation,
+  // immediately restore the label from the actual view/intent.
+  const actionObserver = new MutationObserver(() => {
+    if(mainViewSyncing) return;
+
+    queueMicrotask(() => {
+      syncVisibleMainViewState();
+    });
+  });
+
+  actionObserver.observe(action,{
+    childList:true,
+    characterData:true,
+    subtree:true
   });
 
   document.addEventListener("click",event => {
-    if(
+    const evaluation =
+      event.target?.closest?.("#drawerEvaluation");
+
+    if(evaluation){
+      setMainViewIntent("form");
+
+      // Reassert after dashboard.js finishes its animated transition.
+      setTimeout(
+        () => syncVisibleMainViewState("form"),
+        0
+      );
+      setTimeout(
+        () => syncVisibleMainViewState("form"),
+        220
+      );
+      setTimeout(
+        () => syncVisibleMainViewState(),
+        560
+      );
+      return;
+    }
+
+    const dashboardIntent =
       event.target?.closest?.(
-        "#drawerDashboard,#drawerEvaluation,#headerActionBtn,#backToDashboard"
-      )
-    ){
-      setTimeout(syncVisibleMainViewState,0);
-      setTimeout(syncVisibleMainViewState,380);
+        "#drawerDashboard,#backToDashboard"
+      );
+
+    if(dashboardIntent){
+      setMainViewIntent("dashboard");
+
+      setTimeout(
+        () => syncVisibleMainViewState("dashboard"),
+        0
+      );
+      setTimeout(
+        () => syncVisibleMainViewState("dashboard"),
+        220
+      );
+      setTimeout(
+        () => syncVisibleMainViewState(),
+        560
+      );
+      return;
+    }
+
+    if(event.target?.closest?.("#headerActionBtn")){
+      const currentMode =
+        mainViewFromDom() ||
+        mainViewIntent ||
+        "dashboard";
+
+      setMainViewIntent(
+        currentMode === "form"
+          ? "dashboard"
+          : "form"
+      );
     }
   },true);
 
-  window.addEventListener("pageshow",syncVisibleMainViewState);
+  window.addEventListener(
+    "pageshow",
+    () => syncVisibleMainViewState()
+  );
+
+  window.addEventListener(
+    "focus",
+    () => syncVisibleMainViewState()
+  );
+
   document.addEventListener("visibilitychange",() => {
     if(document.visibilityState === "visible"){
       syncVisibleMainViewState();
