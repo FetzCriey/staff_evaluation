@@ -296,6 +296,26 @@ function injectStyles(){
       cursor:pointer;
       outline:none;
       touch-action:manipulation;
+
+      /* SVG <g> elements must not inherit the site's universal
+         [role="button"] scale/translate motion. Scaling an SVG group
+         uses the SVG coordinate space and visually pulls the point left. */
+      scale:1 !important;
+      translate:0 0 !important;
+      transform:none !important;
+      animation:none !important;
+      transition:none !important;
+      transform-origin:center !important;
+      transform-box:fill-box !important;
+    }
+
+    body.motion-ready .team-average-point:hover,
+    body.motion-ready .team-average-point:active,
+    body.motion-ready .team-average-point.motion-click{
+      scale:1 !important;
+      translate:0 0 !important;
+      transform:none !important;
+      animation:none !important;
     }
 
     .team-average-point-hit{
@@ -314,6 +334,13 @@ function injectStyles(){
     .team-average-point:focus-visible .team-average-dot{
       stroke:#08344c;
       stroke-width:4;
+    }
+
+    .team-average-point.motion-click .team-average-dot,
+    .team-average-point:active .team-average-dot{
+      transform:none !important;
+      scale:1 !important;
+      translate:0 0 !important;
     }
 
     .team-average-grid{
