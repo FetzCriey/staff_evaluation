@@ -286,7 +286,8 @@ function ensureStyles(){
     }
 
 
-    /* Keep the main brand header separated from dark backgrounds. */
+
+    /* Main header must remain visibly separated in Dark / AMOLED. */
     html[data-bp-theme="dark"] header.top,
     html[data-bp-theme="amoled"] header.top{
       border:1.5px solid var(--bp-card-border) !important;
@@ -295,7 +296,7 @@ function ensureStyles(){
         var(--shadow) !important;
     }
 
-    /* Background company logos stay visible but no longer move or rotate. */
+    /* Background company logos stay visible but are completely stationary. */
     body.motion-ready::before,
     body.motion-ready::after{
       animation:none !important;
@@ -453,6 +454,405 @@ function ensureStyles(){
       color:var(--lagoon-deep) !important;
     }
 
+
+    /* =========================================================
+       DARK / AMOLED — LEGACY LIGHT SURFACE COMPATIBILITY
+       Older modules still contain hard-coded white/pale surfaces.
+       These overrides make them follow the account theme.
+       ========================================================= */
+
+    /* Evaluation status / reviewer surfaces. */
+    html[data-bp-theme="dark"] :where(
+      .whobar,
+      .prog-wrap,
+      .review-summary-card,
+      .review-remark-card,
+      .backbar button
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .whobar,
+      .prog-wrap,
+      .review-summary-card,
+      .review-remark-card,
+      .backbar button
+    ){
+      background:var(--panel) !important;
+      border-color:var(--bp-card-border) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .pill-state,
+      .prog-chip
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .pill-state,
+      .prog-chip
+    ){
+      background:var(--bp-theme-surface-2) !important;
+      border-color:var(--line) !important;
+      color:var(--ink-soft) !important;
+    }
+
+    html[data-bp-theme="dark"] .pill-state.dirty,
+    html[data-bp-theme="amoled"] .pill-state.dirty{
+      background:var(--accent-soft) !important;
+      border-color:rgba(var(--bp-accent-rgb),.42) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+    html[data-bp-theme="dark"] .pill-state.saved,
+    html[data-bp-theme="amoled"] .pill-state.saved{
+      background:rgba(39,128,79,.16) !important;
+      border-color:rgba(79,178,119,.38) !important;
+      color:#73d99e !important;
+    }
+
+    html[data-bp-theme="dark"] .pill-state.locked,
+    html[data-bp-theme="amoled"] .pill-state.locked{
+      background:rgba(184,121,33,.16) !important;
+      border-color:rgba(224,171,85,.38) !important;
+      color:#e9bd70 !important;
+    }
+
+    /* Sidebar History / Evaluation Results cards. */
+    html[data-bp-theme="dark"] :where(
+      .res-row,
+      .his-row,
+      .his-date-sum,
+      .his-date-body
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .res-row,
+      .his-row,
+      .his-date-sum,
+      .his-date-body
+    ){
+      background:var(--bp-theme-surface-2) !important;
+      border-color:var(--line) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(.res-row:hover,.his-row:hover,.his-date-sum:hover),
+    html[data-bp-theme="amoled"] :where(.res-row:hover,.his-row:hover,.his-date-sum:hover){
+      background:var(--bp-theme-surface-3) !important;
+      border-color:var(--lagoon) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(.res-row.on,.his-row.on,.his-date-group.open > .his-date-sum),
+    html[data-bp-theme="amoled"] :where(.res-row.on,.his-row.on,.his-date-group.open > .his-date-sum){
+      background:var(--accent-soft) !important;
+      border-color:rgba(var(--bp-accent-rgb),.52) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .res-nm,.his-nm,.his-date-label
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .res-nm,.his-nm,.his-date-label
+    ){
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .res-ct,.his-meta,.his-date-count,.his-date-chev
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .res-ct,.his-meta,.his-date-count,.his-date-chev
+    ){
+      color:var(--muted) !important;
+    }
+
+    html[data-bp-theme="dark"] .res-row.full .res-ct,
+    html[data-bp-theme="amoled"] .res-row.full .res-ct{
+      color:#73d99e !important;
+    }
+
+    html[data-bp-theme="dark"] :where(.res-bar,.prog-bar),
+    html[data-bp-theme="amoled"] :where(.res-bar,.prog-bar){
+      background:var(--bp-theme-surface-3) !important;
+    }
+
+    html[data-bp-theme="dark"] .his-avg,
+    html[data-bp-theme="amoled"] .his-avg{
+      background:var(--accent-soft) !important;
+      border-color:rgba(var(--bp-accent-rgb),.34) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+    /* Recent Evaluations: Manager / Senior clickable highlight.
+       recent-evaluation-results-link.js is loaded later and contains a
+       hard-coded pale hover, so !important is intentional here. */
+    html[data-bp-theme="dark"] .dash-live-eval-row.recent-review-link,
+    html[data-bp-theme="amoled"] .dash-live-eval-row.recent-review-link{
+      color:var(--ink) !important;
+      border-color:var(--line) !important;
+    }
+
+    html[data-bp-theme="dark"] .dash-live-eval-row.recent-review-link:hover,
+    html[data-bp-theme="dark"] .dash-live-eval-row.recent-review-link:focus-visible,
+    html[data-bp-theme="dark"] .dash-live-eval-row.recent-review-link:active,
+    html[data-bp-theme="amoled"] .dash-live-eval-row.recent-review-link:hover,
+    html[data-bp-theme="amoled"] .dash-live-eval-row.recent-review-link:focus-visible,
+    html[data-bp-theme="amoled"] .dash-live-eval-row.recent-review-link:active{
+      background:rgba(var(--bp-accent-rgb),.14) !important;
+      border-color:rgba(var(--bp-accent-rgb),.46) !important;
+      box-shadow:
+        inset 0 0 0 1.5px rgba(var(--bp-accent-rgb),.38),
+        0 8px 20px -15px rgba(0,0,0,.82) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] .dash-live-eval-row.recent-review-link :where(
+      .dash-live-names b,
+      .dash-live-names strong
+    ),
+    html[data-bp-theme="amoled"] .dash-live-eval-row.recent-review-link :where(
+      .dash-live-names b,
+      .dash-live-names strong
+    ){
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] .dash-live-eval-row.recent-review-link :where(
+      .dash-live-names span,
+      .dash-live-progress-line,
+      .dash-live-meta,
+      .dash-live-comment,
+      .dash-live-time
+    ),
+    html[data-bp-theme="amoled"] .dash-live-eval-row.recent-review-link :where(
+      .dash-live-names span,
+      .dash-live-progress-line,
+      .dash-live-meta,
+      .dash-live-comment,
+      .dash-live-time
+    ){
+      color:var(--muted) !important;
+    }
+
+    html[data-bp-theme="dark"] .dash-live-status.draft,
+    html[data-bp-theme="amoled"] .dash-live-status.draft{
+      background:var(--accent-soft) !important;
+      border-color:rgba(var(--bp-accent-rgb),.38) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+    html[data-bp-theme="dark"] .dash-live-status.submitted,
+    html[data-bp-theme="amoled"] .dash-live-status.submitted{
+      background:rgba(39,128,79,.16) !important;
+      border-color:rgba(79,178,119,.38) !important;
+      color:#73d99e !important;
+    }
+
+    /* Staff Exemptions modal, overview and editor. */
+    html[data-bp-theme="dark"] :where(
+      .round-exemption-dialog,
+      .round-exemption-summary,
+      .round-exemption-summary-stats,
+      .round-exemption-row,
+      .round-exemption-editor-card,
+      .round-exemption-editor-tip,
+      .round-exemption-timeoff-option,
+      .round-exemption-stacked-card
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-exemption-dialog,
+      .round-exemption-summary,
+      .round-exemption-summary-stats,
+      .round-exemption-row,
+      .round-exemption-editor-card,
+      .round-exemption-editor-tip,
+      .round-exemption-timeoff-option,
+      .round-exemption-stacked-card
+    ){
+      background:var(--panel) !important;
+      border-color:var(--bp-card-border) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .round-exemption-summary,
+      .round-exemption-summary-stats,
+      .round-exemption-editor-tip
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-exemption-summary,
+      .round-exemption-summary-stats,
+      .round-exemption-editor-tip
+    ){
+      background:var(--bp-theme-surface-2) !important;
+    }
+
+    html[data-bp-theme="dark"] .round-exemption-row:hover,
+    html[data-bp-theme="amoled"] .round-exemption-row:hover{
+      background:var(--bp-theme-surface-3) !important;
+      border-color:var(--lagoon) !important;
+    }
+
+    html[data-bp-theme="dark"] .round-exemption-row.active,
+    html[data-bp-theme="amoled"] .round-exemption-row.active{
+      background:rgba(190,137,38,.13) !important;
+      border-color:rgba(222,176,82,.44) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .round-exemption-summary-title,
+      .round-exemption-row-name,
+      .round-exemption-editor-name,
+      .round-exemption-timeoff-option-copy,
+      .round-exemption-stacked-title
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-exemption-summary-title,
+      .round-exemption-row-name,
+      .round-exemption-editor-name,
+      .round-exemption-timeoff-option-copy,
+      .round-exemption-stacked-title
+    ){
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .round-exemption-summary-copy,
+      .round-exemption-row-role,
+      .round-exemption-row-meta,
+      .round-exemption-editor-role,
+      .round-exemption-editor-note,
+      .round-exemption-editor-tip,
+      .round-exemption-label,
+      .round-exemption-stacked-message
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-exemption-summary-copy,
+      .round-exemption-row-role,
+      .round-exemption-row-meta,
+      .round-exemption-editor-role,
+      .round-exemption-editor-note,
+      .round-exemption-editor-tip,
+      .round-exemption-label,
+      .round-exemption-stacked-message
+    ){
+      color:var(--muted) !important;
+    }
+
+    html[data-bp-theme="dark"] .round-exemption-timeoff-option:hover,
+    html[data-bp-theme="amoled"] .round-exemption-timeoff-option:hover{
+      background:var(--bp-theme-surface-3) !important;
+      border-color:var(--lagoon) !important;
+    }
+
+    html[data-bp-theme="dark"] .round-exemption-timeoff-option:has(input:checked),
+    html[data-bp-theme="amoled"] .round-exemption-timeoff-option:has(input:checked){
+      background:var(--accent-soft) !important;
+      border-color:var(--lagoon) !important;
+      box-shadow:0 0 0 3px rgba(var(--bp-accent-rgb),.11) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .round-exemption-editor-avatar,
+      .round-exemption-row-avatar,
+      .round-exemption-card-chevron
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-exemption-editor-avatar,
+      .round-exemption-row-avatar,
+      .round-exemption-card-chevron
+    ){
+      background:var(--bp-theme-surface-3) !important;
+      border-color:var(--line) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .round-exemption-summary-badge,
+      .round-exemption-row-state.ready
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-exemption-summary-badge,
+      .round-exemption-row-state.ready
+    ){
+      background:var(--accent-soft) !important;
+      border-color:rgba(var(--bp-accent-rgb),.38) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .round-exemption-row-state.active,
+      .round-exempted-state
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-exemption-row-state.active,
+      .round-exempted-state
+    ){
+      background:rgba(190,137,38,.16) !important;
+      border-color:rgba(222,176,82,.42) !important;
+      color:#e9bd70 !important;
+    }
+
+    html[data-bp-theme="dark"] .round-self-exemption-banner,
+    html[data-bp-theme="amoled"] .round-self-exemption-banner{
+      background:rgba(190,137,38,.12) !important;
+      border-color:rgba(222,176,82,.42) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .round-self-exemption-title
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-self-exemption-title
+    ){
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .round-self-exemption-message,
+      .round-self-exemption-reason
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .round-self-exemption-message,
+      .round-self-exemption-reason
+    ){
+      color:#e1c17c !important;
+    }
+
+    html[data-bp-theme="dark"] .round-self-exemption-reason,
+    html[data-bp-theme="amoled"] .round-self-exemption-reason{
+      background:rgba(190,137,38,.10) !important;
+      border-color:rgba(222,176,82,.32) !important;
+    }
+
+    /* Common select/list controls that still declare white directly. */
+    html[data-bp-theme="dark"] :where(
+      .lay-tr,
+      .lay-menu,
+      .mgr-sel
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .lay-tr,
+      .lay-menu,
+      .mgr-sel
+    ){
+      background:var(--bp-theme-input) !important;
+      border-color:var(--line) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] .lay-opt:hover,
+    html[data-bp-theme="dark"] .lay-opt.cursor,
+    html[data-bp-theme="amoled"] .lay-opt:hover,
+    html[data-bp-theme="amoled"] .lay-opt.cursor{
+      background:var(--bp-theme-surface-3) !important;
+    }
+
+    html[data-bp-theme="dark"] .lay-opt[aria-selected="true"],
+    html[data-bp-theme="amoled"] .lay-opt[aria-selected="true"]{
+      background:var(--accent-soft) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+
     /* Account appearance controls. */
     .bp-appearance-section{
       display:flex;
@@ -555,14 +955,37 @@ function ensureStyles(){
 
     .bp-accent-grid{
       display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      gap:9px;
+    }
+
+    .bp-accent-row{
+      display:flex;
       align-items:center;
-      flex-wrap:wrap;
-      gap:8px;
+      flex-wrap:nowrap;
+      gap:6px;
+      width:100%;
+      min-width:0;
+      overflow-x:auto;
+      overflow-y:hidden;
+      padding:2px 2px 4px;
+      scrollbar-width:thin;
+    }
+
+    .bp-accent-row::-webkit-scrollbar{
+      height:5px;
+    }
+
+    .bp-accent-row::-webkit-scrollbar-thumb{
+      border-radius:999px;
+      background:rgba(120,140,160,.32);
     }
 
     .bp-accent-swatch{
-      width:31px;
-      height:31px;
+      width:28px;
+      height:28px;
+      flex:0 0 28px;
       padding:0;
       border:2px solid transparent;
       border-radius:10px;
@@ -582,7 +1005,7 @@ function ensureStyles(){
     }
 
     .bp-accent-reset{
-      margin-left:auto;
+      align-self:flex-end;
       min-height:31px;
       padding:6px 10px;
       border:1.5px solid var(--line);
@@ -702,6 +1125,7 @@ function ensureStyles(){
     }
 
     @media(max-width:520px){
+      .bp-accent-reset{align-self:flex-start}
       .bp-theme-choices{grid-template-columns:1fr}
       .bp-theme-choice{min-height:58px}
       .bp-accent-reset{margin-left:0}
@@ -892,8 +1316,10 @@ function buildSettingsSection(){
     </div>
 
     <div class="bp-accent-label">Site color</div>
-    <div class="bp-accent-grid" role="group" aria-label="Site accent color">
-      ${swatches}
+    <div class="bp-accent-grid">
+      <div class="bp-accent-row" role="group" aria-label="Site accent color">
+        ${swatches}
+      </div>
       <button
         class="bp-accent-reset"
         id="bpResetAccent"
