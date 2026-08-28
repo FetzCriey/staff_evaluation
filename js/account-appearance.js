@@ -283,6 +283,111 @@ function ensureStyles(){
       background:rgba(0,0,0,.68) !important;
     }
 
+    /* Drawer/admin/account surfaces must stay readable in dark themes. */
+    html[data-bp-theme="dark"] :where(
+      .mgr-sec,.mgr-panel-body,.acct,.lay-menu
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .mgr-sec,.mgr-panel-body,.acct,.lay-menu
+    ){
+      background:var(--panel) !important;
+      border-color:var(--line) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .mgr-sum,.lay-tr,.lay-opt,.dash-drawer-link
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .mgr-sum,.lay-tr,.lay-opt,.dash-drawer-link
+    ){
+      background:var(--bp-theme-surface-2) !important;
+      border-color:var(--line) !important;
+      color:var(--ink-soft) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .mgr-sum:hover,.lay-tr:hover,.lay-opt:hover,.dash-drawer-link:hover
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .mgr-sum:hover,.lay-tr:hover,.lay-opt:hover,.dash-drawer-link:hover
+    ){
+      background:var(--bp-theme-surface-3) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .mgr-sec.open .mgr-sum,.dash-drawer-link.on,.lay-opt.on
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .mgr-sec.open .mgr-sum,.dash-drawer-link.on,.lay-opt.on
+    ){
+      background:var(--accent-soft) !important;
+      border-color:var(--lagoon) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .mgr-sum .lbl,.acct-nm,.mgr-nm,.round-exemption-sidebar-label
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .mgr-sum .lbl,.acct-nm,.mgr-nm,.round-exemption-sidebar-label
+    ){
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .acct-rl,.mgr h3,#mgrPanel h3,.round-exemption-sidebar-kicker
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .acct-rl,.mgr h3,#mgrPanel h3,.round-exemption-sidebar-kicker
+    ){
+      color:var(--muted) !important;
+    }
+
+    html[data-bp-theme="dark"] .mgr-sum .cnt,
+    html[data-bp-theme="amoled"] .mgr-sum .cnt{
+      background:var(--accent-soft) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+    html[data-bp-theme="dark"] .round-exemption-sidebar-launch,
+    html[data-bp-theme="amoled"] .round-exemption-sidebar-launch{
+      background:rgba(226,170,54,.11) !important;
+      border-color:rgba(226,170,54,.38) !important;
+      color:#f1c96f !important;
+    }
+
+    html[data-bp-theme="dark"] .round-exemption-sidebar-launch :where(
+      .round-exemption-sidebar-label,.round-exemption-sidebar-kicker
+    ),
+    html[data-bp-theme="amoled"] .round-exemption-sidebar-launch :where(
+      .round-exemption-sidebar-label,.round-exemption-sidebar-kicker
+    ){
+      color:#f1c96f !important;
+    }
+
+    html[data-bp-theme="dark"] .round-exemption-sidebar-count,
+    html[data-bp-theme="amoled"] .round-exemption-sidebar-count{
+      background:rgba(226,170,54,.15) !important;
+      border-color:rgba(226,170,54,.42) !important;
+      color:#ffd98b !important;
+    }
+
+    html[data-bp-theme="dark"] .acct-settings-btn,
+    html[data-bp-theme="amoled"] .acct-settings-btn{
+      background:var(--bp-theme-surface-3) !important;
+      border-color:var(--line) !important;
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] .acct-settings-btn:hover,
+    html[data-bp-theme="amoled"] .acct-settings-btn:hover{
+      background:var(--accent-soft) !important;
+      border-color:var(--lagoon) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
     /* Account appearance controls. */
     .bp-appearance-section{
       display:flex;
@@ -440,10 +545,12 @@ function ensureStyles(){
     .bp-custom-color::-moz-color-swatch{border:0;border-radius:7px}
 
     .bp-appearance-status{
-      min-height:17px;
+      min-height:0;
       color:var(--muted);
       font-size:10.5px;
     }
+
+    .bp-appearance-status:empty{display:none}
 
     .bp-appearance-status.ok{color:#27804f}
     .bp-appearance-status.err{color:var(--error-ink)}
@@ -451,6 +558,78 @@ function ensureStyles(){
     html[data-bp-theme="dark"] .bp-appearance-status.ok,
     html[data-bp-theme="amoled"] .bp-appearance-status.ok{
       color:#73d99e;
+    }
+
+
+    /* Wide, horizontal Settings layout on desktop. */
+    @media(min-width:821px){
+      #accountSettingsModal .account-settings-dialog{
+        width:min(1040px,calc(100vw - 48px)) !important;
+        max-height:min(720px,calc(100vh - 48px)) !important;
+      }
+
+      #accountSettingsModal .account-settings-body{
+        display:grid !important;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:16px;
+        align-items:stretch;
+        padding:18px !important;
+      }
+
+      #accountSettingsModal .account-settings-body > .settings-divider{
+        display:none !important;
+      }
+
+      #accountSettingsModal .account-settings-body > .settings-section{
+        min-width:0;
+        min-height:100%;
+        padding:16px;
+        border:1.5px solid var(--line);
+        border-radius:16px;
+        background:var(--bp-theme-surface-2);
+      }
+
+      #accountSettingsModal .settings-photo-row{
+        flex:0 0 auto;
+      }
+
+      #accountSettingsModal .settings-photo-actions{
+        margin-top:auto;
+      }
+
+      #accountSettingsModal .bp-appearance-section{
+        align-content:start;
+      }
+
+      #accountSettingsModal .settings-password-save{
+        margin-top:auto;
+      }
+
+      #accountSettingsModal .settings-section-title{
+        font-size:15px;
+      }
+    }
+
+    @media(max-width:820px){
+      #accountSettingsModal .account-settings-dialog{
+        width:min(520px,100%) !important;
+      }
+
+      #accountSettingsModal .account-settings-body{
+        display:block !important;
+      }
+
+      #accountSettingsModal .account-settings-body > .settings-section{
+        min-height:0;
+        padding:0;
+        border:0;
+        border-radius:0;
+        background:transparent;
+      }
+
+      #accountSettingsModal .account-settings-body > .settings-divider{
+        display:block;
+      }
     }
 
     @media(max-width:520px){
@@ -549,8 +728,6 @@ async function saveAppearance(){
     currentUser = user;
   }
 
-  setStatus("Saving to your account…");
-
   const payload = {
     ...currentAppearance,
     updated_at: new Date().toISOString()
@@ -570,13 +747,13 @@ async function saveAppearance(){
   }
 
   currentUser = data?.user || currentUser;
-  setStatus("Saved to your account.", "ok");
+  setStatus();
 }
 
 function chooseMode(mode){
   if(!MODES.has(mode) || mode === currentAppearance.mode) return;
   applyAppearance({ ...currentAppearance, mode });
-  setStatus("Saving…");
+  setStatus();
   scheduleSave();
 }
 
@@ -585,7 +762,7 @@ function chooseAccent(accent){
   const normalized = accent.toUpperCase();
   if(normalized === currentAppearance.accent) return;
   applyAppearance({ ...currentAppearance, accent:normalized });
-  setStatus("Saving…");
+  setStatus();
   scheduleSave();
 }
 
