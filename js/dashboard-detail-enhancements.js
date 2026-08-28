@@ -281,6 +281,39 @@ function injectStyles(){
       width:100%;
       min-width:620px;
       height:auto;
+      user-select:none;
+      -webkit-user-select:none;
+      -webkit-touch-callout:none;
+    }
+
+    .team-average-chart text{
+      user-select:none;
+      -webkit-user-select:none;
+      pointer-events:none;
+    }
+
+    .team-average-point{
+      cursor:pointer;
+      outline:none;
+      touch-action:manipulation;
+    }
+
+    .team-average-point-hit{
+      fill:transparent;
+      stroke:transparent;
+      stroke-width:1;
+      pointer-events:all;
+      cursor:pointer;
+    }
+
+    .team-average-point:focus,
+    .team-average-point:focus-visible{
+      outline:none !important;
+    }
+
+    .team-average-point:focus-visible .team-average-dot{
+      stroke:#08344c;
+      stroke-width:4;
     }
 
     .team-average-grid{
@@ -327,60 +360,10 @@ function injectStyles(){
       stroke-width:4;
     }
 
-    .team-average-dot:focus,
-    .team-average-dot:focus-visible{
-      outline:none !important;
-    }
-
-    .team-average-dot:focus-visible{
-      stroke:#08344c;
-      stroke-width:4;
-    }
-
     .team-average-value{
       fill:#28455c;
       font:800 11px "Bricolage Grotesque","Inter",sans-serif;
       pointer-events:none;
-    }
-
-    .team-average-detail{
-      display:grid;
-      grid-template-columns:minmax(0,1.45fr) repeat(2,minmax(0,.75fr));
-      gap:8px;
-      margin-top:9px;
-    }
-
-    .team-average-detail-main,
-    .team-average-detail-mini{
-      min-width:0;
-      padding:10px 11px;
-      border:1px solid #d5e8f2;
-      border-radius:12px;
-      background:#fff;
-    }
-
-    .team-average-detail-label{
-      color:var(--muted,#5b7080);
-      font-size:7.8px;
-      font-weight:800;
-      letter-spacing:.045em;
-      text-transform:uppercase;
-    }
-
-    .team-average-detail-value{
-      display:block;
-      margin-top:4px;
-      color:var(--ink,#0a2233);
-      font-size:11px;
-      line-height:1.35;
-      font-weight:800;
-      overflow-wrap:anywhere;
-    }
-
-    .team-average-detail-score{
-      font-family:"Bricolage Grotesque","Inter",sans-serif;
-      font-size:17px;
-      line-height:1;
     }
 
     .team-evaluator-modal[hidden]{
@@ -715,14 +698,6 @@ function injectStyles(){
 
       .team-average-chart{
         min-width:560px;
-      }
-
-      .team-average-detail{
-        grid-template-columns:1fr 1fr;
-      }
-
-      .team-average-detail-main{
-        grid-column:1 / -1;
       }
 
       .team-average-evaluator-list{
@@ -1407,13 +1382,19 @@ function renderTeamGraph(data){
         ${periods.map((period,index) => {
           const [xx,yy] = coords[index];
           return `
-            <g>
+            <g class="team-average-point"
+              data-team-period-index="${index}"
+              tabindex="0"
+              role="button"
+              aria-pressed="${index === periods.length - 1 ? "true" : "false"}"
+              aria-label="${periodDateLabel(period.archived_at)} team average ${scoreText(period.average)} out of 5">
+
+              <!-- Large invisible target: 48px diameter around the point. -->
+              <circle class="team-average-point-hit"
+                cx="${xx}" cy="${yy}" r="24"></circle>
+
               <circle class="team-average-dot${index === periods.length - 1 ? " selected" : ""}"
-                data-team-period-index="${index}"
-                cx="${xx}" cy="${yy}" r="6"
-                tabindex="0"
-                role="button"
-                aria-label="${periodDateLabel(period.archived_at)} team average ${scoreText(period.average)} out of 5">
+                cx="${xx}" cy="${yy}" r="6">
                 <title>${periodDateLabel(period.archived_at)} · ${scoreText(period.average)} / 5</title>
               </circle>
 
@@ -1434,23 +1415,6 @@ function renderTeamGraph(data){
       </svg>
     </div>
 
-    <div class="team-average-detail" id="teamAveragePointDetail">
-      <div class="team-average-detail-main">
-        <div class="team-average-detail-label">Selected period</div>
-        <span class="team-average-detail-value" data-period-detail="date"></span>
-      </div>
-      <div class="team-average-detail-mini">
-        <div class="team-average-detail-label">Team average</div>
-        <span class="team-average-detail-value team-average-detail-score"
-          data-period-detail="score"></span>
-      </div>
-      <div class="team-average-detail-mini">
-        <div class="team-average-detail-label">Staff finalized</div>
-        <span class="team-average-detail-value"
-          data-period-detail="staff"></span>
-      </div>
-    </div>
-
   `;
 
   host.appendChild(graph);
@@ -1462,29 +1426,19 @@ function renderTeamGraph(data){
     const period = periods[index];
     if(!period) return;
 
-    host.querySelectorAll(".team-average-dot").forEach(dot => {
-      dot.classList.toggle(
-        "selected",
-        Number(dot.dataset.teamPeriodIndex) === index
-      );
-      dot.setAttribute(
+    host.querySelectorAll(".team-average-point").forEach(point => {
+      const selected =
+        Number(point.dataset.teamPeriodIndex) === index;
+
+      point.setAttribute(
         "aria-pressed",
-        Number(dot.dataset.teamPeriodIndex) === index
-          ? "true"
-          : "false"
+        selected ? "true" : "false"
       );
+
+      point
+        .querySelector(".team-average-dot")
+        ?.classList.toggle("selected",selected);
     });
-
-    const detail = host.querySelector("#teamAveragePointDetail");
-
-    detail.querySelector('[data-period-detail="date"]').textContent =
-      periodDateLabel(period.archived_at);
-
-    detail.querySelector('[data-period-detail="score"]').textContent =
-      `${scoreText(period.average)} / 5`;
-
-    detail.querySelector('[data-period-detail="staff"]').textContent =
-      `${period.staffCount} staff`;
 
     if(showEvaluatorPopup){
       const evaluatorItems = buildEvaluatorAverages(
@@ -1501,27 +1455,33 @@ function renderTeamGraph(data){
     }
   };
 
-  host.querySelectorAll(".team-average-dot").forEach(dot => {
+  host.querySelectorAll(".team-average-point").forEach(point => {
     const activate = () =>
       selectPeriod(
-        Number(dot.dataset.teamPeriodIndex),
+        Number(point.dataset.teamPeriodIndex),
         {
           showEvaluatorPopup:true,
-          trigger:dot
+          trigger:point
         }
       );
 
-    dot.addEventListener("click",event => {
-      activate();
-
-      if(event.detail > 0){
-        dot.blur?.();
+    // Prevent browser text-drag selection before the click is dispatched.
+    point.addEventListener("pointerdown",event => {
+      if(event.pointerType === "mouse"){
+        event.preventDefault();
       }
     });
 
-    dot.addEventListener("keydown",event => {
+    point.addEventListener("click",event => {
+      event.preventDefault();
+      event.stopPropagation();
+      activate();
+    });
+
+    point.addEventListener("keydown",event => {
       if(event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
+      event.stopPropagation();
       activate();
     });
   });
