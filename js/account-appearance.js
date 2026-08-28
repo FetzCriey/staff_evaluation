@@ -546,6 +546,39 @@ function ensureStyles(){
       color:var(--ink) !important;
     }
 
+    /* Open history date group: keep the selected date header dark and readable. */
+    html[data-bp-theme="dark"] #hisList .his-date-group.open > .his-date-sum,
+    html[data-bp-theme="amoled"] #hisList .his-date-group.open > .his-date-sum{
+      background:var(--bp-theme-surface-3) !important;
+      border-color:rgba(var(--bp-accent-rgb),.58) !important;
+      color:var(--ink) !important;
+      box-shadow:inset 3px 0 0 var(--lagoon) !important;
+    }
+
+    html[data-bp-theme="dark"] #hisList .his-date-group.open > .his-date-sum :where(
+      .his-date-copy,
+      .his-date-label
+    ),
+    html[data-bp-theme="amoled"] #hisList .his-date-group.open > .his-date-sum :where(
+      .his-date-copy,
+      .his-date-label
+    ){
+      color:var(--ink) !important;
+    }
+
+    html[data-bp-theme="dark"] #hisList .his-date-group.open > .his-date-sum .his-date-count,
+    html[data-bp-theme="amoled"] #hisList .his-date-group.open > .his-date-sum .his-date-count{
+      background:var(--accent-soft) !important;
+      border-color:rgba(var(--bp-accent-rgb),.34) !important;
+      color:var(--lagoon-deep) !important;
+    }
+
+    html[data-bp-theme="dark"] #hisList .his-date-group.open > .his-date-sum .his-date-chev,
+    html[data-bp-theme="amoled"] #hisList .his-date-group.open > .his-date-sum .his-date-chev{
+      color:var(--lagoon-deep) !important;
+      opacity:1 !important;
+    }
+
     html[data-bp-theme="dark"] :where(
       .res-nm,.his-nm,.his-date-label
     ),
@@ -961,31 +994,22 @@ function ensureStyles(){
     }
 
     .bp-accent-row{
-      display:flex;
+      display:grid;
+      grid-template-columns:repeat(8,28px);
       align-items:center;
-      flex-wrap:nowrap;
-      gap:6px;
+      justify-content:space-between;
+      gap:0;
       width:100%;
       min-width:0;
-      overflow-x:auto;
-      overflow-y:hidden;
-      padding:2px 2px 4px;
-      scrollbar-width:thin;
-    }
-
-    .bp-accent-row::-webkit-scrollbar{
-      height:5px;
-    }
-
-    .bp-accent-row::-webkit-scrollbar-thumb{
-      border-radius:999px;
-      background:rgba(120,140,160,.32);
+      overflow:visible;
+      padding:5px 4px;
     }
 
     .bp-accent-swatch{
       width:28px;
       height:28px;
-      flex:0 0 28px;
+      min-width:0;
+      justify-self:center;
       padding:0;
       border:2px solid transparent;
       border-radius:10px;
@@ -1126,6 +1150,15 @@ function ensureStyles(){
 
     @media(max-width:520px){
       .bp-accent-reset{align-self:flex-start}
+      .bp-accent-row{
+        grid-template-columns:repeat(8,26px);
+        padding-left:3px;
+        padding-right:3px;
+      }
+      .bp-accent-swatch{
+        width:26px;
+        height:26px;
+      }
       .bp-theme-choices{grid-template-columns:1fr}
       .bp-theme-choice{min-height:58px}
       .bp-accent-reset{margin-left:0}
