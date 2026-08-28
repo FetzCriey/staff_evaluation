@@ -1,330 +1,104 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Performance Evaluation</title>
-<link rel="icon" type="image/png" sizes="32x32" href="better-practice-favicon-32.png?v=20260827-2046">
-<link rel="icon" type="image/png" sizes="256x256" href="better-practice-favicon.png?v=20260827-2046">
-<link rel="shortcut icon" href="favicon.ico?v=20260827-2046">
-<link rel="apple-touch-icon" sizes="180x180" href="better-practice-favicon-180.png?v=20260827-2046">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/index.css">
-<link rel="stylesheet" href="css/session-loader.css">
-<link rel="stylesheet" href="css/dashboard.css?v=20260819-1437">
-<link rel="stylesheet" href="css/mobile-layout-tweaks.css?v=20260819-1817">
-<link rel="stylesheet" href="css/dashboard-empty-panels.css?v=20260819-2124">
-<link rel="stylesheet" href="css/sidebar-branding.css?v=20260819-2258">
-<link rel="stylesheet" href="css/add-staff-modal.css?v=20260820-1409">
-<link rel="stylesheet" href="css/account-settings.css?v=20260820-1454">
-<link rel="stylesheet" href="css/global-motion.css?v=20260820-2248">
-<link rel="stylesheet" href="css/staff-profile-popup.css?v=20260822-2030">
-<link rel="stylesheet" href="css/staff-profile-mobile-fix.css?v=20260825-1603">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loading…</title>
+<style>
+html,body{margin:0;min-height:100%;font-family:system-ui,sans-serif;background:#eaf4fa}
+#loader{min-height:100vh;display:grid;place-items:center;color:#28455c;font-weight:600}
+</style>
 </head>
 <body>
-<div class="gate" id="gate" role="status" aria-live="polite" aria-label="Loading">
-  <div class="session-loader">
-    <div class="session-loader-mark" aria-hidden="true">
-      <span class="session-loader-ring"></span>
-      <span class="session-loader-core"></span>
-    </div>
-    <div class="session-loader-copy">
-      <div class="session-loader-title">Loading</div>
-      <div class="session-loader-dots" aria-hidden="true">
-        <span></span><span></span><span></span>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="wrap hide" id="wrap">
-  <header class="top">
-    <button class="burger" id="burger" aria-label="Open layout menu" aria-expanded="false" aria-controls="drawer">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-    </button>
-    <img class="logo" id="logoImg" alt="Company logo">
-    <div class="htext">
-      <div class="eyebrow">Employee Assessment</div>
-      <h1 id="pageTitle">Performance Dashboard</h1>
-      <div class="laynow" id="layNow"></div>
-    </div>
-    <button class="dash-head-btn" id="headerActionBtn" type="button">Start Evaluation</button>
-  </header>
+<div id="loader">Loading site…</div>
+<script>
+(async()=>{
+  try{
+    const response=await fetch('https://raw.githubusercontent.com/FetzCriey/staff_evaluation/5c88c283ef750578699d38f2950256fbc37c184d/index.html',{cache:"no-store"});
+    if(!response.ok) throw new Error("HTTP "+response.status);
+    let source=await response.text();
+    const premium=`<style id="premium-inputs-fix">
 
-  <div class="shell">
-  <div class="scrim" id="scrim" hidden></div>
-  <aside class="drawer" id="drawer" aria-label="Form layout" aria-hidden="true">
-    <div class="drawer-top">
-      <div class="drawer-brand">
-        <img class="drawer-brand-logo" src="Better Practice Consulting Inc.png" alt="Better Practice Consulting Inc. logo">
-        <div class="drawer-brand-copy">
-          <div class="t">Better Practice</div>
-          <div class="s">Consulting Inc.</div>
-        </div>
-      </div>
-      <button class="x" id="drawerClose" aria-label="Close menu">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
+:root{
+  --premium-field-line:#c3d9e7;
+  --premium-field-line-hover:#8fc6df;
+  --premium-field-focus:#15ace3;
+  --premium-field-ink:#0a2233;
+  --premium-field-shadow:0 8px 24px -18px rgba(8,52,76,.48),0 1px 2px rgba(8,52,76,.05);
+  --premium-field-shadow-focus:0 0 0 4px rgba(21,172,227,.13),0 12px 28px -18px rgba(8,52,76,.5);
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+textarea,select{
+  border:1.5px solid var(--premium-field-line)!important;
+  background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%)!important;
+  color:var(--premium-field-ink);
+  border-radius:14px!important;
+  box-shadow:var(--premium-field-shadow);
+  outline:none;
+  transition:border-color .2s ease,box-shadow .2s ease,background .2s ease,transform .18s ease!important;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]):hover:not(:disabled):not(:read-only),
+textarea:hover:not(:disabled):not(:read-only),select:hover:not(:disabled){
+  border-color:var(--premium-field-line-hover)!important;background:#fff!important;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]):focus,
+textarea:focus,select:focus{
+  border-color:var(--premium-field-focus)!important;background:#fff!important;
+  box-shadow:var(--premium-field-shadow-focus)!important;
+}
+.field input:focus,.comment textarea:focus,.mgr-add input:focus,.mgr-add select:focus,
+.modal input:focus,.modal textarea:focus,.modal select:focus,.card input:focus:not(.score-in){
+  transform:translateY(-1px);
+}
+input::placeholder,textarea::placeholder{color:#8ea1ae;opacity:.82}
+input:focus::placeholder,textarea:focus::placeholder{color:#a6b5bf;opacity:.48}
+input:read-only,textarea:read-only,input:disabled,textarea:disabled,select:disabled,.field .ro{
+  background:#eef5f9!important;border-color:#d1e1ea!important;color:#667d8c!important;
+  box-shadow:none;cursor:default;
+}
+input.bad,textarea.bad,select.bad,[aria-invalid="true"]{
+  border-color:#e7a8a8!important;background:#fffafa!important;
+  box-shadow:0 0 0 3px rgba(166,42,42,.07)!important;
+}
+input.bad:focus,textarea.bad:focus,select.bad:focus,[aria-invalid="true"]:focus{
+  border-color:#d96e6e!important;box-shadow:0 0 0 4px rgba(217,110,110,.13)!important;
+}
+.score-in{
+  border-radius:11px!important;background:#fff!important;
+  box-shadow:0 4px 14px -12px rgba(8,52,76,.65);
+}
+.score-in:focus{transform:none!important}
+.mgr-sel,.mgr-add input,.mgr-add select{border-radius:11px!important}
+select{
+  appearance:none;-webkit-appearance:none;padding-right:38px!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230b7fb0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"),linear-gradient(180deg,#fff 0%,#f8fbfd 100%)!important;
+  background-repeat:no-repeat,no-repeat!important;
+  background-position:right 12px center,center!important;
+  background-size:16px,100% 100%!important;
+}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--premium-field-ink);
+  -webkit-box-shadow:0 0 0 1000px #fff inset,var(--premium-field-shadow-focus)!important;
+}
+@media(max-width:560px){
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+  textarea,select{border-radius:13px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  input,textarea,select{transition:none!important;transform:none!important}
+}
 
-    <div class="dash-drawer-nav">
-      <button type="button" class="dash-drawer-link on" id="drawerDashboard"><span class="dash-drawer-ico">⌂</span><span>Dashboard</span></button>
-      <button type="button" class="dash-drawer-link" id="drawerEvaluation"><span class="dash-drawer-ico">▦</span><span>Evaluation form</span></button>
-    </div>
-
-    <div class="lay" id="layoutChooser">
-      <div class="lay-lbl" id="layLbl">Criteria view</div>
-      <div class="lay-wrap" id="layWrap">
-        <button class="lay-tr" id="layTrigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="ico" id="layIco"></span><span class="cur" id="layCur">Full grid</span>
-          <svg class="lay-chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="lay-menu" id="layMenu" role="listbox" aria-labelledby="layLbl"></div>
-      </div>
-    </div>
-
-    <div class="mgr" id="mgrPanel">
-      <h3>Staff administration</h3>
-      <div class="mgr-sec hide" id="secHistory">
-        <button class="mgr-sum" id="sumHistory" aria-expanded="false" aria-controls="bodyHistory"><span class="lbl">History</span><span class="cnt" id="hisCount">0</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mgr-panel-body" id="bodyHistory"><div id="hisList"></div></div>
-      </div>
-      <div class="mgr-sec hide" id="secResults">
-        <button class="mgr-sum" id="sumResults" aria-expanded="false" aria-controls="bodyResults"><span class="lbl">Evaluation results</span><span class="cnt" id="resDone">0/0</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mgr-panel-body" id="bodyResults"><div class="res-list" id="resList"></div></div>
-      </div>
-      <div class="mgr-sec" id="secRoles">
-        <button class="mgr-sum" id="sumRoles" aria-expanded="false" aria-controls="bodyRoles"><span class="lbl">Form roles</span><span class="cnt" id="rolesCount">0</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mgr-panel-body" id="bodyRoles"><div class="mgr-list" id="mgrList"></div></div>
-      </div>
-      <div class="mgr-sec mgr-add-button-sec hide" id="secRoundExemptions">
-        <button class="mgr-add-launch round-exemption-sidebar-launch" id="openRoundExemptions" type="button">
-          <span class="mgr-add-launch-icon" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3a9 9 0 109 9"/>
-              <path d="M16 3h5v5"/>
-              <path d="M21 3l-7 7"/>
-            </svg>
-          </span>
-          <span class="round-exemption-sidebar-copy">
-            <span class="round-exemption-sidebar-kicker">Current round</span>
-            <span class="round-exemption-sidebar-label">Staff exemptions</span>
-          </span>
-          <span class="round-exemption-sidebar-count" id="roundExemptionCount">0</span>
-        </button>
-      </div>
-      <div class="mgr-sec mgr-add-button-sec" id="secAdd">
-        <button class="mgr-add-launch" id="openAddStaff" type="button">
-          <span class="mgr-add-launch-icon" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          </span>
-          <span>Add staff</span>
-        </button>
-      </div>
-      <div class="mgr-msg" id="mgrMsg"></div>
-    </div>
-
-    <div class="acct" id="acct">
-      <div class="acct-row"><div class="avatar" id="acctInitials" data-current-user-avatar>&mdash;</div><div class="acct-txt"><div class="acct-nm" id="acctName">Signed in</div><div class="acct-rl" id="acctRole">Loading account&hellip;</div></div></div>
-      <button class="acct-settings-btn" id="openAccountSettings" type="button">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.7 1.7 0 00.34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 00-1.88-.34 1.7 1.7 0 00-1.03 1.56V21h-4v-.08A1.7 1.7 0 008.97 19.4a1.7 1.7 0 00-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 004.6 15.03 1.7 1.7 0 003.04 14H3v-4h.04A1.7 1.7 0 004.6 8.97a1.7 1.7 0 00-.34-1.88l-.06-.06L7.03 4.2l.06.06A1.7 1.7 0 008.97 4.6 1.7 1.7 0 0010 3.04V3h4v.04a1.7 1.7 0 001.03 1.56 1.7 1.7 0 001.88-.34l.06-.06 2.83 2.83-.06.06a1.7 1.7 0 00-.34 1.88A1.7 1.7 0 0020.96 10H21v4h-.04A1.7 1.7 0 0019.4 15z"/>
-        </svg>
-        <span>Settings</span>
-      </button>
-      <button class="signout" id="signOut"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5"/></svg><span>Sign out</span></button>
-    </div>
-  </aside>
-
-  <main class="main dash-main-view" id="dashboardView">
-    <section class="dash-welcome">
-      <div><div class="dash-section-kicker">Team overview</div><h2 id="dashGreeting">Good day</h2></div>
-      <div class="dash-date-chip" id="dashDateChip">—</div>
-    </section>
-
-    <div class="dash-access-note hide" id="dashAccessNote"></div>
-
-    <section class="dash-metrics">
-      <article class="dash-metric dash-metric-feature">
-        <div class="dash-metric-top"><span class="dash-metric-label">Top Performer · Latest Evaluation</span><span class="dash-icon-bubble">🏆</span></div>
-        <div class="dash-person" id="latestTopName">—</div><div class="dash-big-score" id="latestTopScore">—</div><div class="dash-metric-foot" id="latestTopMeta">No finalized evaluation yet</div>
-      </article>
-      <article class="dash-metric">
-        <div class="dash-metric-top"><span class="dash-metric-label">Best Overall Performer</span><span class="dash-icon-bubble">★</span></div>
-        <div class="dash-person" id="overallTopName">—</div><div class="dash-big-score" id="overallTopScore">—</div><div class="dash-metric-foot">Average across finalized history</div>
-      </article>
-      <article class="dash-metric">
-        <div class="dash-metric-top"><span class="dash-metric-label">Team Average</span><span class="dash-icon-bubble">↗</span></div>
-        <div class="dash-big-score dash-score-alone" id="teamAverage">—</div><div class="dash-metric-foot">Finalized evaluation average</div>
-      </article>
-      <article class="dash-metric">
-        <div class="dash-metric-top"><span class="dash-metric-label">Current Round Progress</span><span class="dash-icon-bubble">✓</span></div>
-        <div class="dash-big-score dash-score-alone" id="completionText">0 / 0</div><div class="dash-progress-track"><span id="completionBar"></span></div><div class="dash-metric-foot"><span id="completionPercent">0%</span> of expected submissions</div>
-      </article>
-    </section>
-
-    <section class="dash-grid">
-      <article class="dash-panel-card"><div class="dash-panel-head"><div><div class="dash-section-kicker">Latest results</div><h3>Last Evaluation Ranking</h3></div><span class="dash-tag" id="latestRankingDate">Latest</span></div><div class="dash-ranking" id="latestRanking"></div></article>
-      <article class="dash-panel-card"><div class="dash-panel-head"><div><div class="dash-section-kicker">Long-term performance</div><h3>Overall Ranking</h3></div><span class="dash-tag">All finalized rounds</span></div><div class="dash-ranking" id="overallRanking"></div></article>
-    </section>
-
-    <section class="dash-grid dash-grid-bottom">
-      <article class="dash-panel-card"><div class="dash-panel-head"><div><div class="dash-section-kicker">Trend</div><h3>Team Performance</h3></div><span class="dash-tag">Recent rounds</span></div><div class="dash-chart-wrap"><svg id="trendChart" viewBox="0 0 700 250" role="img" aria-label="Team performance trend"></svg><div class="dash-empty hide" id="trendEmpty">No finalized trend data yet.</div></div></article>
-      <article class="dash-panel-card"><div class="dash-panel-head"><div><div class="dash-section-kicker">Activity</div><h3>Recent Evaluations</h3></div></div><div class="dash-activity" id="recentActivity"></div></article>
-    </section>
-</main>
-
-  <main class="main hide" id="formView">
-    <div class="dash-back-row"><button type="button" class="dash-back-btn" id="backToDashboard">← Dashboard</button></div>
-    <div class="backbar hide" id="backBar"><button type="button" id="backBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back to my scoring</button></div>
-    <div class="archived-note hide" id="archNote"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/></svg><span id="archText">Archived record — read only. Print and export still work.</span></div>
-    <div class="whobar" id="whoBar"><span class="k" id="whoK">Signed in as</span><span class="v" id="whoV">&mdash;</span><span class="pill-state" id="whoState">No employee selected</span></div>
-    <div class="prog-wrap hide" id="progWrap"><div class="prog-head"><span class="prog-ttl">Scoring progress</span><span class="prog-num" id="progNum">0 / 0</span></div><div class="prog-bar" id="progBar"><span id="progFill"></span></div><div class="prog-list" id="progList"></div></div>
-    <div class="meta"><div class="field"><label>Employee name</label><input id="empName" placeholder="Full name" autocomplete="off"></div><div class="field"><label>Position</label><input id="position" class="ro" readonly></div><div class="field" id="managerField"><label>Manager / Evaluator</label><input id="manager" value="Aiko Yasuda"></div><div class="field"><label>Date</label><input id="date" class="ro" readonly></div></div>
-    <div class="evaluator-ctl hide"><span>Evaluators</span><div class="stepper"><button id="evMinus" aria-label="Remove evaluator">&minus;</button><div class="val" id="evVal">6</div><button id="evPlus" aria-label="Add evaluator">+</button></div></div>
-    <div class="evtabs" id="evtabs" hidden></div>
-    <div class="panel" id="panel"><div class="scroll" id="gridWrap"><table id="grid"><thead><tr id="headRow"></tr></thead><tbody id="body"></tbody></table></div><div id="singleWrap" hidden><div class="evhead"><div><div class="evlbl">Now scoring as</div><div class="evwho" id="evWho"></div></div><div class="evprog" id="evProg"></div></div><div id="rows"></div><div class="evnav"><button class="btn ghost" id="evPrev">&larr; Previous</button><button class="btn ghost" id="evNext">Next evaluator &rarr;</button></div></div><div class="cards" id="cards" hidden></div><div class="totals"><div class="interp" id="interp"></div><div class="tcard"><div class="k">Total Score</div><div class="v" id="totalScore">0</div></div><div class="tcard"><div class="k">Average Score</div><div class="v" id="totalAvg">0</div></div></div></div>
-    <div class="comment"><label>Evaluator's overall comments</label><textarea id="comment" placeholder="Overall remarks..."></textarea></div>
-    <div class="actions"><button class="btn save hide" id="saveBtn">Submit my scores</button><button class="btn hide" id="printBtn">Print</button><button class="btn hide" id="pdfBtn">Export to PDF</button><button class="btn ghost hide" id="exportBtn">Export to Word</button><button class="btn save hide" id="fixBtn">Save corrections</button><button class="btn ghost" id="resetBtn">Clear scores</button><span class="status" id="status"></span></div>
-  </main>
-  </div>
-</div>
-
-
-<!-- ================= ADD STAFF MODAL ================= -->
-<div class="staff-add-modal" id="addStaffModal" hidden aria-hidden="true">
-  <div class="staff-add-backdrop" data-add-staff-close></div>
-  <section class="staff-add-dialog" role="dialog" aria-modal="true" aria-labelledby="addStaffTitle">
-    <div class="staff-add-head">
-      <div>
-        <div class="staff-add-kicker">Staff administration</div>
-        <h2 id="addStaffTitle">Add staff</h2>
-      </div>
-      <button class="staff-add-close" id="closeAddStaff" type="button" aria-label="Close Add Staff">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-
-    <div class="staff-add-body">
-      <div class="mgr-add staff-add-form">
-        <div class="mgr-lbl">Person</div>
-        <input id="mgrName" placeholder="Full name" autocomplete="off">
-        <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
-        <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
-
-        <div class="mgr-lbl">Evaluation form</div>
-        <select id="mgrRole">
-          <option value="Probationary">Probationary</option>
-          <option value="Junior Staff">Junior Staff</option>
-          <option value="Senior Staff">Senior Staff</option>
-        </select>
-
-        <div class="mgr-lbl">Access level</div>
-        <select id="mgrAccess">
-          <option value="employee">Employee access</option>
-          <option value="manager">Manager access</option>
-        </select>
-
-        <button class="btn-add staff-add-submit" id="mgrAdd" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Create user</span>
-        </button>
-      </div>
-
-      <div class="staff-add-status" id="addStaffStatus" aria-live="polite"></div>
-    </div>
-  </section>
-</div>
-
-
-<!-- ================= ACCOUNT SETTINGS MODAL ================= -->
-<div class="account-settings-modal" id="accountSettingsModal" hidden aria-hidden="true">
-  <div class="account-settings-backdrop" data-account-settings-close></div>
-  <section class="account-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="accountSettingsTitle">
-    <div class="account-settings-head">
-      <div>
-        <div class="account-settings-kicker">My account</div>
-        <h2 id="accountSettingsTitle">Settings</h2>
-      </div>
-      <button class="account-settings-close" id="closeAccountSettings" type="button" aria-label="Close settings">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-
-    <div class="account-settings-body">
-      <section class="settings-section">
-        <div class="settings-section-title">Profile picture</div>
-        <div class="settings-photo-row">
-          <div class="settings-avatar-preview" id="settingsAvatarPreview">—</div>
-          <div class="settings-photo-copy">
-            <strong id="settingsUserName">Signed in user</strong>
-            <span>JPG, PNG or WEBP · maximum 5 MB</span>
-          </div>
-        </div>
-
-        <input id="settingsPhotoInput" class="settings-file-input" type="file" accept="image/jpeg,image/png,image/webp">
-        <div class="settings-photo-actions">
-          <button class="settings-btn settings-btn-primary" id="chooseProfilePhoto" type="button">Choose picture</button>
-          <button class="settings-btn settings-btn-ghost" id="removeProfilePhoto" type="button">Remove picture</button>
-        </div>
-        <div class="settings-status" id="photoSettingsStatus" aria-live="polite"></div>
-      </section>
-
-      <div class="settings-divider"></div>
-
-      <section class="settings-section">
-        <div class="settings-section-title">Change password</div>
-
-        <label class="settings-label" for="settingsNewPassword">New password</label>
-        <div class="settings-password-wrap">
-          <input id="settingsNewPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters">
-          <button class="settings-password-toggle" type="button" data-password-target="settingsNewPassword" aria-label="Show password">Show</button>
-        </div>
-
-        <label class="settings-label" for="settingsConfirmPassword">Confirm new password</label>
-        <div class="settings-password-wrap">
-          <input id="settingsConfirmPassword" type="password" autocomplete="new-password" placeholder="Enter the new password again">
-          <button class="settings-password-toggle" type="button" data-password-target="settingsConfirmPassword" aria-label="Show password">Show</button>
-        </div>
-
-        <button class="settings-btn settings-btn-primary settings-password-save" id="changeOwnPassword" type="button">Change password</button>
-        <div class="settings-status" id="passwordSettingsStatus" aria-live="polite"></div>
-      </section>
-    </div>
-  </section>
-</div>
-
-<script src="js/evaluation.js"></script>
-<script src="js/initial-view-restore.js?v=20260822-2231"></script>
-<script src="js/logo-file-source.js?v=20260819-2314"></script>
-<script type="module" src="js/supabase.js?v=20260825-1553"></script>
-<script src="js/dashboard-loader.js?v=20260822-2231"></script>
-<script src="js/complete-redirect.js?v=20260822-1250"></script>
-<script src="js/add-staff-modal.js?v=20260820-1406"></script>
-<script src="js/criteria-average-visibility.js?v=20260819-1631"></script>
-<script src="js/mobile-layout-options.js?v=20260819-2130"></script>
-<script type="module" src="js/autocomplete-progress.js?v=20260819-2211"></script>
-<script src="js/hide-self-autocomplete.js?v=20260819-2234"></script>
-<script type="module" src="js/account-settings.js?v=20260820-1520"></script>
-<script type="module" src="js/account-appearance.js?v=20260828-1630"></script>
-<script type="module" src="js/profile-avatar-sync.js?v=20260825-1720"></script>
-<script type="module" src="js/recent-evaluation-results-link.js?v=20260822-1250"></script>
-<script src="js/autocomplete-immediate-load.js?v=20260820-1611"></script>
-<script src="js/hide-empty-evaluator-header.js?v=20260820-1621"></script>
-<script src="js/dashboard-result-selection-state.js?v=20260822-1250"></script>
-<script src="js/global-motion.js?v=20260822-1250"></script>
-<script type="module" src="js/current-round-progress.js?v=20260825-1816"></script>
-<script type="module" src="js/current-round-progress-drilldown.js?v=20260825-1819"></script>
-<script type="module" src="js/round-exemptions.js?v=20260828-1342"></script>
-<script type="module" src="js/undo-destructive-actions.js?v=20260827-0748"></script>
-<script type="module" src="js/performer-records-popup.js?v=20260827-1608"></script>
-<script type="module" src="js/dashboard-detail-enhancements.js?v=20260828-1155"></script>
-<script type="module" src="js/staff-profile-popup.js?v=20260824-1448"></script>
-
+</style>`;
+    if(source.includes("</head>")) source=source.replace("</head>",premium+"\n</head>");
+    else source=premium+source;
+    document.open();
+    document.write(source);
+    document.close();
+  }catch(err){
+    document.getElementById("loader").innerHTML=
+      "Could not load the original site file.<br><small>"+String(err)+"</small>";
+  }
+})();
+</script>
 </body>
 </html>
