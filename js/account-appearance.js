@@ -286,6 +286,25 @@ function ensureStyles(){
     }
 
 
+    /* Keep the main brand header separated from dark backgrounds. */
+    html[data-bp-theme="dark"] header.top,
+    html[data-bp-theme="amoled"] header.top{
+      border:1.5px solid var(--bp-card-border) !important;
+      box-shadow:
+        0 0 0 1px rgba(var(--bp-accent-rgb),.05),
+        var(--shadow) !important;
+    }
+
+    /* Background company logos stay visible but no longer move or rotate. */
+    body.motion-ready::before,
+    body.motion-ready::after{
+      animation:none !important;
+      transform:none !important;
+    }
+
+    body.motion-ready::before{opacity:.24 !important}
+    body.motion-ready::after{opacity:.18 !important}
+
     /* Clear separation between cards and the dark page background. */
     html[data-bp-theme="dark"] :where(
       .dash-metric,
@@ -319,12 +338,12 @@ function ensureStyles(){
     html[data-bp-theme="dark"] :where(
       .dash-date-chip,.dash-tag,.dash-back-btn,.dash-icon-bubble,
       .dash-rank-avatar,.dash-rank-no,.dash-activity-icon,.dash-live-avatar,
-      .bp-theme-choice,.bp-custom-color-wrap
+      .bp-theme-choice,.bp-accent-reset
     ),
     html[data-bp-theme="amoled"] :where(
       .dash-date-chip,.dash-tag,.dash-back-btn,.dash-icon-bubble,
       .dash-rank-avatar,.dash-rank-no,.dash-activity-icon,.dash-live-avatar,
-      .bp-theme-choice,.bp-custom-color-wrap
+      .bp-theme-choice,.bp-accent-reset
     ){
       border-color:var(--line) !important;
     }
@@ -562,33 +581,37 @@ function ensureStyles(){
         0 0 0 4px var(--lagoon);
     }
 
-    .bp-custom-color-wrap{
+    .bp-accent-reset{
       margin-left:auto;
-      display:flex;
-      align-items:center;
-      gap:7px;
-      padding:5px 8px;
+      min-height:31px;
+      padding:6px 10px;
       border:1.5px solid var(--line);
       border-radius:10px;
       background:var(--bp-theme-surface-2);
       color:var(--ink-soft);
+      font:inherit;
       font-size:10.5px;
-      font-weight:700;
-    }
-
-    .bp-custom-color{
-      width:28px;
-      height:25px;
-      padding:0;
-      border:0;
-      border-radius:7px;
-      background:transparent;
+      font-weight:750;
       cursor:pointer;
+      transition:
+        border-color .14s ease,
+        background-color .14s ease,
+        color .14s ease,
+        transform .14s ease;
     }
 
-    .bp-custom-color::-webkit-color-swatch-wrapper{padding:0}
-    .bp-custom-color::-webkit-color-swatch{border:0;border-radius:7px}
-    .bp-custom-color::-moz-color-swatch{border:0;border-radius:7px}
+    .bp-accent-reset:hover{
+      transform:translateY(-1px);
+      border-color:var(--lagoon);
+      background:var(--accent-soft);
+      color:var(--lagoon-deep);
+    }
+
+    .bp-accent-reset:disabled{
+      opacity:.48;
+      cursor:default;
+      transform:none;
+    }
 
     .bp-appearance-status{
       min-height:0;
@@ -681,7 +704,7 @@ function ensureStyles(){
     @media(max-width:520px){
       .bp-theme-choices{grid-template-columns:1fr}
       .bp-theme-choice{min-height:58px}
-      .bp-custom-color-wrap{margin-left:0}
+      .bp-accent-reset{margin-left:0}
     }
 
     @media(prefers-reduced-motion:reduce){
@@ -751,9 +774,11 @@ function syncControls(){
     );
   });
 
-  const picker = document.getElementById("bpCustomAccent");
-  if(picker && picker.value.toUpperCase() !== currentAppearance.accent){
-    picker.value = currentAppearance.accent;
+  const resetButton = document.getElementById("bpResetAccent");
+  if(resetButton){
+    const isDefault = currentAppearance.accent === DEFAULTS.accent;
+    resetButton.disabled = isDefault;
+    resetButton.setAttribute("aria-disabled", String(isDefault));
   }
 }
 
@@ -812,6 +837,13 @@ function chooseAccent(accent){
   scheduleSave();
 }
 
+function resetAccent(){
+  if(currentAppearance.accent === DEFAULTS.accent) return;
+  applyAppearance({ ...currentAppearance, accent:DEFAULTS.accent });
+  setStatus();
+  scheduleSave();
+}
+
 function buildSettingsSection(){
   if(document.getElementById("bpAppearanceSection")) return true;
 
@@ -862,16 +894,13 @@ function buildSettingsSection(){
     <div class="bp-accent-label">Site color</div>
     <div class="bp-accent-grid" role="group" aria-label="Site accent color">
       ${swatches}
-      <label class="bp-custom-color-wrap" for="bpCustomAccent">
-        <span>Custom</span>
-        <input
-          class="bp-custom-color"
-          id="bpCustomAccent"
-          type="color"
-          value="${DEFAULTS.accent}"
-          aria-label="Custom site color"
-        >
-      </label>
+      <button
+        class="bp-accent-reset"
+        id="bpResetAccent"
+        type="button"
+        aria-label="Reset site color"
+        title="Reset to Better Practice color"
+      >Reset color</button>
     </div>
 
     <div class="bp-appearance-status" id="bpAppearanceStatus" aria-live="polite"></div>
@@ -895,9 +924,7 @@ function buildSettingsSection(){
     btn.addEventListener("click", () => chooseAccent(btn.dataset.bpAccent));
   });
 
-  section.querySelector("#bpCustomAccent")?.addEventListener("change", event => {
-    chooseAccent(event.target.value);
-  });
+  section.querySelector("#bpResetAccent")?.addEventListener("click", resetAccent);
 
   syncControls();
   return true;
@@ -956,7 +983,8 @@ window.bpAccountAppearance = Object.freeze({
   apply: value => applyAppearance(value),
   reset: () => {
     applyAppearance(DEFAULTS);
-    setStatus("Saving…");
+    setStatus();
     scheduleSave();
-  }
+  },
+  resetColor: resetAccent
 });
