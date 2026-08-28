@@ -304,13 +304,31 @@ function injectStyles(){
       stroke:#fff;
       stroke-width:3;
       cursor:pointer;
-      transition:r .14s ease,fill .14s ease;
+      outline:none;
+      transition:
+        fill .14s ease,
+        stroke .14s ease,
+        stroke-width .14s ease;
     }
 
-    .team-average-dot:hover,
+    .team-average-dot:hover{
+      fill:#0b7fb0;
+    }
+
     .team-average-dot.selected{
-      r:8px;
       fill:#08344c;
+      stroke:#15ace3;
+      stroke-width:4;
+    }
+
+    .team-average-dot:focus,
+    .team-average-dot:focus-visible{
+      outline:none !important;
+    }
+
+    .team-average-dot:focus-visible{
+      stroke:#08344c;
+      stroke-width:4;
     }
 
     .team-average-value{
@@ -357,6 +375,121 @@ function injectStyles(){
       font-family:"Bricolage Grotesque","Inter",sans-serif;
       font-size:17px;
       line-height:1;
+    }
+
+    .team-average-evaluator-section{
+      margin-top:12px;
+    }
+
+    .team-average-evaluator-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin:0 1px 8px;
+    }
+
+    .team-average-evaluator-title{
+      color:var(--ink,#0a2233);
+      font-family:"Bricolage Grotesque","Inter",sans-serif;
+      font-size:13px;
+      line-height:1.2;
+      font-weight:800;
+    }
+
+    .team-average-evaluator-count{
+      flex:0 0 auto;
+      padding:4px 8px;
+      border:1px solid #cbe7f3;
+      border-radius:999px;
+      background:#eef9fd;
+      color:var(--lagoon-deep,#0b7fb0);
+      font-size:8px;
+      line-height:1.2;
+      font-weight:800;
+    }
+
+    .team-average-evaluator-list{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .team-average-evaluator-card{
+      min-width:0;
+      padding:10px 11px;
+      border:1.5px solid #d5e8f2;
+      border-radius:12px;
+      background:#fff;
+    }
+
+    .team-average-evaluator-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .team-average-evaluator-copy{
+      min-width:0;
+    }
+
+    .team-average-evaluator-name{
+      display:block;
+      color:var(--ink,#0a2233);
+      font-size:10.5px;
+      line-height:1.3;
+      font-weight:800;
+      overflow-wrap:anywhere;
+    }
+
+    .team-average-evaluator-meta{
+      display:block;
+      margin-top:2px;
+      color:var(--muted,#5b7080);
+      font-size:8.5px;
+      line-height:1.3;
+    }
+
+    .team-average-evaluator-score{
+      flex:0 0 auto;
+      color:var(--ink,#0a2233);
+      font-family:"Bricolage Grotesque","Inter",sans-serif;
+      font-size:16px;
+      line-height:1;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .team-average-evaluator-bar{
+      height:5px;
+      margin-top:8px;
+      overflow:hidden;
+      border-radius:999px;
+      background:#e6f0f5;
+    }
+
+    .team-average-evaluator-bar span{
+      display:block;
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(
+        90deg,
+        var(--lagoon,#15ace3),
+        var(--lagoon-deep,#0b7fb0)
+      );
+    }
+
+    .team-average-evaluator-empty{
+      grid-column:1 / -1;
+      padding:13px;
+      border:1.5px dashed #c9dfee;
+      border-radius:12px;
+      background:#f9fcfe;
+      color:var(--muted,#5b7080);
+      text-align:center;
+      font-size:9.5px;
+      line-height:1.4;
     }
 
     .team-average-empty,
@@ -450,6 +583,10 @@ function injectStyles(){
 
       .team-average-detail-main{
         grid-column:1 / -1;
+      }
+
+      .team-average-evaluator-list{
+        grid-template-columns:1fr;
       }
     }
 
@@ -678,6 +815,122 @@ function periodDateLabel(value,short=false){
   );
 }
 
+function buildEvaluatorAverages(rows,periodKey,profiles){
+  const names = new Map(
+    (profiles || [])
+      .filter(profile => profile?.id)
+      .map(profile => [
+        profile.id,
+        String(profile.full_name || "Unknown evaluator")
+      ])
+  );
+
+  const grouped = new Map();
+
+  rows
+    .filter(row =>
+      row.archived &&
+      row.archived_at &&
+      localDateKey(row.archived_at) === periodKey &&
+      row.evaluator_id &&
+      Number.isFinite(Number(row.average))
+    )
+    .forEach(row => {
+      if(!grouped.has(row.evaluator_id)){
+        grouped.set(row.evaluator_id,[]);
+      }
+
+      grouped.get(row.evaluator_id).push({
+        average:Number(row.average),
+        employee_id:row.employee_id
+      });
+    });
+
+  return [...grouped.entries()]
+    .map(([evaluator_id,items]) => ({
+      evaluator_id,
+      name:names.get(evaluator_id) || "Unknown evaluator",
+      average:mean(items.map(item => item.average)),
+      employeeCount:new Set(
+        items.map(item => item.employee_id).filter(Boolean)
+      ).size
+    }))
+    .filter(item => Number.isFinite(item.average))
+    .sort(
+      (a,b) =>
+        b.average - a.average ||
+        a.name.localeCompare(b.name)
+    );
+}
+
+function renderEvaluatorAverages(host,items){
+  if(!host) return;
+
+  const count = host.querySelector(".team-average-evaluator-count");
+  const list = host.querySelector(".team-average-evaluator-list");
+
+  if(count){
+    count.textContent =
+      `${items.length} evaluator${items.length === 1 ? "" : "s"}`;
+  }
+
+  if(!list) return;
+
+  list.innerHTML = "";
+
+  if(!items.length){
+    list.innerHTML = `
+      <div class="team-average-evaluator-empty">
+        No evaluator-level averages are available for this period.
+      </div>
+    `;
+    return;
+  }
+
+  items.forEach(item => {
+    const card = document.createElement("article");
+    card.className = "team-average-evaluator-card";
+
+    card.innerHTML = `
+      <div class="team-average-evaluator-top">
+        <div class="team-average-evaluator-copy">
+          <span class="team-average-evaluator-name"></span>
+          <span class="team-average-evaluator-meta"></span>
+        </div>
+        <div class="team-average-evaluator-score"></div>
+      </div>
+      <div class="team-average-evaluator-bar"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="5"
+        aria-valuenow="${Number(item.average).toFixed(2)}">
+        <span></span>
+      </div>
+    `;
+
+    card.querySelector(".team-average-evaluator-name").textContent =
+      item.name;
+
+    card.querySelector(".team-average-evaluator-meta").textContent =
+      `${item.employeeCount} staff member${
+        item.employeeCount === 1 ? "" : "s"
+      } evaluated`;
+
+    card.querySelector(".team-average-evaluator-score").textContent =
+      `${scoreText(item.average)} / 5`;
+
+    card.querySelector(".team-average-evaluator-bar span").style.width =
+      `${
+        Math.max(
+          0,
+          Math.min(100,Number(item.average) / 5 * 100)
+        )
+      }%`;
+
+    list.appendChild(card);
+  });
+}
+
 function renderTeamGraph(data){
   const employeeRounds = buildEmployeeRounds(data.evaluations);
   const periods = buildTeamPeriods(employeeRounds);
@@ -885,6 +1138,17 @@ function renderTeamGraph(data){
           data-period-detail="staff"></span>
       </div>
     </div>
+
+    <section class="team-average-evaluator-section"
+      id="teamAverageEvaluatorSection">
+      <div class="team-average-evaluator-head">
+        <div class="team-average-evaluator-title">
+          Evaluator averages
+        </div>
+        <div class="team-average-evaluator-count">0 evaluators</div>
+      </div>
+      <div class="team-average-evaluator-list"></div>
+    </section>
   `;
 
   host.appendChild(graph);
@@ -898,6 +1162,12 @@ function renderTeamGraph(data){
         "selected",
         Number(dot.dataset.teamPeriodIndex) === index
       );
+      dot.setAttribute(
+        "aria-pressed",
+        Number(dot.dataset.teamPeriodIndex) === index
+          ? "true"
+          : "false"
+      );
     });
 
     const detail = host.querySelector("#teamAveragePointDetail");
@@ -910,13 +1180,30 @@ function renderTeamGraph(data){
 
     detail.querySelector('[data-period-detail="staff"]').textContent =
       `${period.staffCount} staff`;
+
+    renderEvaluatorAverages(
+      host.querySelector("#teamAverageEvaluatorSection"),
+      buildEvaluatorAverages(
+        data.evaluations,
+        period.key,
+        data.profiles
+      )
+    );
   };
 
   host.querySelectorAll(".team-average-dot").forEach(dot => {
     const activate = () =>
       selectPeriod(Number(dot.dataset.teamPeriodIndex));
 
-    dot.addEventListener("click",activate);
+    dot.addEventListener("click",event => {
+      activate();
+
+      // Pointer clicks should not leave Chromium's SVG focus rectangle
+      // around the selected dot. Keyboard users keep normal focus behavior.
+      if(event.detail > 0){
+        dot.blur?.();
+      }
+    });
 
     dot.addEventListener("keydown",event => {
       if(event.key !== "Enter" && event.key !== " ") return;
@@ -983,6 +1270,110 @@ document.addEventListener("keydown",event => {
     closeTeamModal();
   }
 },true);
+
+
+/* =========================================================
+   MAIN VIEW STATE SYNCHRONIZER
+   Keep header + sidebar navigation aligned with whichever main
+   view is actually visible, regardless of which control changed it.
+   ========================================================= */
+
+function syncVisibleMainViewState(){
+  const dashboard = document.getElementById("dashboardView");
+  const form = document.getElementById("formView");
+
+  if(!dashboard || !form) return;
+
+  const dashboardVisible = !dashboard.classList.contains("hide");
+  const formVisible = !form.classList.contains("hide");
+
+  // Do nothing during transition frames where both views may temporarily
+  // share the same visibility state. Synchronize once the target settles.
+  if(dashboardVisible === formVisible) return;
+
+  const onDashboard = dashboardVisible;
+
+  const action = document.getElementById("headerActionBtn");
+  if(action){
+    const nextText = onDashboard ? "Start Evaluation" : "Dashboard";
+
+    if(action.textContent !== nextText){
+      action.textContent = nextText;
+    }
+
+    action.setAttribute(
+      "aria-label",
+      onDashboard
+        ? "Start Evaluation"
+        : "Return to Dashboard"
+    );
+  }
+
+  const title = document.getElementById("pageTitle");
+  if(title){
+    const nextTitle =
+      onDashboard
+        ? "Performance Dashboard"
+        : "Performance Evaluation";
+
+    if(title.textContent !== nextTitle){
+      title.textContent = nextTitle;
+    }
+  }
+
+  document
+    .getElementById("drawerDashboard")
+    ?.classList.toggle("on",onDashboard);
+
+  document
+    .getElementById("drawerEvaluation")
+    ?.classList.toggle("on",!onDashboard);
+
+  document
+    .getElementById("layoutChooser")
+    ?.classList.toggle("hide",onDashboard);
+}
+
+function installMainViewStateSync(){
+  const dashboard = document.getElementById("dashboardView");
+  const form = document.getElementById("formView");
+
+  if(!dashboard || !form) return;
+
+  const observer = new MutationObserver(() => {
+    queueMicrotask(syncVisibleMainViewState);
+  });
+
+  observer.observe(dashboard,{
+    attributes:true,
+    attributeFilter:["class"]
+  });
+
+  observer.observe(form,{
+    attributes:true,
+    attributeFilter:["class"]
+  });
+
+  document.addEventListener("click",event => {
+    if(
+      event.target?.closest?.(
+        "#drawerDashboard,#drawerEvaluation,#headerActionBtn,#backToDashboard"
+      )
+    ){
+      setTimeout(syncVisibleMainViewState,0);
+      setTimeout(syncVisibleMainViewState,380);
+    }
+  },true);
+
+  window.addEventListener("pageshow",syncVisibleMainViewState);
+  document.addEventListener("visibilitychange",() => {
+    if(document.visibilityState === "visible"){
+      syncVisibleMainViewState();
+    }
+  });
+
+  syncVisibleMainViewState();
+}
 
 /* =========================================================
    CURRENT ROUND DASHBOARD STABILITY
@@ -1278,5 +1669,6 @@ cardObserver.observe(document.documentElement,{
 
 injectStyles();
 decorateTeamAverageCard();
+installMainViewStateSync();
 installProgressGuard();
 syncStableProgress();
