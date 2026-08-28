@@ -126,7 +126,8 @@ function ensureStyles(){
       --mist:#111922;
       --mist-deep:#0a1016;
       --panel:#18222c;
-      --line:#30404e;
+      --line:#435867;
+      --bp-card-border:#536b7d;
       --bp-theme-surface-2:#1d2934;
       --bp-theme-surface-3:#23313d;
       --bp-theme-input:#111a23;
@@ -145,7 +146,8 @@ function ensureStyles(){
       --mist:#000000;
       --mist-deep:#000000;
       --panel:#050505;
-      --line:#262626;
+      --line:#363636;
+      --bp-card-border:#484848;
       --bp-theme-surface-2:#0b0b0b;
       --bp-theme-surface-3:#111111;
       --bp-theme-input:#090909;
@@ -283,7 +285,51 @@ function ensureStyles(){
       background:rgba(0,0,0,.68) !important;
     }
 
-    /* Drawer/admin/account surfaces must stay readable in dark themes. */
+
+    /* Clear separation between cards and the dark page background. */
+    html[data-bp-theme="dark"] :where(
+      .dash-metric,
+      .dash-panel-card,
+      .panel,
+      .tcard,
+      .mgr-sec,
+      .acct,
+      .account-settings-dialog,
+      .account-settings-body > .settings-section,
+      .settings-photo-row,
+      .profile-crop-dialog
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .dash-metric,
+      .dash-panel-card,
+      .panel,
+      .tcard,
+      .mgr-sec,
+      .acct,
+      .account-settings-dialog,
+      .account-settings-body > .settings-section,
+      .settings-photo-row,
+      .profile-crop-dialog
+    ){
+      border-color:var(--bp-card-border) !important;
+      border-width:1.5px !important;
+      border-style:solid !important;
+    }
+
+    html[data-bp-theme="dark"] :where(
+      .dash-date-chip,.dash-tag,.dash-back-btn,.dash-icon-bubble,
+      .dash-rank-avatar,.dash-rank-no,.dash-activity-icon,.dash-live-avatar,
+      .bp-theme-choice,.bp-custom-color-wrap
+    ),
+    html[data-bp-theme="amoled"] :where(
+      .dash-date-chip,.dash-tag,.dash-back-btn,.dash-icon-bubble,
+      .dash-rank-avatar,.dash-rank-no,.dash-activity-icon,.dash-live-avatar,
+      .bp-theme-choice,.bp-custom-color-wrap
+    ){
+      border-color:var(--line) !important;
+    }
+
+        /* Drawer/admin/account surfaces must stay readable in dark themes. */
     html[data-bp-theme="dark"] :where(
       .mgr-sec,.mgr-panel-body,.acct,.lay-menu
     ),
@@ -849,7 +895,7 @@ function buildSettingsSection(){
     btn.addEventListener("click", () => chooseAccent(btn.dataset.bpAccent));
   });
 
-  section.querySelector("#bpCustomAccent")?.addEventListener("input", event => {
+  section.querySelector("#bpCustomAccent")?.addEventListener("change", event => {
     chooseAccent(event.target.value);
   });
 
