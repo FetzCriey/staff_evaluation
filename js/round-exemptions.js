@@ -1032,9 +1032,81 @@ function injectStyles(){
       text-transform:uppercase;
     }
 
+    .round-exemption-timeoff-fieldset{
+      min-width:0;
+      margin:0;
+      padding:0;
+      border:0;
+    }
+
+    .round-exemption-timeoff-options{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:7px;
+      margin-top:7px;
+    }
+
+    .round-exemption-timeoff-option{
+      position:relative;
+      display:flex;
+      align-items:flex-start;
+      gap:9px;
+      min-width:0;
+      padding:10px 11px;
+      border:1.5px solid var(--line,#c9dfee);
+      border-radius:11px;
+      background:#fff;
+      color:var(--ink-soft,#28455c);
+      cursor:pointer;
+      transition:border-color .15s ease,background .15s ease,box-shadow .15s ease;
+    }
+
+    .round-exemption-timeoff-option:hover{
+      border-color:#b9ddec;
+      background:#fbfeff;
+    }
+
+    .round-exemption-timeoff-option:has(input:checked){
+      border-color:var(--lagoon,#15ace3);
+      background:#eef9fd;
+      box-shadow:0 0 0 3px rgba(21,172,227,.09);
+    }
+
+    .round-exemption-timeoff-option input{
+      flex:0 0 auto;
+      width:15px;
+      height:15px;
+      margin:1px 0 0;
+      accent-color:var(--lagoon-deep,#0b7fb0);
+    }
+
+    .round-exemption-timeoff-option-copy{
+      min-width:0;
+      color:var(--ink,#0a2233);
+      font-size:9.7px;
+      line-height:1.35;
+      font-weight:700;
+      overflow-wrap:anywhere;
+    }
+
+    .round-exemption-details-wrap{
+      margin-top:11px;
+    }
+
+    .round-exemption-details-wrap[hidden]{
+      display:none !important;
+    }
+
+    .round-exemption-details-help{
+      margin:4px 0 7px;
+      color:var(--muted,#5b7080);
+      font-size:8.8px;
+      line-height:1.4;
+    }
+
     .round-exemption-reason-input{
       width:100%;
-      min-height:106px;
+      min-height:78px;
       resize:vertical;
       padding:11px 12px;
       border:1.5px solid var(--line,#c9dfee);
@@ -1237,6 +1309,10 @@ function injectStyles(){
 
       .round-exemption-editor-hero{
         align-items:flex-start;
+      }
+
+      .round-exemption-timeoff-options{
+        grid-template-columns:1fr;
       }
     }
     .res-row.round-exempted-result{
@@ -2386,13 +2462,44 @@ function openReasonEditor(profile){
           The reason is saved for audit purposes and helps explain why this staff member is excluded from the current round.
         </div>
 
-        <label class="round-exemption-label" for="roundExemptionReason">
-          Reason for exemption
-        </label>
-        <textarea class="round-exemption-reason-input"
-          id="roundExemptionReason"
-          maxlength="500"
-          placeholder="Example: On approved leave"></textarea>
+        <fieldset class="round-exemption-timeoff-fieldset">
+          <legend class="round-exemption-label">Type of leave</legend>
+          <div class="round-exemption-timeoff-options">
+            ${[
+              "Sick leave (Illness or Injury)",
+              "Bereavement leave (Immediate Family)",
+              "Bereavement leave (Other)",
+              "Vacation leave",
+              "Maternity / Paternity leave",
+              "Emergency leave",
+              "Temporary leave",
+              "Birthday leave",
+              "Leave without pay (Absent)",
+              "Other"
+            ].map((option,index) => `
+              <label class="round-exemption-timeoff-option">
+                <input type="radio"
+                  name="roundExemptionType"
+                  value="${option}"
+                  ${index === 0 ? "" : ""}>
+                <span class="round-exemption-timeoff-option-copy">${option}</span>
+              </label>
+            `).join("")}
+          </div>
+        </fieldset>
+
+        <div class="round-exemption-details-wrap" id="roundExemptionDetailsWrap">
+          <label class="round-exemption-label" for="roundExemptionReason">
+            Description <span id="roundExemptionDetailsRequirement">(optional)</span>
+          </label>
+          <div class="round-exemption-details-help">
+            Add a short description only when more context is useful. Description is required when “Other” is selected.
+          </div>
+          <textarea class="round-exemption-reason-input"
+            id="roundExemptionReason"
+            maxlength="500"
+            placeholder="Optional details"></textarea>
+        </div>
 
         <div class="round-exemption-editor-actions">
           <button class="round-exemption-secondary" type="button">Cancel</button>
@@ -2410,21 +2517,60 @@ function openReasonEditor(profile){
   const cancel = body.querySelector(".round-exemption-secondary");
   const save = body.querySelector(".round-exemption-primary");
   const input = body.querySelector(".round-exemption-reason-input");
+  const typeInputs = [
+    ...body.querySelectorAll('input[name="roundExemptionType"]')
+  ];
+  const requirement = body.querySelector("#roundExemptionDetailsRequirement");
+
+  const syncDescriptionRequirement = () => {
+    const selected = typeInputs.find(item => item.checked)?.value || "";
+    const other = selected === "Other";
+
+    setText(
+      requirement,
+      other ? "(required)" : "(optional)"
+    );
+
+    if(input){
+      input.placeholder = other
+        ? "Describe the reason"
+        : "Optional details";
+    }
+  };
+
+  typeInputs.forEach(item => {
+    item.addEventListener("change",syncDescriptionRequirement);
+  });
 
   back?.addEventListener("click",renderManageList);
   cancel?.addEventListener("click",renderManageList);
 
   save?.addEventListener("click",async () => {
-    const reason = String(input?.value || "").trim();
+    const selectedType =
+      typeInputs.find(item => item.checked)?.value || "";
+    const details = String(input?.value || "").trim();
 
-    if(reason.length < 2){
+    if(!selectedType){
       await showNotice(
-        "Reason required",
-        "Enter a short reason for the current-round exemption."
+        "Type of leave required",
+        "Select the Better Practice time-off reason for this exemption."
+      );
+      typeInputs[0]?.focus();
+      return;
+    }
+
+    if(selectedType === "Other" && details.length < 2){
+      await showNotice(
+        "Description required",
+        "Enter a short description when Other is selected."
       );
       input?.focus();
       return;
     }
+
+    const reason = details
+      ? `${selectedType} — ${details}`
+      : selectedType;
 
     save.disabled = true;
 

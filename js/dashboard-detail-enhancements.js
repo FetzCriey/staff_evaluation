@@ -296,10 +296,6 @@ function injectStyles(){
       cursor:pointer;
       outline:none;
       touch-action:manipulation;
-
-      /* SVG <g> elements must not inherit the site's universal
-         [role="button"] scale/translate motion. Scaling an SVG group
-         uses the SVG coordinate space and visually pulls the point left. */
       scale:1 !important;
       translate:0 0 !important;
       transform:none !important;
@@ -334,13 +330,6 @@ function injectStyles(){
     .team-average-point:focus-visible .team-average-dot{
       stroke:#08344c;
       stroke-width:4;
-    }
-
-    .team-average-point.motion-click .team-average-dot,
-    .team-average-point:active .team-average-dot{
-      transform:none !important;
-      scale:1 !important;
-      translate:0 0 !important;
     }
 
     .team-average-grid{
@@ -571,6 +560,41 @@ function injectStyles(){
       border:1.5px solid #d5e8f2;
       border-radius:12px;
       background:#fff;
+    }
+
+    .team-average-evaluator-card.exempted{
+      border-color:#ead9ab;
+      background:linear-gradient(180deg,#fffdf7 0%,#fff8e8 100%);
+    }
+
+    .team-average-evaluator-exempted-pill{
+      flex:0 0 auto;
+      padding:4px 7px;
+      border:1px solid #e5cf91;
+      border-radius:999px;
+      background:#fff1c9;
+      color:#7e601f;
+      font-size:8px;
+      line-height:1.2;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .team-average-evaluator-reason{
+      margin-top:8px;
+      padding:7px 8px;
+      border:1px solid #eadfbd;
+      border-radius:9px;
+      background:rgba(255,255,255,.75);
+      color:#715d34;
+      font-size:8.7px;
+      line-height:1.4;
+      overflow-wrap:anywhere;
+    }
+
+    .team-average-evaluator-reason strong{
+      color:#765a20;
+      font-weight:800;
     }
 
     .team-average-evaluator-top{
@@ -908,11 +932,23 @@ async function loadTeamData(force=false){
     return teamCache;
   }
 
-  const [profilesResult,evaluationsResult] = await Promise.all([
+  const [
+    profilesResult,
+    evaluationsResult,
+    exemptionsResult,
+    historyMetaResult
+  ] = await Promise.all([
     db.from("profiles")
       .select("id,full_name")
       .order("full_name"),
-    db.rpc("get_dashboard_evaluations")
+    db.rpc("get_dashboard_evaluations"),
+    db.from("evaluation_round_exemptions")
+      .select("staff_id,reason,active,exempted_at,restored_at")
+      .order("exempted_at",{ascending:true}),
+    db.from("evaluations")
+      .select("archived_at,manager_summary")
+      .eq("archived",true)
+      .not("manager_summary","is",null)
   ]);
 
   if(profilesResult.error) throw profilesResult.error;
@@ -920,7 +956,13 @@ async function loadTeamData(force=false){
 
   teamCache = {
     profiles:profilesResult.data || [],
-    evaluations:evaluationsResult.data || []
+    evaluations:evaluationsResult.data || [],
+    exemptions:exemptionsResult.error
+      ? []
+      : (exemptionsResult.data || []),
+    historyMetadata:historyMetaResult.error
+      ? []
+      : (historyMetaResult.data || [])
   };
   teamCacheAt = Date.now();
   return teamCache;
@@ -965,18 +1007,23 @@ function buildTeamPeriods(employeeRounds){
 
   return [...byDate.entries()]
     .sort((a,b) => a[0].localeCompare(b[0]))
-    .map(([key,rounds]) => ({
-      key,
-      archived_at:rounds
+    .map(([key,rounds]) => {
+      const archivedTimes = rounds
         .map(round => round.archived_at)
-        .sort((a,b) => new Date(a) - new Date(b))[0],
+        .sort((a,b) => new Date(a) - new Date(b));
+
+      return {
+      key,
+      archived_at:archivedTimes[0],
+      archived_end:archivedTimes.at(-1),
       average:mean(rounds.map(round => round.average)),
       staffCount:new Set(rounds.map(round => round.employee_id)).size,
       evaluatorSubmissions:rounds.reduce(
         (sum,round) => sum + (Number(round.evaluatorCount) || 0),
         0
       )
-    }))
+      };
+    })
     .filter(period => Number.isFinite(period.average));
 }
 
@@ -1004,6 +1051,86 @@ function periodDateLabel(value,short=false){
     short
       ? {month:"short",year:"2-digit"}
       : {weekday:"short",month:"long",day:"numeric",year:"numeric"}
+  );
+}
+
+function buildPeriodExemptions(data,period){
+  const profiles = data.profiles || [];
+  const profileByName = new Map(
+    profiles.map(profile => [
+      String(profile.full_name || "").trim().toLowerCase(),
+      profile
+    ])
+  );
+  const profileById = new Map(
+    profiles
+      .filter(profile => profile?.id)
+      .map(profile => [profile.id,profile])
+  );
+
+  const found = new Map();
+  const add = ({staff_id=null,name="",reason=""}) => {
+    const cleanName = String(name || "").trim();
+    const profile = staff_id
+      ? profileById.get(staff_id)
+      : profileByName.get(cleanName.toLowerCase());
+    const finalName = cleanName || profile?.full_name || "Unknown staff";
+    const key = staff_id || profile?.id || finalName.toLowerCase();
+
+    if(!key || found.has(key)) return;
+
+    found.set(key,{
+      staff_id:staff_id || profile?.id || null,
+      name:finalName,
+      reason:String(reason || "Exempted from this finalized period.").trim()
+    });
+  };
+
+  // Historical demo rounds carry an explicit marker because the exempted
+  // staff member correctly has no evaluation row in that finalized period.
+  const summaries = new Set(
+    (data.historyMetadata || [])
+      .filter(row =>
+        row.archived_at &&
+        localDateKey(row.archived_at) === period.key &&
+        row.manager_summary
+      )
+      .map(row => String(row.manager_summary))
+  );
+
+  summaries.forEach(summary => {
+    const marker = /\[HISTORICAL_EXEMPTION\]\s*(.+?)\s+[—-]\s+(.+?)(?=\.?\s+Historical simulation data|$)/gi;
+    for(const match of summary.matchAll(marker)){
+      add({name:match[1],reason:match[2]});
+    }
+  });
+
+  // Real exemption audit rows are also used when the exemption window
+  // overlaps the finalized period. This is intentionally best-effort so
+  // users without permission to read the audit table still see the graph.
+  const periodStart = new Date(period.archived_at).getTime();
+  const periodEnd = new Date(period.archived_end || period.archived_at).getTime();
+
+  (data.exemptions || []).forEach(record => {
+    const exemptedAt = new Date(record.exempted_at).getTime();
+    const restoredAt = record.restored_at
+      ? new Date(record.restored_at).getTime()
+      : Number.POSITIVE_INFINITY;
+
+    if(
+      Number.isFinite(exemptedAt) &&
+      exemptedAt <= periodEnd &&
+      restoredAt >= periodStart
+    ){
+      add({
+        staff_id:record.staff_id,
+        reason:record.reason
+      });
+    }
+  });
+
+  return [...found.values()].sort(
+    (a,b) => a.name.localeCompare(b.name)
   );
 }
 
@@ -1055,22 +1182,27 @@ function buildEvaluatorAverages(rows,periodKey,profiles){
     );
 }
 
-function renderEvaluatorAverages(host,items){
+function renderEvaluatorAverages(host,items,exemptions=[]){
   if(!host) return;
 
   const count = host.querySelector(".team-average-evaluator-count");
   const list = host.querySelector(".team-average-evaluator-list");
 
   if(count){
-    count.textContent =
+    const activeText =
       `${items.length} evaluator${items.length === 1 ? "" : "s"}`;
+    const exemptedText = exemptions.length
+      ? ` · ${exemptions.length} exempted`
+      : "";
+
+    count.textContent = activeText + exemptedText;
   }
 
   if(!list) return;
 
   list.innerHTML = "";
 
-  if(!items.length){
+  if(!items.length && !exemptions.length){
     list.innerHTML = `
       <div class="team-average-evaluator-empty">
         No evaluator-level averages are available for this period.
@@ -1118,6 +1250,33 @@ function renderEvaluatorAverages(host,items){
           Math.min(100,Number(item.average) / 5 * 100)
         )
       }%`;
+
+    list.appendChild(card);
+  });
+
+  exemptions.forEach(item => {
+    const card = document.createElement("article");
+    card.className = "team-average-evaluator-card exempted";
+
+    card.innerHTML = `
+      <div class="team-average-evaluator-top">
+        <div class="team-average-evaluator-copy">
+          <span class="team-average-evaluator-name"></span>
+          <span class="team-average-evaluator-meta">
+            Exempted from this finalized period
+          </span>
+        </div>
+        <span class="team-average-evaluator-exempted-pill">Exempted</span>
+      </div>
+      <div class="team-average-evaluator-reason">
+        <strong>Cause:</strong> <span></span>
+      </div>
+    `;
+
+    card.querySelector(".team-average-evaluator-name").textContent =
+      item.name;
+    card.querySelector(".team-average-evaluator-reason span").textContent =
+      item.reason;
 
     list.appendChild(card);
   });
@@ -1206,7 +1365,7 @@ function closeEvaluatorModal(){
   evaluatorModalLastFocused = null;
 }
 
-function openEvaluatorModal(period,items,trigger){
+function openEvaluatorModal(period,items,exemptions,trigger){
   const popup = ensureEvaluatorModal();
 
   evaluatorModalLastFocused =
@@ -1232,7 +1391,8 @@ function openEvaluatorModal(period,items,trigger){
 
   renderEvaluatorAverages(
     popup.querySelector(".team-average-evaluator-section"),
-    items
+    items,
+    exemptions
   );
 
   popup.hidden = false;
@@ -1473,10 +1633,15 @@ function renderTeamGraph(data){
         period.key,
         data.profiles
       );
+      const exemptionItems = buildPeriodExemptions(
+        data,
+        period
+      );
 
       openEvaluatorModal(
         period,
         evaluatorItems,
+        exemptionItems,
         trigger
       );
     }
