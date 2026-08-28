@@ -47,8 +47,6 @@
      Beneath it: Score [input] value/5 on ONE line. */
   body.hide-criteria-average-while-scoring #grid #body tr{
     display:grid !important;
-    /* Equal flexible space on both sides centers the whole
-       Score [input] value/5 group inside every criterion card. */
     grid-template-columns:1fr auto auto 1fr;
     column-gap:10px;
     row-gap:0;
@@ -62,7 +60,6 @@
     padding-bottom:10px;
   }
 
-  /* Cell that contains the evaluator's editable score input. */
   body.hide-criteria-average-while-scoring #grid #body td:has(> .score-in){
     grid-column:2;
     justify-self:end;
@@ -98,8 +95,6 @@
     text-align:center;
   }
 
-  /* Existing row score is the same value in one-evaluator mode.
-     Reuse it as the live "4.6/5" display instead of placing it below. */
   body.hide-criteria-average-while-scoring #grid #body td.calc:not(.dim){
     grid-column:3;
     justify-self:start;
@@ -128,12 +123,10 @@
     margin-left:2px;
   }
 
-  /* Average remains hidden during normal scoring. */
   body.hide-criteria-average-while-scoring #grid #body td.calc.dim{
     display:none !important;
   }
 
-  /* Cards view gets the same compact input sizing if selected manually. */
   body.hide-criteria-average-while-scoring #cards .cpill{
     display:none;
   }
@@ -169,5 +162,79 @@
     max-width:72px;
     padding:9px 6px;
     font-size:16px;
+  }
+
+  /* =====================================================
+     MOBILE DARK / AMOLED FIXES
+     Desktop is intentionally untouched.
+     ===================================================== */
+
+  /* Do not draw the desktop-only outer boxes around
+     Profile picture / Appearance / Change password sections. */
+  html[data-bp-theme="dark"] body .account-settings-body > .settings-section,
+  html[data-bp-theme="amoled"] body .account-settings-body > .settings-section{
+    border:0 !important;
+    border-width:0 !important;
+    border-style:none !important;
+    box-shadow:none !important;
+    background:transparent !important;
+    padding-left:0 !important;
+    padding-right:0 !important;
+  }
+
+  /* Keep only the inner controls/cards bordered on mobile. */
+  html[data-bp-theme="dark"] body .settings-photo-row,
+  html[data-bp-theme="amoled"] body .settings-photo-row,
+  html[data-bp-theme="dark"] body .bp-theme-choice,
+  html[data-bp-theme="amoled"] body .bp-theme-choice{
+    border-style:solid !important;
+  }
+
+  /* Mobile evaluation rows must follow the selected dark theme
+     instead of keeping the desktop/mobile white card background. */
+  html[data-bp-theme="dark"] body.hide-criteria-average-while-scoring #grid #body tr,
+  html[data-bp-theme="amoled"] body.hide-criteria-average-while-scoring #grid #body tr{
+    background:var(--panel) !important;
+    border-color:var(--bp-card-border, var(--line)) !important;
+    color:var(--ink) !important;
+  }
+
+  html[data-bp-theme="dark"] body.hide-criteria-average-while-scoring #grid #body td,
+  html[data-bp-theme="amoled"] body.hide-criteria-average-while-scoring #grid #body td{
+    background:transparent !important;
+    border-color:var(--line) !important;
+    color:var(--ink) !important;
+  }
+
+  html[data-bp-theme="dark"] body.hide-criteria-average-while-scoring #grid #body .crit-name,
+  html[data-bp-theme="amoled"] body.hide-criteria-average-while-scoring #grid #body .crit-name{
+    color:var(--ink) !important;
+    opacity:1 !important;
+  }
+
+  html[data-bp-theme="dark"] body.hide-criteria-average-while-scoring #grid #body .crit-desc,
+  html[data-bp-theme="amoled"] body.hide-criteria-average-while-scoring #grid #body .crit-desc{
+    color:var(--muted) !important;
+    opacity:1 !important;
+  }
+
+  html[data-bp-theme="dark"] body.hide-criteria-average-while-scoring #grid #body td:has(> .score-in)::before,
+  html[data-bp-theme="amoled"] body.hide-criteria-average-while-scoring #grid #body td:has(> .score-in)::before{
+    color:var(--ink-soft) !important;
+  }
+
+  html[data-bp-theme="dark"] body.hide-criteria-average-while-scoring #grid #body .score-in,
+  html[data-bp-theme="amoled"] body.hide-criteria-average-while-scoring #grid #body .score-in{
+    background:var(--bp-theme-input) !important;
+    color:var(--ink) !important;
+    border-color:var(--line) !important;
+  }
+
+  /* Same treatment if Cards view is selected manually. */
+  html[data-bp-theme="dark"] body.hide-criteria-average-while-scoring #cards .card,
+  html[data-bp-theme="amoled"] body.hide-criteria-average-while-scoring #cards .card{
+    background:var(--panel) !important;
+    border-color:var(--bp-card-border, var(--line)) !important;
+    color:var(--ink) !important;
   }
 }
