@@ -518,6 +518,140 @@
           flex-basis:100% !important;
         }
       }
+
+      /* Selected evaluation/history rows must stay dark */
+      html[data-bp-theme="dark"] :where(.res-row,.res-row.on,.res-row.selected,.res-row.active,.his-row,.his-row.on,.his-row.selected,.his-row.active),
+      html[data-bp-theme="amoled"] :where(.res-row,.res-row.on,.res-row.selected,.res-row.active,.his-row,.his-row.on,.his-row.selected,.his-row.active){
+        background:var(--bp-theme-surface-2) !important;
+        color:var(--ink) !important;
+        border-color:var(--line) !important;
+      }
+
+      html[data-bp-theme="dark"] :where(.res-row.on,.res-row.selected,.res-row.active,.his-row.on,.his-row.selected,.his-row.active),
+      html[data-bp-theme="amoled"] :where(.res-row.on,.res-row.selected,.res-row.active,.his-row.on,.his-row.selected,.his-row.active){
+        background:rgba(var(--bp-accent-rgb),.12) !important;
+        border-color:rgba(var(--bp-accent-rgb),.55) !important;
+        box-shadow:inset 3px 0 0 var(--lagoon) !important;
+      }
+
+      html[data-bp-theme="dark"] :where(.res-nm,.his-nm),
+      html[data-bp-theme="amoled"] :where(.res-nm,.his-nm){
+        color:var(--ink) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] :where(.res-ct,.his-meta),
+      html[data-bp-theme="amoled"] :where(.res-ct,.his-meta){
+        color:var(--muted) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] :where(.res-bar,.his-bar),
+      html[data-bp-theme="amoled"] :where(.res-bar,.his-bar){
+        background:var(--bp-theme-surface-3) !important;
+      }
+
+      /* Read-only evaluation result cards */
+      html[data-bp-theme="dark"] :where(.review-summary-card,.review-remark-card,.result-card,.results-card,.evaluation-result-card,.preview-card,#cards .card,#cards .ccard,.criterion-card,.criteria-card),
+      html[data-bp-theme="amoled"] :where(.review-summary-card,.review-remark-card,.result-card,.results-card,.evaluation-result-card,.preview-card,#cards .card,#cards .ccard,.criterion-card,.criteria-card){
+        background:var(--panel) !important;
+        color:var(--ink) !important;
+        border-color:var(--bp-card-border,var(--line)) !important;
+      }
+
+      @media(max-width:680px){
+        html[data-bp-theme="dark"] #grid #body tr,
+        html[data-bp-theme="amoled"] #grid #body tr{
+          background:var(--panel) !important;
+          color:var(--ink) !important;
+          border-color:var(--bp-card-border,var(--line)) !important;
+        }
+        html[data-bp-theme="dark"] #grid #body td,
+        html[data-bp-theme="amoled"] #grid #body td{
+          background:transparent !important;
+          color:var(--ink) !important;
+          border-color:var(--line) !important;
+        }
+        html[data-bp-theme="dark"] #grid #body :where(.crit-name,.crit-title),
+        html[data-bp-theme="amoled"] #grid #body :where(.crit-name,.crit-title){
+          color:var(--ink) !important;
+          opacity:1 !important;
+        }
+        html[data-bp-theme="dark"] #grid #body :where(.crit-desc,.crit-description),
+        html[data-bp-theme="amoled"] #grid #body :where(.crit-desc,.crit-description){
+          color:var(--muted) !important;
+          opacity:1 !important;
+        }
+      }
+
+      /* Team Average dot -> Evaluator averages popup */
+      html[data-bp-theme="dark"] :where(.team-evaluator-popup-body > *,.team-evaluator-list > *,[class*="team-evaluator"][class*="row"],[class*="team-evaluator"][class*="item"],[class*="team-evaluator"][class*="card"]),
+      html[data-bp-theme="amoled"] :where(.team-evaluator-popup-body > *,.team-evaluator-list > *,[class*="team-evaluator"][class*="row"],[class*="team-evaluator"][class*="item"],[class*="team-evaluator"][class*="card"]){
+        background:var(--panel) !important;
+        border-color:var(--bp-card-border,var(--line)) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] :where([class*="team-evaluator"] strong,[class*="team-evaluator"] b,[class*="team-evaluator"][class*="name"],[class*="team-evaluator"][class*="score"]),
+      html[data-bp-theme="amoled"] :where([class*="team-evaluator"] strong,[class*="team-evaluator"] b,[class*="team-evaluator"][class*="name"],[class*="team-evaluator"][class*="score"]){
+        color:var(--ink) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] :where([class*="team-evaluator"] span,[class*="team-evaluator"][class*="meta"]),
+      html[data-bp-theme="amoled"] :where([class*="team-evaluator"] span,[class*="team-evaluator"][class*="meta"]){
+        color:var(--muted) !important;
+      }
+
+      /* Clear scores button readability */
+      #resetBtn{
+        border:1.5px solid #c84b4b !important;
+        background:linear-gradient(180deg,#df5a54,#b92f2f) !important;
+        color:#fff !important;
+        box-shadow:0 10px 24px -12px rgba(185,47,47,.7) !important;
+        opacity:1 !important;
+      }
+      #resetBtn:hover:not(:disabled){
+        background:linear-gradient(180deg,#e96b65,#c53b3b) !important;
+        color:#fff !important;
+        border-color:#e16a65 !important;
+      }
+      #resetBtn:disabled{
+        background:var(--bp-theme-surface-3,#e9eef2) !important;
+        color:var(--muted,#7b8790) !important;
+        border-color:var(--line,#c9dfee) !important;
+        box-shadow:none !important;
+        opacity:.7 !important;
+      }
+      html[data-bp-theme="amoled"] #resetBtn:disabled,
+      html[data-bp-theme="dark"] #resetBtn:disabled{
+        background:var(--bp-theme-surface-3) !important;
+        color:var(--ink-soft) !important;
+        border-color:var(--line) !important;
+        opacity:.72 !important;
+      }
+
+      /* Not started readability */
+      html[data-bp-theme="dark"] :where(.round-progress-state.not-started,.round-drilldown-badge.not-started),
+      html[data-bp-theme="amoled"] :where(.round-progress-state.not-started,.round-drilldown-badge.not-started){
+        background:var(--bp-theme-surface-3) !important;
+        color:var(--ink-soft) !important;
+        border-color:var(--line) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] :where(.round-progress-person.not-started,.round-drilldown-assignment.not-started),
+      html[data-bp-theme="amoled"] :where(.round-progress-person.not-started,.round-drilldown-assignment.not-started){
+        background:var(--panel) !important;
+        color:var(--ink) !important;
+        border-color:var(--line) !important;
+      }
+
+      html[data-bp-theme="dark"] .round-progress-summary-card.not-started :where(strong,span),
+      html[data-bp-theme="amoled"] .round-progress-summary-card.not-started :where(strong,span){
+        color:var(--ink-soft) !important;
+      }
+
     `;
 
     document.head.appendChild(style);
