@@ -1033,14 +1033,11 @@
       @media(max-width:760px){
         html{
           scroll-behavior:auto !important;
-          overscroll-behavior-y:auto !important;
         }
 
         body{
           overflow-x:hidden !important;
           overflow-y:visible !important;
-          overscroll-behavior-y:auto !important;
-          touch-action:pan-y !important;
         }
 
         body :where(
@@ -1064,17 +1061,6 @@
           overflow-anchor:none !important;
         }
 
-        body :where(
-          input,
-          textarea,
-          select,
-          button,
-          a,
-          [role="button"]
-        ){
-          touch-action:manipulation;
-        }
-
         /* A little real bottom breathing room prevents the final button/card
            from sitting exactly under the dynamic mobile browser toolbar. */
         #formView,
@@ -1084,6 +1070,131 @@
 
         .actions{
           margin-bottom:max(18px, env(safe-area-inset-bottom)) !important;
+        }
+      }
+
+
+      /* =====================================================
+         ADD STAFF — EXACT CUSTOM DROPDOWN THEME
+         ===================================================== */
+
+      html[data-bp-theme="dark"] body .staff-add-dialog,
+      html[data-bp-theme="amoled"] body .staff-add-dialog{
+        background:var(--panel) !important;
+        border-color:var(--bp-card-border,var(--line)) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-body,
+      html[data-bp-theme="amoled"] body .staff-add-body,
+      html[data-bp-theme="dark"] body .staff-add-form,
+      html[data-bp-theme="amoled"] body .staff-add-form{
+        background:transparent !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form :where(input,select),
+      html[data-bp-theme="amoled"] body .staff-add-form :where(input,select){
+        background:var(--bp-theme-input) !important;
+        border-color:var(--line) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form :where(input,select):focus,
+      html[data-bp-theme="amoled"] body .staff-add-form :where(input,select):focus{
+        background:var(--bp-theme-input) !important;
+        border-color:var(--lagoon) !important;
+        color:var(--ink) !important;
+      }
+
+      /* These are the visible custom controls, not the hidden native selects. */
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-btn,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-btn{
+        background:var(--bp-theme-input) !important;
+        border-color:var(--line) !important;
+        color:var(--ink) !important;
+        box-shadow:none !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-btn:hover,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-btn:hover{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--lagoon) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select.open .bp-select-btn,
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-btn:focus-visible,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select.open .bp-select-btn,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-btn:focus-visible{
+        background:var(--bp-theme-input) !important;
+        border-color:var(--lagoon) !important;
+        color:var(--ink) !important;
+        box-shadow:0 0 0 3px rgba(var(--bp-accent-rgb),.16) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-label,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-label{
+        color:var(--ink) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-arrow,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-arrow{
+        border-color:var(--lagoon) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-menu,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-menu{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+        box-shadow:0 18px 38px -20px rgba(0,0,0,.86) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-option,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-option{
+        background:transparent !important;
+        color:var(--ink-soft) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-option:hover,
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-option.focused,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-option:hover,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-option.focused{
+        background:rgba(var(--bp-accent-rgb),.12) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] body .staff-add-form .bp-select-option.selected,
+      html[data-bp-theme="amoled"] body .staff-add-form .bp-select-option.selected{
+        background:rgba(var(--bp-accent-rgb),.18) !important;
+        color:var(--lagoon) !important;
+      }
+
+      /* =====================================================
+         MOBILE NATIVE SCROLL — DO NOT INTERCEPT TOUCH GESTURES
+         ===================================================== */
+      @media(max-width:760px){
+        html{
+          scroll-behavior:auto !important;
+        }
+
+        body{
+          overflow-x:hidden !important;
+          /* Intentionally no touch-action / overscroll override here.
+             Let Android/Chrome handle normal momentum scrolling natively. */
+        }
+
+        .staff-add-dialog,
+        .account-settings-dialog,
+        .team-average-dialog,
+        .team-evaluator-dialog,
+        .round-progress-dialog{
+          -webkit-overflow-scrolling:touch !important;
+          touch-action:auto !important;
+        }
+
+        .staff-add-dialog{
+          overscroll-behavior:contain !important;
         }
       }
 
