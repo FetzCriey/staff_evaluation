@@ -3,44 +3,663 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>Performance Evaluation</title>
-<link rel="icon" type="image/png" sizes="32x32" href="better-practice-favicon-32.png?v=20260827-2046">
-<link rel="icon" type="image/png" sizes="256x256" href="better-practice-favicon.png?v=20260827-2046">
-<link rel="shortcut icon" href="favicon.ico?v=20260827-2046">
-<link rel="apple-touch-icon" sizes="180x180" href="better-practice-favicon-180.png?v=20260827-2046">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/index.css">
-<link rel="stylesheet" href="css/session-loader.css">
-<link rel="stylesheet" href="css/dashboard.css?v=20260819-1437">
-<link rel="stylesheet" href="css/mobile-layout-tweaks.css?v=20260829-0716">
-<link rel="stylesheet" href="css/dashboard-empty-panels.css?v=20260819-2124">
-<link rel="stylesheet" href="css/sidebar-branding.css?v=20260819-2258">
-<link rel="stylesheet" href="css/add-staff-modal.css?v=20260820-1409">
-<link rel="stylesheet" href="css/account-settings.css?v=20260820-1454">
-<link rel="stylesheet" href="css/global-motion.css?v=20260820-2248">
-<link rel="stylesheet" href="css/staff-profile-popup.css?v=20260822-2030">
-<link rel="stylesheet" href="css/staff-profile-mobile-fix.css?v=20260825-1603">
+<style>
+  :root{
+    --ink:#0a2233;
+    --ink-soft:#28455c;
+    --muted:#5b7080;
+    --lagoon:#15ACE3;
+    --lagoon-deep:#0b7fb0;
+    --lagoon-dark:#08344c;
+    --mist:#d5e7f3;
+    --mist-deep:#c3dcec;
+    --panel:#ffffff;
+    --line:#c9dfee;
+    --error-bg:#fff0f0;
+    --error-ink:#a62a2a;
+    --error-line:#f1caca;
+    --shadow:0 24px 70px -20px rgba(8,52,76,.35);
+    --shadow-sm:0 2px 4px rgba(8,52,76,.06),0 14px 34px -16px rgba(8,52,76,.42);
+    /* legacy aliases so existing rules keep resolving */
+    --paper:var(--mist); --accent:var(--lagoon); --accent-deep:var(--lagoon-deep);
+    --accent-soft:#e2f4fc; --sky:#77D0F0; --gold:var(--lagoon-deep);
+  }
+  *{box-sizing:border-box} html,body{margin:0;min-height:100%}
+  body{
+    font-family:"Inter","Segoe UI",system-ui,sans-serif;
+    background:linear-gradient(180deg,var(--mist) 0%,var(--mist-deep) 100%)
+      fixed no-repeat var(--mist);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;line-height:1.5;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:34px 20px 80px}
+
+  /* ================= BRAND HEADER — mirrors the login brand panel ================= */
+  header.top{
+    position:relative;display:flex;align-items:center;gap:16px;
+    padding:26px 30px;margin-bottom:28px;border:0;
+    border-radius:22px;color:#f2fafe;overflow:hidden;
+    box-shadow:var(--shadow);
+    background:
+      radial-gradient(120% 90% at 85% -10%, rgba(21,172,227,.55), transparent 55%),
+      radial-gradient(100% 80% at -10% 110%, rgba(21,172,227,.30), transparent 50%),
+      linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 55%,#051e2d 100%);
+  }
+  header.top .logo{
+    width:52px;height:52px;flex:0 0 auto;object-fit:cover;
+    border-radius:14px;background:#fff;padding:6px;border:0;
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
+  }
+  header.top .htext{flex:1 1 auto;min-width:0}
+  .eyebrow{
+    font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:rgba(180,224,245,.85);font-weight:600;margin-bottom:6px;
+  }
+  h1{
+    font-family:"Bricolage Grotesque","Inter",sans-serif;
+    font-weight:800;font-size:30px;line-height:1.1;
+    letter-spacing:-.01em;margin:0;color:#f2fafe;
+  }
+  .sub{color:rgba(210,236,248,.82);font-size:13.5px;margin-top:7px;max-width:62ch}
+
+  /* ================= FIELDS ================= */
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:26px}
+  .field label,.comment label{
+    display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-soft);margin:0 0 7px;
+  }
+  .field input{
+    width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;
+    font-size:14.5px;background:#f2f8fc;font-family:inherit;color:var(--ink);outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+  }
+  .field input:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+  .field .ro{background:#eef6fb;color:var(--muted)}
+  .field input.bad{border-color:var(--error-line);background:var(--error-bg);color:var(--error-ink)}
+
+  .evaluator-ctl{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .evaluator-ctl span{
+    font-size:11.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-soft);
+  }
+  .stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel)}
+  .stepper button{border:0;background:transparent;width:36px;height:36px;font-size:18px;cursor:pointer;color:var(--lagoon-deep);font-weight:700}
+  .stepper button:hover{background:var(--accent-soft)}
+  .stepper .val{width:38px;text-align:center;font-weight:700;font-size:14px;border-left:1.5px solid var(--line);border-right:1.5px solid var(--line);line-height:36px}
+
+  /* ================= SCORE PANEL ================= */
+  .panel{background:var(--panel);border:1.5px solid var(--line);border-radius:20px;box-shadow:var(--shadow-sm);overflow:hidden}
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:720px}
+  thead th{
+    font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);
+    font-weight:700;text-align:center;padding:15px 8px;border-bottom:1.5px solid var(--line);background:#f4fafd;
+  }
+  thead th.crit{text-align:left;min-width:260px;padding-left:22px}
+  thead th.evh{min-width:96px;max-width:120px;letter-spacing:.04em;line-height:1.3;word-break:break-word;text-transform:none;font-size:11.5px}
+  thead th.tot{color:var(--lagoon-deep)}
+  tbody td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+  tbody tr:hover td{background:#fbfdff}
+  tbody td.crit{text-align:left;font-size:13.5px;padding-left:22px;color:var(--ink);max-width:340px;vertical-align:top}
+  .crit-name{font-weight:700;color:var(--ink);margin-bottom:2px;font-size:14px}
+  .crit-desc{font-weight:400;font-size:12px;color:var(--muted);line-height:1.4}
+  tbody tr:last-child td{border-bottom:0}
+  .score-in{
+    width:58px;padding:8px 4px;text-align:center;border:1.5px solid var(--line);
+    border-radius:9px;font-size:13.5px;font-family:inherit;color:var(--ink);background:#f2f8fc;outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+  }
+  .score-in:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+  .score-in.bad{border-color:var(--error-line);background:var(--error-bg);color:var(--error-ink)}
+  td.calc{font-variant-numeric:tabular-nums;font-weight:700;color:var(--lagoon-deep);font-size:14px}
+  td.calc.dim{color:var(--muted);font-weight:500}
+
+  .totals{display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap;padding:18px 20px;background:#f4fafd;border-top:1.5px solid var(--line)}
+  .tcard{border:1.5px solid var(--line);border-radius:14px;background:var(--panel);padding:12px 18px;min-width:144px;text-align:right}
+  .tcard .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .tcard .v{
+    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;
+    font-size:26px;font-variant-numeric:tabular-nums;color:var(--lagoon-deep);letter-spacing:-.01em;
+  }
+  .interp{margin-left:auto;align-self:center;font-size:13px;color:var(--muted)}
+  .interp b{color:var(--lagoon-deep);font-weight:700}
+
+  /* ================= COMMENTS ================= */
+  .comment{margin-top:26px}
+  .comment textarea{
+    width:100%;min-height:100px;padding:13px 14px;border:1.5px solid var(--line);border-radius:13px;
+    font-family:inherit;font-size:14.5px;resize:vertical;background:#f2f8fc;color:var(--ink);outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+  }
+  .comment textarea:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+
+  /* ================= ACTIONS ================= */
+  .actions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;align-items:center;justify-content:center}
+  .btn{
+    border:0;border-radius:11px;font-family:inherit;font-size:15px;font-weight:700;
+    padding:14px 28px;cursor:pointer;color:#fff;
+    background:linear-gradient(180deg,var(--lagoon) 0%,var(--lagoon-deep) 100%);
+    box-shadow:0 10px 24px -8px rgba(21,172,227,.55);
+    transition:transform .12s ease,box-shadow .12s ease,filter .12s ease;
+  }
+  .btn:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 14px 28px -8px rgba(21,172,227,.6)}
+  .btn:active{transform:translateY(0)}
+  .btn:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .btn:disabled{opacity:.65;cursor:not-allowed;transform:none;filter:none}
+  .btn.ghost{
+    background:var(--panel);color:var(--lagoon-deep);
+    border:1.5px solid var(--line);box-shadow:none;
+  }
+  .btn.ghost:hover{background:var(--accent-soft);border-color:var(--lagoon);filter:none}
+  .status{font-size:13px;color:var(--muted);flex-basis:100%;text-align:center;margin-top:4px}
+  .hint{font-size:12px;color:var(--muted);margin-top:10px}
+
+
+  /* ================= DRAWER (hamburger) ================= */
+  .burger{flex:0 0 auto;width:42px;height:42px;border-radius:12px;cursor:pointer;
+    display:grid;place-items:center;color:#f2fafe;
+    background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.22);
+    transition:background .15s ease,transform .12s ease}
+  .burger:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
+  .burger:focus-visible{outline:3px solid #fff;outline-offset:2px}
+  .scrim{position:fixed;inset:0;background:rgba(5,30,45,.45);backdrop-filter:blur(2px);
+    opacity:0;visibility:hidden;transition:opacity .22s ease,visibility .22s ease;z-index:60}
+  .scrim.open{opacity:1;visibility:visible}
+  .drawer{position:fixed;top:0;left:0;bottom:0;width:290px;max-width:86vw;z-index:61;
+    background:var(--panel);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
+    transform:translateX(-100%);transition:transform .24s cubic-bezier(.4,0,.2,1);
+    display:flex;flex-direction:column;overflow-y:auto}
+  .drawer.open{transform:translateX(0)}
+  .drawer-top{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:20px 18px;color:#f2fafe;
+    background:radial-gradient(120% 90% at 85% -10%,rgba(21,172,227,.55),transparent 55%),
+      linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 55%,#051e2d 100%)}
+  .drawer-top .t{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:16px}
+  .drawer-top .s{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:rgba(180,224,245,.85);font-weight:600;margin-top:3px}
+  .x{width:34px;height:34px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);
+    background:rgba(255,255,255,.10);color:#f2fafe;cursor:pointer;display:grid;place-items:center}
+  .x:hover{background:rgba(255,255,255,.2)}
+  /* ---- manager staff panel ---- */
+  .mgr{display:none;border-top:1.5px solid var(--line);margin-top:12px;padding:14px 12px 4px}
+  .mgr.on{display:block}
+  .mgr h3{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin:0 0 10px 2px}
+  .mgr-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  .mgr-row{display:flex;align-items:center;gap:8px;padding:8px 9px;border:1.5px solid var(--line);
+    border-radius:11px;background:#f7fbfd}
+  .mgr-nm{flex:1 1 auto;min-width:0;font-size:12px;font-weight:600;line-height:1.25;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mgr-sel{flex:0 0 92px;font-family:inherit;font-size:11px;font-weight:600;color:var(--ink-soft);
+    border:1.5px solid #bcd8ea;border-radius:8px;padding:5px 6px;background:#fff;cursor:pointer}
+  .mgr-sel:focus{outline:none;border-color:var(--lagoon);box-shadow:0 0 0 3px rgba(21,172,227,.14)}
+  .mgr-add{display:flex;flex-direction:column;gap:8px;padding:11px;border-radius:12px;
+    background:#f2f9fc;border:1.5px solid var(--edge)}
+  .mgr-add input,.mgr-add select{width:100%;font-family:inherit;font-size:12.5px;color:var(--ink);
+    border:1.5px solid #bcd8ea;border-radius:9px;padding:9px 10px;background:#fff}
+  .mgr-add input:focus,.mgr-add select:focus{outline:none;border-color:var(--lagoon);
+    box-shadow:0 0 0 3px rgba(21,172,227,.14)}
+  .mgr-add .btn-add{display:flex;align-items:center;justify-content:center;gap:8px;border:0;
+    border-radius:10px;padding:10px;cursor:pointer;color:#fff;font-size:12.5px;font-weight:700;
+    font-family:inherit;background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
+    box-shadow:0 8px 18px -8px rgba(21,172,227,.55);transition:transform .12s ease,filter .12s ease}
+  .mgr-add .btn-add:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  .mgr-add .btn-add:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
+  .mgr-msg{font-size:11px;line-height:1.4;color:var(--muted);min-height:15px}
+  .mgr-msg.err{color:#a62a2a}
+  .mgr-msg.ok{color:#1f7a4d}
+  .mgr-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:9px;padding-top:9px;
+    border-top:1px solid var(--line)}
+
+  /* ---- account block in the drawer ---- */
+  .acct{margin:auto 12px 14px;padding:13px;border-radius:14px;background:#f2f9fc;border:1.5px solid var(--edge)}
+  .acct-row{display:flex;align-items:center;gap:11px}
+  .avatar{flex:0 0 38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;
+    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:14px;
+    background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep))}
+  .acct-txt{flex:1 1 auto;min-width:0}
+  .acct-nm{font-size:13px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .acct-rl{font-size:11px;color:var(--muted);margin-top:1px}
+  .signout{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:12px;
+    border:0;border-radius:12px;padding:12px;cursor:pointer;color:#fff;
+    font-size:13.5px;font-weight:700;font-family:inherit;letter-spacing:.01em;
+    background:linear-gradient(180deg,#5b7a8d 0%,#3b596c 100%);
+    box-shadow:0 8px 18px -8px rgba(20,52,70,.55);
+    transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
+  .signout:hover{filter:brightness(1.07);transform:translateY(-1px);
+    box-shadow:0 12px 24px -8px rgba(20,52,70,.6)}
+  .signout:active{transform:translateY(0)}
+  .signout:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .signout:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
+  .signout svg{flex:0 0 auto;opacity:.9}
+  .gate{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:var(--page-top);
+    color:var(--muted);font-size:13.5px;font-weight:600}
+  .side-note{display:none;margin:0 12px 16px;padding:11px 12px;border-radius:12px;background:#f4fafd;
+    border:1.5px solid var(--line);font-size:11px;color:var(--muted);line-height:1.45}
+  .laynow{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(180,224,245,.9);margin-left:2px}
+
+  /* ================= LAYOUT: PINNED CRITERIA ================= */
+  .pinned table{border-collapse:separate;border-spacing:0}
+  .pinned thead th{position:sticky;top:0;z-index:2}
+  .pinned th.crit,.pinned td.crit{position:sticky;left:0;z-index:3;background:var(--panel);
+    box-shadow:6px 0 12px -8px rgba(8,52,76,.35)}
+  .pinned thead th.crit{z-index:4;background:#f4fafd}
+  .pinned tbody tr:hover td.crit{background:#fbfdff}
+
+  /* ================= LAYOUT: ONE EVALUATOR ================= */
+  .evtabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 14px}
+  .evtab{flex:0 0 auto;border:1.5px solid var(--line);background:var(--panel);border-radius:999px;
+    padding:9px 16px;font-size:13.5px;font-weight:600;font-family:inherit;color:var(--ink-soft);
+    cursor:pointer;display:flex;align-items:center;gap:8px;
+    transition:border-color .15s ease,transform .12s ease,box-shadow .15s ease}
+  .evtab:hover{border-color:var(--lagoon);transform:translateY(-1px)}
+  .evtab.active{background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));color:#fff;
+    border-color:transparent;box-shadow:0 10px 22px -10px rgba(21,172,227,.65)}
+  .evtab:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .evdot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:0 0 auto}
+  .evtab.done .evdot{background:#27ae60}
+  .evtab.active .evdot{background:rgba(255,255,255,.85)}
+  .evhead{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+    padding:18px 24px;background:#f4fafd;border-bottom:1.5px solid var(--line)}
+  .evlbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .evwho{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:20px}
+  .evprog{font-size:12.5px;color:var(--muted);font-weight:600}
+  .crow{display:flex;align-items:center;gap:18px;padding:13px 24px;border-bottom:1px solid var(--line)}
+  .crow:last-child{border-bottom:0}
+  .crow:hover{background:#fbfdff}
+  .cnum{flex:0 0 28px;height:28px;border-radius:9px;background:var(--accent-soft);color:var(--lagoon-deep);
+    font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:12.5px;display:grid;place-items:center}
+  .ctext{flex:1 1 auto;min-width:0}
+  .rowavg{flex:0 0 74px;text-align:right;font-size:11px;color:var(--muted);
+    letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+  .rowavg b{display:block;font-size:15px;color:var(--lagoon-deep);letter-spacing:0;font-variant-numeric:tabular-nums}
+  .evnav{display:flex;gap:12px;justify-content:space-between;padding:15px 24px;
+    background:#f4fafd;border-top:1.5px solid var(--line)}
+  .evnav .btn{padding:11px 20px;font-size:14px}
+
+  /* ================= LAYOUT: CRITERION CARDS ================= */
+  .cards{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--panel);border:1.5px solid #c3dced;border-radius:18px;
+    box-shadow:0 1px 2px rgba(8,52,76,.06),0 14px 34px -18px rgba(8,52,76,.42);overflow:hidden}
+  .card.filled{border-color:#bfe4f5}
+  .chead{display:flex;gap:14px;align-items:flex-start;padding:15px 20px 11px}
+  .cpill{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:5px 11px;border-radius:999px;background:#f4fafd;color:var(--muted);
+    border:1.5px solid var(--line);white-space:nowrap}
+  .card.filled .cpill{background:var(--accent-soft);color:var(--lagoon-deep);border-color:#bfe4f5}
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:12px 18px;padding:2px 20px 16px}
+  .cell{border:0;border-radius:0;padding:2px 0;display:flex;align-items:center;gap:10px;background:transparent}
+  .cell .nm{flex:1 1 auto;min-width:0;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.25;
+    overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .cell .score-in{flex:0 0 46px;width:46px;padding:6px 2px;font-size:13.5px}
+  @media(max-width:560px){
+    .cgrid{grid-template-columns:1fr 1fr;padding:0 14px 14px;gap:8px}
+    .chead{padding:14px 14px 10px}
+    .crow{gap:12px;padding:12px 15px}.rowavg{display:none}
+    .evhead{padding:15px}.evnav{padding:13px 15px}.evnav .btn{flex:1 1 0}
+  }
+
+  /* --- employee name autocomplete --- */
+  .ac-box{position:absolute;top:100%;left:0;right:0;z-index:50;margin-top:6px;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
+    box-shadow:var(--shadow-sm);overflow:hidden;display:none}
+  .ac-box.open{display:block}
+  .ac-item{padding:10px 13px;font-size:14px;cursor:pointer}
+  .ac-item:hover,.ac-item.sel{background:var(--accent-soft);color:var(--lagoon-deep)}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+
+  @media (max-width:560px){
+    .wrap{padding:16px 14px 60px}
+    header.top{padding:22px 20px;border-radius:18px;gap:13px}
+    h1{font-size:23px}
+    .sub{display:none}
+    .btn{flex:1 1 100%}
+  }
+
+  /* ================= SURFACE CONTRAST ================= */
+  :root{
+    --page-top:#cfe3f1;
+    --page-bottom:#b9d5e8;
+    --edge:#a9cbe2;
+  }
+  body{
+    background:linear-gradient(180deg,var(--page-top) 0%,var(--page-bottom) 100%)
+      fixed no-repeat var(--page-top);
+  }
+  .panel,.card{
+    background:#fff;
+    border:1.5px solid var(--edge);
+    box-shadow:0 1px 2px rgba(8,52,76,.07),0 20px 46px -22px rgba(8,52,76,.50);
+  }
+  .side,.drawer{border-color:var(--edge)}
+  .field input,.comment textarea,.score-in,.stepper{
+    background:#fff;border-color:#bcd8ea;
+  }
+  .field .ro{background:#eef5fa}
+  .evtab{border-color:#bcd8ea}
+  .totals,.evhead,.evnav,thead th{background:#f2f9fc}
+  thead th.crit,.pinned thead th.crit{background:#f2f9fc}
+
+  /* ================= MANAGER PANEL — ACCORDION ================= */
+  #mgrPanel h3{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin:0 0 10px 2px}
+  .mgr-sec{border:1.5px solid var(--line);border-radius:13px;background:#fff;
+    margin-bottom:9px;overflow:hidden}
+  .mgr-sum{display:flex;align-items:center;gap:9px;width:100%;padding:11px 12px;cursor:pointer;
+    background:#f7fbfd;border:0;font-family:inherit;color:var(--ink-soft);text-align:left;
+    font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    transition:background .15s ease}
+  .mgr-sum:hover{background:#eef6fb}
+  .mgr-sum:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:-3px}
+  .mgr-sum .lbl{flex:1 1 auto;min-width:0}
+  .mgr-sum .cnt{flex:0 0 auto;font-size:10px;letter-spacing:.04em;font-weight:700;
+    padding:2px 7px;border-radius:999px;background:var(--accent-soft);
+    color:var(--lagoon-deep);text-transform:none}
+  .mgr-sum .chev{flex:0 0 auto;transition:transform .2s ease;opacity:.65}
+  .mgr-sec.open .mgr-sum{background:var(--accent-soft);color:var(--lagoon-deep)}
+  .mgr-sec.open .mgr-sum .chev{transform:rotate(180deg)}
+  .mgr-panel-body{display:none;padding:11px}
+  .mgr-sec.open .mgr-panel-body{display:block}
+  .mgr-list{display:flex;flex-direction:column;gap:6px;margin:0}
+  .mgr-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
+  .mgr-add{display:flex;flex-direction:column;gap:8px;padding:0;background:none;border:0}
+  .mgr-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin:5px 0 -2px 2px}
+  .mgr-lbl:first-child{margin-top:0}
+  .mgr-row{align-items:center}
+  .mgr-nm{font-size:12px}
+  #mgrMsg{margin-top:4px}
+  .mgr-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:10px;
+    padding-top:9px;border-top:1px solid var(--line)}
+
+  /* ================= CRITERIA VIEW PICKER ================= */
+  /* Custom listbox — a native <select> renders its list through the OS, which
+     can't be styled to match anything else on the page. */
+  .lay{display:block;padding:14px 12px 0}
+  .lay-lbl{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-soft);margin:0 0 7px 1px}
+  .lay-wrap{position:relative}
+  .lay-tr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;
+    padding:11px 12px;border:1.5px solid #bcd8ea;border-radius:11px;background:#fff;
+    font-family:inherit;font-size:14px;color:var(--ink);outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease}
+  .lay-tr:hover{border-color:var(--lagoon)}
+  .lay-tr:focus-visible,.lay-wrap.open .lay-tr{border-color:var(--lagoon);
+    box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+  .lay-tr .ico{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    background:var(--accent-soft);color:var(--lagoon-deep)}
+  .lay-tr .cur{flex:1 1 auto;min-width:0;font-weight:600;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .lay-chev{flex:0 0 auto;color:var(--lagoon-deep);opacity:.8;transition:transform .2s ease}
+  .lay-wrap.open .lay-chev{transform:rotate(180deg)}
+
+  .lay-menu{position:absolute;z-index:70;top:calc(100% + 6px);left:0;right:0;
+    background:#fff;border:1.5px solid #bcd8ea;border-radius:13px;padding:5px;
+    box-shadow:0 20px 44px -18px rgba(8,52,76,.55);
+    opacity:0;visibility:hidden;transform:translateY(-4px);
+    transition:opacity .16s ease,transform .16s ease,visibility .16s ease}
+  .lay-wrap.open .lay-menu{opacity:1;visibility:visible;transform:translateY(0)}
+  .lay-opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;cursor:pointer;
+    padding:9px 10px;border:0;border-radius:9px;background:transparent;font-family:inherit;
+    color:var(--ink-soft);transition:background .13s ease}
+  .lay-opt:hover,.lay-opt.cursor{background:#f2f9fc}
+  .lay-opt[aria-selected="true"]{background:var(--accent-soft);color:var(--lagoon-deep)}
+  .lay-opt .ico{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    background:#f0f8fc;color:var(--lagoon-deep);border:1.5px solid var(--line)}
+  .lay-opt[aria-selected="true"] .ico{background:#fff;border-color:#bfe4f5}
+  .lay-opt .txt{flex:1 1 auto;min-width:0}
+  .lay-opt .nm{display:block;font-size:13px;font-weight:700;line-height:1.25}
+  .lay-opt .ds{display:block;font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
+  .lay-opt .tick{flex:0 0 auto;color:var(--lagoon-deep);opacity:0;margin-top:5px}
+  .lay-opt[aria-selected="true"] .tick{opacity:1}
+
+  /* ================= HIDE DRAWER SCROLLBARS ================= */
+  /* The drawer still scrolls — only the bar itself is hidden, so opening
+     Form roles or Add staff doesn't put a track down the side of the panel. */
+  .drawer{scrollbar-width:none;-ms-overflow-style:none}
+  .drawer::-webkit-scrollbar{width:0;height:0}
+  .mgr-list,.lay-menu,.evtabs{scrollbar-width:none;-ms-overflow-style:none}
+  .mgr-list::-webkit-scrollbar,.lay-menu::-webkit-scrollbar,
+  .evtabs::-webkit-scrollbar{width:0;height:0}
+
+  /* ================= ROSTER ROW — STACKED ================= */
+  /* Name on its own line so long names are readable in full,
+     with the form-role picker and remove button beneath it. */
+  .mgr-row{display:block;padding:9px 10px}
+  .mgr-nm{display:block;width:100%;font-size:12.5px;font-weight:700;line-height:1.3;
+    white-space:normal;overflow:visible;text-overflow:clip;color:var(--ink);margin-bottom:7px}
+  .mgr-nm .tag{vertical-align:1px}
+  .mgr-ctl{display:flex;align-items:center;gap:8px}
+  .mgr-sel{flex:1 1 auto;width:auto;min-width:0;font-size:11.5px}
+  .mgr-del{flex:0 0 28px;height:28px}
+
+  /* ================= ROSTER TAGS + REMOVE BUTTON ================= */
+  .mgr-nm .tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;
+    font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    line-height:1.6;vertical-align:1px;white-space:nowrap}
+  .tag.mg{background:var(--accent-soft);color:var(--lagoon-deep)}
+  .tag.no{background:#fdf3e6;color:#96601a}
+  .mgr-del{flex:0 0 28px;height:28px;padding:0;border-radius:8px;cursor:pointer;
+    display:grid;place-items:center;border:1.5px solid #e6c3c3;background:#fff6f6;
+    color:#a62a2a;transition:background .15s ease,border-color .15s ease}
+  .mgr-del:hover{background:#ffe4e4;border-color:#d99a9a}
+  .mgr-del:disabled{opacity:.45;cursor:not-allowed}
+
+  /* ================= SAVE BAR / MODES ================= */
+  .btn.save{background:linear-gradient(180deg,#2fa96b,#1f7a4d);
+    box-shadow:0 10px 24px -8px rgba(31,122,77,.55)}
+  .btn.lock{background:#fff;color:#96601a;border:1.5px solid #e8d3b2;box-shadow:none}
+  .btn.lock:hover{background:#fdf3e6;filter:none}
+  .whobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 18px;
+    padding:11px 14px;border-radius:13px;background:#fff;border:1.5px solid var(--edge)}
+  .whobar .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);font-weight:700}
+  .whobar .v{font-size:13.5px;font-weight:700;color:var(--ink)}
+  .pill-state{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;padding:4px 10px;border-radius:999px;
+    background:#f4fafd;color:var(--muted);border:1.5px solid var(--line)}
+  .pill-state.saved{background:#eaf7f0;color:#1f7a4d;border-color:#bfe3ce}
+  .pill-state.locked{background:#fdf3e6;color:#96601a;border-color:#e8d3b2}
+  .pill-state.dirty{background:var(--accent-soft);color:var(--lagoon-deep);border-color:#bfe4f5}
+  .hide{display:none !important}
+
+  /* ================= REVIEWER PROGRESS ================= */
+  .prog-wrap{margin:0 0 20px;padding:14px 16px;border-radius:14px;background:#fff;
+    border:1.5px solid var(--edge);box-shadow:var(--shadow-sm)}
+  .prog-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .prog-ttl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);font-weight:700}
+  .prog-num{margin-left:auto;font-family:"Bricolage Grotesque","Inter",sans-serif;
+    font-weight:800;font-size:15px;color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
+  .prog-bar{height:9px;border-radius:999px;background:#e4eff6;overflow:hidden}
+  .prog-bar span{display:block;height:100%;width:0;border-radius:999px;
+    background:linear-gradient(90deg,var(--lagoon),var(--lagoon-deep));
+    transition:width .35s cubic-bezier(.4,0,.2,1)}
+  .prog-bar.done span{background:linear-gradient(90deg,#33b877,#1f7a4d)}
+  .prog-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .prog-chip{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+    padding:5px 10px;border-radius:999px;border:1.5px solid var(--line);
+    background:#f7fbfd;color:var(--muted)}
+  .prog-chip.ok{background:#eaf7f0;border-color:#bfe3ce;color:#1f7a4d}
+  .prog-chip .dot{width:6px;height:6px;border-radius:50%;background:#c9d9e4}
+  .prog-chip.ok .dot{background:#27ae60}
+
+  /* ================= SIDEBAR RESULTS ================= */
+  .res-list{display:flex;flex-direction:column;gap:7px}
+  .res-row{display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
+    padding:10px 11px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
+    transition:border-color .15s ease,background .15s ease,transform .12s ease}
+  .res-row:hover{border-color:var(--lagoon);background:#f7fbfd;transform:translateY(-1px)}
+  .res-row.on{border-color:#bfe4f5;background:var(--accent-soft)}
+  .res-row:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+  .res-top{display:flex;align-items:baseline;gap:8px;margin-bottom:7px}
+  .res-nm{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink);
+    line-height:1.3;white-space:normal}
+  .res-ct{flex:0 0 auto;font-size:10.5px;font-weight:700;color:var(--muted);
+    font-variant-numeric:tabular-nums}
+  .res-row.full .res-ct{color:#1f7a4d}
+  .res-bar{height:6px;border-radius:999px;background:#e4eff6;overflow:hidden}
+  .res-bar span{display:block;height:100%;width:0;border-radius:999px;
+    background:linear-gradient(90deg,var(--lagoon),var(--lagoon-deep));transition:width .3s ease}
+  .res-row.full .res-bar span{background:linear-gradient(90deg,#33b877,#1f7a4d)}
+  .res-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
+  .backbar{display:flex;align-items:center;gap:10px;margin:0 0 16px}
+  .backbar button{display:flex;align-items:center;gap:7px;border:1.5px solid var(--line);
+    background:#fff;border-radius:11px;padding:9px 14px;cursor:pointer;font-family:inherit;
+    font-size:13px;font-weight:700;color:var(--lagoon-deep);transition:.15s}
+  .backbar button:hover{border-color:var(--lagoon);background:#f7fbfd}
+
+  /* ================= SIDEBAR HISTORY ================= */
+  .his-row{display:flex;align-items:center;gap:7px;width:100%;
+    padding:7px 8px 7px 11px;border:1.5px solid var(--line);border-radius:13px;background:#fff;
+    margin-bottom:7px;transition:border-color .15s ease,background .15s ease,transform .12s ease}
+  .his-row:hover{border-color:var(--lagoon);background:#f7fbfd;transform:translateY(-1px)}
+  .his-row.on{border-color:#bfe4f5;background:var(--accent-soft)}
+  .his-main{flex:1 1 auto;min-width:0;text-align:left;cursor:pointer;font-family:inherit;
+    background:none;border:0;padding:1px 0;color:inherit}
+  .his-avg{flex:0 0 auto;display:grid;place-items:center;min-width:36px;height:32px;padding:0 8px;
+    border-radius:10px;background:var(--accent-soft);border:1.5px solid #d9edf8;
+    font-family:inherit;font-size:13.5px;font-weight:800;line-height:1;
+    color:var(--lagoon-deep);font-variant-numeric:tabular-nums}
+  .his-row.on .his-avg{background:#fff;border-color:#bfe4f5}
+  .his-del{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;cursor:pointer;
+    border:1.5px solid transparent;border-radius:10px;background:none;color:#c08a8a;transition:.15s}
+  .his-del:hover{background:#fff6f6;border-color:#e6c3c3;color:#a62a2a}
+  .his-del:disabled{opacity:.45;cursor:not-allowed}
+  .his-nm{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .his-meta{display:flex;gap:5px;align-items:center;margin-top:3px;font-size:10.5px;color:var(--muted)}
+  .his-meta .dot{opacity:.45}
+  .his-empty{font-size:11.5px;color:var(--muted);padding:4px 2px}
+  .archived-note{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 14px;
+    border-radius:13px;background:#fdf3e6;border:1.5px solid #e8d3b2;color:#7a4d13;
+    font-size:12.5px;font-weight:600}
+  .archived-note svg{flex:0 0 auto}
+
+  /* ================= RESET SUBMISSIONS DIALOG ================= */
+  .rm-scrim{position:fixed;inset:0;z-index:80;background:rgba(5,30,45,.45);
+    backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px}
+  .rm-box{width:100%;max-width:400px;background:#fff;border-radius:18px;
+    border:1.5px solid var(--edge);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
+    overflow:hidden;max-height:80vh;display:flex;flex-direction:column}
+  .rm-top{padding:16px 18px;background:#f4fafd;border-bottom:1.5px solid var(--line)}
+  .rm-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:17px}
+  .rm-sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .rm-body{padding:12px;overflow-y:auto;scrollbar-width:none}
+  .rm-body::-webkit-scrollbar{width:0}
+  .rm-item{display:flex;align-items:center;gap:10px;padding:9px 10px;margin-bottom:7px;
+    border:1.5px solid var(--line);border-radius:11px;background:#f7fbfd}
+  .rm-nm{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink)}
+  .rm-avg{flex:0 0 auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .rm-x{flex:0 0 auto;border:1.5px solid #e6c3c3;background:#fff6f6;color:#a62a2a;
+    border-radius:9px;padding:6px 11px;font:700 11.5px inherit;font-family:inherit;cursor:pointer}
+  .rm-x:hover{background:#ffe4e4;border-color:#d99a9a}
+  .rm-x:disabled{opacity:.5;cursor:not-allowed}
+  .rm-empty{font-size:12px;color:var(--muted);padding:8px 4px}
+  .rm-foot{display:flex;gap:9px;padding:12px;border-top:1.5px solid var(--line);background:#f4fafd}
+  .rm-foot button{flex:1 1 0;border-radius:11px;padding:11px;cursor:pointer;
+    font:700 13px inherit;font-family:inherit;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft)}
+  .rm-foot .all{border-color:#e6c3c3;background:#fff6f6;color:#a62a2a}
+  .rm-foot .all:hover{background:#ffe4e4}
+
+  /* ================= IN-PAGE DIALOGS ================= */
+  .dlg-scrim{position:fixed;inset:0;z-index:95;background:rgba(5,30,45,.45);
+    backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px;
+    opacity:0;transition:opacity .16s ease}
+  .dlg-scrim.in{opacity:1}
+  .dlg{width:100%;max-width:400px;background:#fff;border-radius:18px;
+    border:1.5px solid var(--edge);box-shadow:0 30px 80px -20px rgba(8,52,76,.55);
+    overflow:hidden;transform:translateY(-6px) scale(.99);transition:transform .18s ease}
+  .dlg-scrim.in .dlg{transform:none}
+  .dlg-top{padding:18px 20px 14px}
+  .dlg-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;
+    font-size:17px;line-height:1.25;color:var(--ink)}
+  .dlg-msg{font-size:13px;line-height:1.5;color:var(--ink-soft);margin-top:8px;white-space:pre-line}
+  .dlg-foot{display:flex;gap:9px;padding:14px;background:#f4fafd;border-top:1.5px solid var(--line)}
+  .dlg-foot button{flex:1 1 0;border-radius:11px;padding:12px;cursor:pointer;
+    font-family:inherit;font-size:13.5px;font-weight:700;transition:transform .12s ease,filter .12s ease}
+  .dlg-foot button:hover{transform:translateY(-1px)}
+  .dlg-foot .cancel{border:1.5px solid var(--line);background:#fff;color:var(--ink-soft)}
+  .dlg-foot .cancel:hover{border-color:var(--lagoon);background:#f7fbfd}
+  .dlg-foot .ok{border:0;color:#fff;
+    background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
+    box-shadow:0 10px 22px -10px rgba(21,172,227,.6)}
+  .dlg-foot .ok:hover{filter:brightness(1.06)}
+  .dlg-foot .ok.danger{background:linear-gradient(180deg,#d2554f,#a62a2a);
+    box-shadow:0 10px 22px -10px rgba(166,42,42,.55)}
+  .dlg-foot button:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}
+
+  /* reset-submission dialog inherits the shared dialog chrome */
+  .rm-box{max-width:400px}
+  .rm-ttl{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:17px}
+  .rm-sub{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
+  .rm-top{padding:18px 20px 14px;background:#fff;border-bottom:0}
+  .rm-body{padding:0 14px 4px}
+  .rm-item{background:#f7fbfd;border-color:var(--line);border-radius:12px;padding:10px 11px}
+  .rm-nm{font-size:13px}
+  .rm-x{border-radius:9px;padding:7px 12px;font-size:12px}
+  .rm-foot{padding:14px;background:#f4fafd}
+  .rm-foot button{border-radius:11px;padding:12px;font-size:13.5px;font-weight:700;
+    transition:transform .12s ease,filter .12s ease}
+  .rm-foot button:hover{transform:translateY(-1px)}
+  .rm-foot .all{border:0;color:#fff;
+    background:linear-gradient(180deg,#d2554f,#a62a2a);
+    box-shadow:0 10px 22px -10px rgba(166,42,42,.55)}
+  .rm-foot .all:hover{filter:brightness(1.06);background:linear-gradient(180deg,#d2554f,#a62a2a)}
+  .rm-scrim{z-index:88}
+
+  /* read-only text fields (Evaluator, Date) read visually distinct from
+     fields you can actually type into */
+  .field input[readonly]{background:#eef6fb;color:var(--muted);cursor:default}
+
+  /* ================= MOBILE: STACKED CRITERIA CARDS ================= */
+  /* Below 680px the grid/pinned table becomes one card per criterion. Label
+     stacks ABOVE its input rather than beside it — a side-by-side row with a
+     fixed-width box could overflow past a long evaluator name and get clipped
+     by the panel's overflow:hidden, which is what made the box disappear. A
+     full-width input below the label can never overflow, whatever the name. */
+  @media (max-width: 680px){
+    /* The desktop table has min-width:720px so it never over-squeezes with
+       many evaluator columns — that floor is still active here since setting
+       display:block doesn't clear it, which is what was clipping the score
+       box on narrow screens. Cancel it explicitly. */
+    #grid{ min-width:0 }
+    #grid, #grid thead, #grid tbody, #grid tr, #grid td, #grid th{ display:block; width:100%; min-width:0 }
+    #grid thead{ display:none }
+    .pinned th.crit,.pinned td.crit{ position:static; box-shadow:none }
+    #body tr{
+      background:#fff;border:1.5px solid var(--edge);border-radius:16px;
+      margin-bottom:12px;padding:14px;box-shadow:var(--shadow-sm)
+    }
+    #body td{ border:0;padding:0;text-align:left }
+    #body td.crit{ padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--line) }
+    #body td:not(.crit){ margin-bottom:12px }
+    #body td:not(.crit):last-of-type{ margin-bottom:0 }
+    #body td:not(.crit)::before{
+      display:block;content:attr(data-label);margin-bottom:6px;font-size:11px;
+      font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)
+    }
+    #body td:not(.crit) .score-in{
+      display:block;width:100%;max-width:100%;box-sizing:border-box;
+      padding:12px 14px;font-size:16px   /* 16px stops iOS auto-zooming on focus */
+    }
+    #body td.calc{ font-size:17px;font-weight:700 }
+    .scrollhint{ display:none }
+    .scroll{ overflow-x:visible }
+  }
+</style>
 </head>
 <body>
-<div class="gate" id="gate" role="status" aria-live="polite" aria-label="Loading">
-  <div class="session-loader">
-    <div class="session-loader-mark" aria-hidden="true">
-      <span class="session-loader-ring"></span>
-      <span class="session-loader-core"></span>
-    </div>
-    <div class="session-loader-copy">
-      <div class="session-loader-title">Loading</div>
-      <div class="session-loader-dots" aria-hidden="true">
-        <span></span><span></span><span></span>
-      </div>
-    </div>
-  </div>
-</div>
+<div class="gate" id="gate">Checking your session&hellip;</div>
 <div class="wrap hide" id="wrap">
   <header class="top">
     <button class="burger" id="burger" aria-label="Open layout menu" aria-expanded="false" aria-controls="drawer">
@@ -49,283 +668,2430 @@
     <img class="logo" id="logoImg" alt="Company logo">
     <div class="htext">
       <div class="eyebrow">Employee Assessment</div>
-      <h1 id="pageTitle">Performance Dashboard</h1>
+      <h1>Performance Evaluation</h1>
       <div class="laynow" id="layNow"></div>
     </div>
-    <button class="dash-head-btn" id="headerActionBtn" type="button">Start Evaluation</button>
   </header>
 
+
   <div class="shell">
+
+  <!-- ================= LAYOUT DRAWER ================= -->
   <div class="scrim" id="scrim" hidden></div>
   <aside class="drawer" id="drawer" aria-label="Form layout" aria-hidden="true">
     <div class="drawer-top">
-      <div class="drawer-brand">
-        <img class="drawer-brand-logo" src="Better Practice Consulting Inc.png" alt="Better Practice Consulting Inc. logo">
-        <div class="drawer-brand-copy">
-          <div class="t">Better Practice</div>
-          <div class="s">Consulting Inc.</div>
-        </div>
-      </div>
+      <div><div class="t">Form layout</div><div class="s">Choose a view</div></div>
       <button class="x" id="drawerClose" aria-label="Close menu">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
-
-    <div class="dash-drawer-nav">
-      <button type="button" class="dash-drawer-link on" id="drawerDashboard"><span class="dash-drawer-ico">⌂</span><span>Dashboard</span></button>
-      <button type="button" class="dash-drawer-link" id="drawerEvaluation"><span class="dash-drawer-ico">▦</span><span>Evaluation form</span></button>
-    </div>
-
-    <div class="lay" id="layoutChooser">
+    <div class="lay">
       <div class="lay-lbl" id="layLbl">Criteria view</div>
       <div class="lay-wrap" id="layWrap">
         <button class="lay-tr" id="layTrigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="ico" id="layIco"></span><span class="cur" id="layCur">Full grid</span>
+          <span class="ico" id="layIco"></span>
+          <span class="cur" id="layCur">Full grid</span>
           <svg class="lay-chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="lay-menu" id="layMenu" role="listbox" aria-labelledby="layLbl"></div>
       </div>
     </div>
-
     <div class="mgr" id="mgrPanel">
       <h3>Staff administration</h3>
+
       <div class="mgr-sec hide" id="secHistory">
-        <button class="mgr-sum" id="sumHistory" aria-expanded="false" aria-controls="bodyHistory"><span class="lbl">History</span><span class="cnt" id="hisCount">0</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mgr-panel-body" id="bodyHistory"><div id="hisList"></div></div>
+        <button class="mgr-sum" id="sumHistory" aria-expanded="false" aria-controls="bodyHistory">
+          <span class="lbl">History</span>
+          <span class="cnt" id="hisCount">0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mgr-panel-body" id="bodyHistory">
+          <div id="hisList"></div>
+        </div>
       </div>
+
       <div class="mgr-sec hide" id="secResults">
-        <button class="mgr-sum" id="sumResults" aria-expanded="false" aria-controls="bodyResults"><span class="lbl">Evaluation results</span><span class="cnt" id="resDone">0/0</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mgr-panel-body" id="bodyResults"><div class="res-list" id="resList"></div></div>
+        <button class="mgr-sum" id="sumResults" aria-expanded="false" aria-controls="bodyResults">
+          <span class="lbl">Evaluation results</span>
+          <span class="cnt" id="resDone">0/0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mgr-panel-body" id="bodyResults">
+          <div class="res-list" id="resList"></div>
+        </div>
       </div>
+
       <div class="mgr-sec" id="secRoles">
-        <button class="mgr-sum" id="sumRoles" aria-expanded="false" aria-controls="bodyRoles"><span class="lbl">Form roles</span><span class="cnt" id="rolesCount">0</span><svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mgr-panel-body" id="bodyRoles"><div class="mgr-list" id="mgrList"></div></div>
-      </div>
-      <div class="mgr-sec mgr-add-button-sec hide" id="secRoundExemptions">
-        <button class="mgr-add-launch round-exemption-sidebar-launch" id="openRoundExemptions" type="button">
-          <span class="mgr-add-launch-icon" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3a9 9 0 109 9"/>
-              <path d="M16 3h5v5"/>
-              <path d="M21 3l-7 7"/>
-            </svg>
-          </span>
-          <span class="round-exemption-sidebar-copy">
-            <span class="round-exemption-sidebar-kicker">Current round</span>
-            <span class="round-exemption-sidebar-label">Staff exemptions</span>
-          </span>
-          <span class="round-exemption-sidebar-count" id="roundExemptionCount">0</span>
+        <button class="mgr-sum" id="sumRoles" aria-expanded="false" aria-controls="bodyRoles">
+          <span class="lbl">Form roles</span>
+          <span class="cnt" id="rolesCount">0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
+        <div class="mgr-panel-body" id="bodyRoles">
+          <div class="mgr-list" id="mgrList"></div>
+        </div>
       </div>
-      <div class="mgr-sec mgr-add-button-sec" id="secAdd">
-        <button class="mgr-add-launch" id="openAddStaff" type="button">
-          <span class="mgr-add-launch-icon" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          </span>
-          <span>Add staff</span>
+      <div class="mgr-sec" id="secAdd">
+        <button class="mgr-sum" id="sumAdd" aria-expanded="false" aria-controls="bodyAdd">
+          <span class="lbl">Add staff</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
+        <div class="mgr-panel-body" id="bodyAdd">
+          <div class="mgr-add">
+            <div class="mgr-lbl">Person</div>
+            <input id="mgrName" placeholder="Full name" autocomplete="off">
+            <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
+            <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
+            <div class="mgr-lbl">Evaluation form</div>
+            <select id="mgrRole">
+              <option value="Probationary">Probationary</option>
+              <option value="Junior Staff">Junior Staff</option>
+              <option value="Senior Staff">Senior Staff</option>
+            </select>
+            <div class="mgr-lbl">Access level</div>
+            <select id="mgrAccess">
+              <option value="employee">Employee access</option>
+              <option value="manager">Manager access</option>
+            </select>
+            <button class="btn-add" id="mgrAdd">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Create user</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="mgr-msg" id="mgrMsg"></div>
     </div>
 
     <div class="acct" id="acct">
-      <div class="acct-row"><div class="avatar" id="acctInitials" data-current-user-avatar>&mdash;</div><div class="acct-txt"><div class="acct-nm" id="acctName">Signed in</div><div class="acct-rl" id="acctRole">Loading account&hellip;</div></div></div>
-      <button class="acct-settings-btn" id="openAccountSettings" type="button">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.7 1.7 0 00.34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 00-1.88-.34 1.7 1.7 0 00-1.03 1.56V21h-4v-.08A1.7 1.7 0 008.97 19.4a1.7 1.7 0 00-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 004.6 15.03 1.7 1.7 0 003.04 14H3v-4h.04A1.7 1.7 0 004.6 8.97a1.7 1.7 0 00-.34-1.88l-.06-.06L7.03 4.2l.06.06A1.7 1.7 0 008.97 4.6 1.7 1.7 0 0010 3.04V3h4v.04a1.7 1.7 0 001.03 1.56 1.7 1.7 0 001.88-.34l.06-.06 2.83 2.83-.06.06a1.7 1.7 0 00-.34 1.88A1.7 1.7 0 0020.96 10H21v4h-.04A1.7 1.7 0 0019.4 15z"/>
-        </svg>
-        <span>Settings</span>
+      <div class="acct-row">
+        <div class="avatar" id="acctInitials">&mdash;</div>
+        <div class="acct-txt">
+          <div class="acct-nm" id="acctName">Signed in</div>
+          <div class="acct-rl" id="acctRole">Loading account&hellip;</div>
+        </div>
+      </div>
+      <button class="signout" id="signOut">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5"/></svg>
+        <span>Sign out</span>
       </button>
-      <button class="signout" id="signOut"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h5"/></svg><span>Sign out</span></button>
     </div>
   </aside>
 
-  <main class="main dash-main-view" id="dashboardView">
-    <section class="dash-welcome">
-      <div><div class="dash-section-kicker">Team overview</div><h2 id="dashGreeting">Good day</h2></div>
-      <div class="dash-date-chip" id="dashDateChip">—</div>
-    </section>
+  <!-- ================= FORM ================= -->
+  <main class="main">
+  <div class="backbar hide" id="backBar">
+    <button type="button" id="backBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Back to my scoring
+    </button>
+  </div>
 
-    <div class="dash-access-note hide" id="dashAccessNote"></div>
+  <div class="archived-note hide" id="archNote">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/></svg>
+    <span id="archText">Archived record — read only. Print and export still work.</span>
+  </div>
 
-    <section class="dash-metrics">
-      <article class="dash-metric dash-metric-feature">
-        <div class="dash-metric-top"><span class="dash-metric-label">Top Performer · Latest Evaluation</span><span class="dash-icon-bubble">🏆</span></div>
-        <div class="dash-person" id="latestTopName">—</div><div class="dash-big-score" id="latestTopScore">—</div><div class="dash-metric-foot" id="latestTopMeta">No finalized evaluation yet</div>
-      </article>
-      <article class="dash-metric">
-        <div class="dash-metric-top"><span class="dash-metric-label">Best Overall Performer</span><span class="dash-icon-bubble">★</span></div>
-        <div class="dash-person" id="overallTopName">—</div><div class="dash-big-score" id="overallTopScore">—</div><div class="dash-metric-foot">Average across finalized history</div>
-      </article>
-      <article class="dash-metric">
-        <div class="dash-metric-top"><span class="dash-metric-label">Team Average</span><span class="dash-icon-bubble">↗</span></div>
-        <div class="dash-big-score dash-score-alone" id="teamAverage">—</div><div class="dash-metric-foot">Finalized evaluation average</div>
-      </article>
-      <article class="dash-metric">
-        <div class="dash-metric-top"><span class="dash-metric-label">Current Round Progress</span><span class="dash-icon-bubble">✓</span></div>
-        <div class="dash-big-score dash-score-alone" id="completionText">0 / 0</div><div class="dash-progress-track"><span id="completionBar"></span></div><div class="dash-metric-foot"><span id="completionPercent">0%</span> of expected submissions</div>
-      </article>
-    </section>
+  <div class="whobar" id="whoBar">
+    <span class="k" id="whoK">Signed in as</span>
+    <span class="v" id="whoV">&mdash;</span>
+    <span class="pill-state" id="whoState">No employee selected</span>
+  </div>
 
-    <section class="dash-grid">
-      <article class="dash-panel-card"><div class="dash-panel-head"><div><div class="dash-section-kicker">Latest results</div><h3>Last Evaluation Ranking</h3></div><span class="dash-tag" id="latestRankingDate">Latest</span></div><div class="dash-ranking" id="latestRanking"></div></article>
-      <article class="dash-panel-card"><div class="dash-panel-head"><div><div class="dash-section-kicker">Long-term performance</div><h3>Overall Ranking</h3></div><span class="dash-tag">All finalized rounds</span></div><div class="dash-ranking" id="overallRanking"></div></article>
-    </section>
+  <div class="prog-wrap hide" id="progWrap">
+    <div class="prog-head">
+      <span class="prog-ttl">Scoring progress</span>
+      <span class="prog-num" id="progNum">0 / 0</span>
+    </div>
+    <div class="prog-bar" id="progBar"><span id="progFill"></span></div>
+    <div class="prog-list" id="progList"></div>
+  </div>
 
-    <section class="dash-grid dash-grid-bottom">
-      <article class="dash-panel-card"><div class="dash-panel-head"><div><div class="dash-section-kicker">Trend</div><h3>Team Performance</h3></div><span class="dash-tag">Recent rounds</span></div><div class="dash-chart-wrap"><svg id="trendChart" viewBox="0 0 700 250" role="img" aria-label="Team performance trend"></svg><div class="dash-empty hide" id="trendEmpty">No finalized trend data yet.</div></div></article>
-      <article class="dash-panel-card"><div class="dash-panel-head"><div><div class="dash-section-kicker">Activity</div><h3>Recent Evaluations</h3></div></div><div class="dash-activity" id="recentActivity"></div></article>
-    </section>
-</main>
+  <div class="meta">
+    <div class="field"><label>Employee name</label><input id="empName" placeholder="Full name" autocomplete="off"></div>
+    <div class="field"><label>Position</label><input id="position" class="ro" readonly></div>
+    <div class="field" id="managerField"><label>Manager / Evaluator</label><input id="manager" value="Aiko Yasuda"></div>
+    <div class="field"><label>Date</label><input id="date" class="ro" readonly></div>
+  </div>
 
-  <main class="main hide" id="formView">
-    <div class="dash-back-row"><button type="button" class="dash-back-btn" id="backToDashboard">← Dashboard</button></div>
-    <div class="backbar hide" id="backBar"><button type="button" id="backBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back to my scoring</button></div>
-    <div class="archived-note hide" id="archNote"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/></svg><span id="archText">Archived record — read only. Print and export still work.</span></div>
-    <div class="whobar" id="whoBar"><span class="k" id="whoK">Signed in as</span><span class="v" id="whoV">&mdash;</span><span class="pill-state" id="whoState">No employee selected</span></div>
-    <div class="prog-wrap hide" id="progWrap"><div class="prog-head"><span class="prog-ttl">Scoring progress</span><span class="prog-num" id="progNum">0 / 0</span></div><div class="prog-bar" id="progBar"><span id="progFill"></span></div><div class="prog-list" id="progList"></div></div>
-    <div class="meta"><div class="field"><label>Employee name</label><input id="empName" placeholder="Full name" autocomplete="off"></div><div class="field"><label>Position</label><input id="position" class="ro" readonly></div><div class="field" id="managerField"><label>Manager / Evaluator</label><input id="manager" value="Aiko Yasuda"></div><div class="field"><label>Date</label><input id="date" class="ro" readonly></div></div>
-    <div class="evaluator-ctl hide"><span>Evaluators</span><div class="stepper"><button id="evMinus" aria-label="Remove evaluator">&minus;</button><div class="val" id="evVal">6</div><button id="evPlus" aria-label="Add evaluator">+</button></div></div>
-    <div class="evtabs" id="evtabs" hidden></div>
-    <div class="panel" id="panel"><div class="scroll" id="gridWrap"><table id="grid"><thead><tr id="headRow"></tr></thead><tbody id="body"></tbody></table></div><div id="singleWrap" hidden><div class="evhead"><div><div class="evlbl">Now scoring as</div><div class="evwho" id="evWho"></div></div><div class="evprog" id="evProg"></div></div><div id="rows"></div><div class="evnav"><button class="btn ghost" id="evPrev">&larr; Previous</button><button class="btn ghost" id="evNext">Next evaluator &rarr;</button></div></div><div class="cards" id="cards" hidden></div><div class="totals"><div class="interp" id="interp"></div><div class="tcard"><div class="k">Total Score</div><div class="v" id="totalScore">0</div></div><div class="tcard"><div class="k">Average Score</div><div class="v" id="totalAvg">0</div></div></div></div>
-    <div class="comment"><label>Evaluator's overall comments</label><textarea id="comment" placeholder="Overall remarks..."></textarea></div>
-    <div class="actions"><button class="btn save hide" id="saveBtn">Submit my scores</button><button class="btn hide" id="printBtn">Print</button><button class="btn hide" id="pdfBtn">Export to PDF</button><button class="btn ghost hide" id="exportBtn">Export to Word</button><button class="btn save hide" id="fixBtn">Save corrections</button><button class="btn ghost" id="resetBtn">Clear scores</button><span class="status" id="status"></span></div>
+  <div class="evaluator-ctl hide">
+    <span>Evaluators</span>
+    <div class="stepper">
+      <button id="evMinus" aria-label="Remove evaluator">&minus;</button>
+      <div class="val" id="evVal">6</div>
+      <button id="evPlus" aria-label="Add evaluator">+</button>
+    </div>
+  </div>
+
+  <!-- layout: one evaluator at a time -->
+  <div class="evtabs" id="evtabs" hidden></div>
+
+  <div class="panel" id="panel">
+    <!-- layout: grid / pinned -->
+    <div class="scroll" id="gridWrap">
+      <table id="grid"><thead><tr id="headRow"></tr></thead><tbody id="body"></tbody></table>
+    </div>
+
+    <!-- layout: one evaluator at a time -->
+    <div id="singleWrap" hidden>
+      <div class="evhead">
+        <div><div class="evlbl">Now scoring as</div><div class="evwho" id="evWho"></div></div>
+        <div class="evprog" id="evProg"></div>
+      </div>
+      <div id="rows"></div>
+      <div class="evnav">
+        <button class="btn ghost" id="evPrev">&larr; Previous</button>
+        <button class="btn ghost" id="evNext">Next evaluator &rarr;</button>
+      </div>
+    </div>
+
+    <!-- layout: criterion cards -->
+    <div class="cards" id="cards" hidden></div>
+
+    <div class="totals">
+      <div class="interp" id="interp"></div>
+      <div class="tcard"><div class="k">Total Score</div><div class="v" id="totalScore">0</div></div>
+      <div class="tcard"><div class="k">Average Score</div><div class="v" id="totalAvg">0</div></div>
+    </div>
+  </div>
+
+  <div class="comment">
+    <label>Evaluator's overall comments</label>
+    <textarea id="comment" placeholder="Overall remarks..."></textarea>
+  </div>
+
+  <div class="actions">
+    <button class="btn save hide" id="saveBtn">Submit my scores</button>
+    <button class="btn hide" id="printBtn">Print</button>
+    <button class="btn hide" id="pdfBtn">Export to PDF</button>
+    <button class="btn ghost hide" id="exportBtn">Export to Word</button>
+    <button class="btn save hide" id="fixBtn">Save corrections</button>
+    <button class="btn lock hide" id="lockBtn">Lock evaluations</button>
+    <button class="btn ghost" id="resetBtn">Clear scores</button>
+    <span class="status" id="status"></span>
+  </div>
   </main>
   </div>
+
 </div>
 
+<script>
+const LOGO_JPG_B64="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";
+const LOGO_B64="iVBORw0KGgoAAAANSUhEUgAAAIwAAACMCAYAAACuwEE+AAAUqklEQVR4nO2de4wlWV3HP79TVffVt7unp+c9s8xj37uiuwO72QAioLDBiBoQI2LgHwkGSJAYEx+JMcZEicagicZEskSJJBiXKMQEN0iALCywCvuChWWWnZl99bz7eV9V5/z849Tt6Zm5t/vW0jNTt3M+k+q5ubfqVt2qb53zO7/z+/1KVFUJBEbEXO8DCIwXQTCBQgTBBAoRBBMoRBBMoBBBMIFCBMEEChEEEyhEEEygEEEwgUIEwQQKEQQTKEQQTKAQQTCBQgTBBAoRBBMoRBBMoBBBMIFCBMEEChEEEyhEEEygEEEwgUIEwQQKEQQTKEQQTKAQQTCBQgTBBAoRBBMoRBBMoBDx9T6AQSjgi0rIumsJIDJ8Haear7W5CArq973O7rcksjXLfWi+XI0GdO3pElBFReifRZH1ZT7ulEowvj0QXlzqcGxFicWievnpV4wxpCocmRBuaNa4oi1SyNTyrZfnadmIaIR9y+qfjddsRMJkXZiqGPY1ahi5dA9WfbtmtmDzU6ouyakQCTy5YHnw+S6TVcjcxXva5AvG0Ektv3Yg9oJRLu0aBNTBx/5vmSeWhdhc2i4MomH8vjdCgAwwxjAVWRxwUwN+cX+Ve3ZOcNdMQiOpAo5MHagh3kLNTqkE0ycyhkYiNJOIbMCVjgBVR2zW73KSKKZWMVRHEIwq2BGPT4FMlXOZoeeUEx3lobMpiZzh7m0J9+4QPnBokp/eOQkiOFVQwWwB0ZRSMABOfdPuBl1pEZxuLAJwiIKM0OkWvpb5BpVYmMKgKJkmfG/R8eg8fOrYOd65d5mP3NHk3l0TQESm6lubMaaUw2oFrjBdXvF3Xc1/XtiZKlb9yZxMDHtrEfVKhU+/lPHWL5/hw4/MMdfqEItgVSmP1VicUgpmXFHAKqTOy2m2aqgmVR44YXnjQ3M8eOICkeQjK+1vMV4EwVwlDN7WEmCmEnG6F/HeRxb4w++ew2IRUexmNaPXkC0uGCmwbD59b1CmSi0WZqoxf/n9Jd778Ck6mSUSSMesfyqt0bsZxAKJERIB5/2zA6Xh37cjy6Z/ie1IhrfH5erZ16jwbycyrDvFA2/YTS2OcChmTMbdW1gwylyacbYVEyUQqUMYfIEFSOlPNvTfGfydABGCMUIjgpr4rRyCG0E+qXMcaEZ87qWM6iOn+PTrd4BU0TFx1Ww5way2IkZ4zw01nm/HiIG68Xexrl7Ui/IRoO1G9MMorGSWc+0eJ9rK812HOqEaxTRiL52NbJOuU/bVYj7zXIdXTczzF0d3Y5WRHIfXmy0nmP45TwT+9OgurrxvrxTMpesMayVkzeeCzTLOZ45nlhyf//ECX3i5y9PLynTFUInBufUddakqu5t1/voHHe6bvcCvHJzBqcNIuc3KLSeYi0S4ge/LkNfrvXfp5wJEccLOGHbW4PU7a/xBt8O/n2jz8afO8my7zkxNqOBI8/UvRwFRR7MS85HvnOfobJ0Dg6Y5Ska55fwTYq7SAv0QDB9CYRVmqnU+cMt2vv72G/jojRErvZSWCom4oY46B0xEygvLMX/2+LncCnL5J+VkSwvmarE6GBc/Ix2JoKpkCrvrdT5x3x7+5q4ai90eF1IhMcPjclInzDZiPvtCj0dOL2JESEs80g6C2SREhFj8VESq8OHb9/Cv900Sq2PFRlTIGNTdKVARJdWYTzy1iMtHc2VlrAUjJTQQBSERQ+qU99y4k79/bZ1ur4fNhTRIMpnCVGJ46IzjibMrRPnkahkp3xkH/PBig/tMGMnvcb1IDGTO8b6btvO7N0YsZAm1dcIsjPFD+3850UbIQyJKSCkFUzGOSIb3+wJYFZbKaxsCQmQMSszv3b2TQw3LSuaGn3BVnIn52qkuy90usZFS3g6lEkxfHvXYx40MHV2oUokNzy9kOJcN9eBebwR/rDurNT52a5NWmg4N23QKU3HEkwvKdxez1ffKRqkE01fMbCJUJcYNaWMUqBrheMtyfClDxFGi0ORLMIBVx68fqnLzRMxy5gaKRoGasfQUvnGqtebdclEqwfiDUQ40KlSTDLvO+RJVbBzz4Etd2pliRLDq70qXR+pduugIi1tnubieqveUjHI5JW/+tlUavHNfFbfOtEGm0IgNT57vAQ4zSqjgNaZUggE/AViLDAdq6zfJClQFXmwpD/xgkReW2kTiMEK+uIKLF93wRfP1cv8LayYLclH2wxkuRRAxKMJbD06QasYw60TVz64/seTIHKXsass3NaCACPfOVvn+YhskZpgxowr1xPBMqnzy2R53z6YcaiZsSyR3yF86/7M5+DiWqvh9TyTxmlwkvx/vS5FLkuwEODwZUY8yMk3yKOArMQhnuspLrS6vatY26Zg3j/IJRvxpv2kqYm8VXuwptWioZlBVGhGsKHz5tMOcaVPbIJtgyDeNdnAoMUpsoBIZGhFsrwo31ODIVI3dVUM1Ti5+45q5of3VmNdsb/Lw2YzZhIEZESIKLmUxtYCUbm6pdIIRfC5SPUr4uT0VPnPC4juA4WNoVf9DkkRQ4lfowxj1qnjXfc/BkoPTHTi+Av8rluTlNruryk9NJ7x62nBgsu4zHPIt40iYrkQ4TYfuTwQyl9BqW5jZzJZxcyidYIBVH8RrZxs8Nb/M4wuWRry+97M/GQh69Q2zvAuKwIf1ASoxPmjL8OLLXR4+LdwxbXnDroSDkzXIu6CqdvIDHTxTLhgMlq6LhqxzfSmlYPoIhl89UOellUXmXUxiRvNNXCtDUdfuLf+vIkpUibEqPDqvPDa/wmtne7xlb42d1YgKbkjAw8VvjQyYuHxigRKOkvoI/kacqSb85qEaiXZJbfmzBxWfSquiNBIlShIePuf4px8u8dSFJc50DZEZlu2tKI6Ozagm5fyhpRUM+P5cgcNTDd5/aIKJqEfLQiTr36NlweX9ZDMWzrsKn3lBaSQxNVIyHfwbnEI9MuyIR03cvbaUWjDga7GoCrfOTPDBm6c5XM1Y6SlOI4wZD+EoEBuHtRF3zE7wjgNTOGfJVK8YATmFWgS7JurAlZ9fb0ovGO/48id9bz3iw7dO8/bdhho9FnuWXi4ZQz+gKU8gW3Xg5TVbNnnpD/9HNkzVD5m7TjkyGfG2PXVwDrsm5EHEC+bOSUM99p6akuml3EbvWrwHxBBHhvtvmOToji7fudDjqbMdTtmIHgbn/OhD5ErDd7OSDEUld8pBgiWKFId3Lo7qyWk5y83bakSR8KWXOz7LQBQRoeMcR6cNgmAdRCW7pcdGMLDGVa6ws17h/nqFN+1u8FKry/EVy6mO0s6EVLVAWloxYqBrLV2nLGbKuR7ERqkYfB2aEZLbjMS0rePIZMLrehlfOt2jHkU+Pyq13L5rKv+1jrINrcdKMMBqpShVHzJdjSIOTzY4PHn5mldrcC1YdaTWsZQq53rKkxe6HFvOON0VkjgiFrfB8N/bJh3ruHO2wakUnrrQo6bCvopyz0zV76lsBgxjKJg+Ij4DES467fpi8u9evZMdiSGKDbUYdtaV26ZjFlLH42fbfPWM5WzmZ53X66YEUDGkCvfM1nl2KeNcx/LOAwlHmglOtZQlz0rWQ74yhDXG7TXYn65Z+rPU00nEG/dO8pHbJ7h3O7R7aR79PzxyzkcOOqZiw8/vrpFmPd59QxOknF5eoFxFEceZfitnBFDHt8+1+eKcZSUDjK5TBUsQemTWcGapzd++bgfTSYWyCmZLtDBlQPBBXZlTEMOuiuGJs0soGYnLGJY8IihCQiYRbzs4wXRSHRL4UA6CYH5CFF+LzzqQfKT0hedXeNOXz/PgixnfPN0jNgkOO1AGih8LVYzw+LzlucUWgimtZMbW6L2ci7PVXJM7VAGjYIzPfESUk4sd/urpBR440aMihj2NmCfmMybjNkd3VOgOzEvyRKK0sphH5y2Hp7x3u4Q273gLpm9wRnIxddVzjc60OJZ7KY/Nd/iP40t87oWU422YrSU+TcYpKso3z6fcNl2hGis2LzpyOX76AI4vWzqZoxZHmxonuFmMpWCc+tbkohfUcbpreXmlx+klSyvrUvhUS377u/VDD5wYWs5wajnl28spxxYcT853yYiZqibsqfsSZX0/TD0SOlb59rkOb943gc0GNzP9eN4X2xknWz1umaqthquWibETjC+84yOknzm/wkOnU74y1+YrZ7v0HKSuglUFcaC+FL3iL5Jofm+L+teiF+cMBMC/vz5CZBSj0FMhiYSZeoMIR5Yn5K9FVYlF+fFyxl2djG2JoTesBIiAivDcYodbpvpVqYJgXgE+Q0kdREb48UKbv/vBAp89mTHXzWhWKsSSUIuhTj8AvKg9b/0VGzVfWwSj3l6y6oYGkCpCLMKKVZ5d7HHPbIKQMDC/QJVIIp5r53NiJRMLjIlgvAEoiLE88KMF/uSxJV7sGmZqhn0T1bxYsuTzOK/U5M2FMurGqiNXcenbWXMdhwV0nai7WGC+44fncQmjxUo+rHaoOkSU1Fo+9PVT/Paji3RNwq6GL0uWOh2xjPz1o5/zdLKl9JxBRNdtPVoqLKVeWmX7XaUWjE+xEFqp4ze+Msc/nuixu5YQ4XyLcr0PcAME37J0rHChm/HL+4R9DUhdxDCJi4BzSquX15Mp2Y8srWD6czXWOj76rdN8bs6yt+4N2lIXbcBPDyTGYBVOdS2zifCpe6d44HU7mYnER9oN2K4/jM6AThkz8SmxDePUx+7+w9Pn+OTxLvsmKmSunFLpR/spfgb9XCZ005QjEzEfurnJB2+ZZH+9gmoKxqyO2ga1HoKgeT43bG7O5mZQQsH4hPdIDD+cb/HxpxeZrVfJ3Mb9uaAYA4Y8kqm/hciGwY6ydv1RkDwqTn1r0E0tRgyZ63LnZMzbXjXB7xxpcrDpc5JStcRAZnODd51dlfO28JRQMACKquXPn5znZLfCroZ/stkw+rZCy0UsdDJEfZqp5HfpSM6vESftXX/YrSmopRbDwXrMdDPhTbPK/ft3cnS2wrZqDESrDrxYIjKrdJwSDQl5EMCiVCOhnpiRD/1aUjrBOBWMRDxxYZkvzqVsq8eIDrnr1M8MW5TzHcfuqvKWXZabppp5hQUvnM1DsRJTEajFlh2NGvtqcOcE3DjThNWnSyqp9fnXRrwvRoCewrnUrB+nq/7xgJXYUL4OqYSC6bfV/3lihfOpsKfuS5MOQkToOofNMj5wU5M/umOSA80K18OW95Of/SB07wG+nDOpY6GjVCrDq2spUAG2JT6hv1xyKaFgjAgW5b/mOjQTyNxg67A/msic45/vm+Zdh7fRjy65FiFh3uLxOzJ5FsGwkEpVnxHwwwtd36X1I9kHkCnMJELFCOt7a64PpRJMvwE+Pr/Cc8u+3x9GLHC6Db9/e5V3HZ4hU1nNR7p2/f4oO/Lmdi/L+P6i9UWJ1GAHHGQ/T2D/RH6TuH4IX3kolR+mX6bjewspK2nmCyMObF2UFSe8etLxx3dO+oBpymcggq/2KSL8aKXHybZSiQaLBcCJENuMWycSINq0XKrNpGSC8f8fa0FHhxuHsVEWeo579zaYrvqUjJLdiGtQMrV87bTF5A/1GzZCyhS2J8L+hm/4y3gDlEowfZYzwbpoYIPvT2wETjnUyAsIXesDHJG+8/Frc8s8s2ipGR067jEC3cxxcCphqhbTn68uG6UUjMcNuBcNgqHrvMdi0uSh1SVsu735oTy70uV/5hy1aP0ntjmFilGObstTTMo5M1BOwWzkdV1NXyvpSe3bqidaKf9ybMX7lhjubTbin9J2c8Nw2zafNVDG7ghKKpixRC+GWRhRji32eOBYlxU1SAR2SGKSL2cCWOVndyQYMWgJW8w+pRpWj0pZGpb+cfg0XVlNYvvGmRU+f9LiIu/AszA0kc0ItFLL7dtibtteQ7XcVbbGTjAKJHnxl/aqK36Iw4yRp4iKmZe5m6TfbUgeD/zsSof/fmGRHy1XSJIYkz+Nbb3v7qmhaiz376kQSXnzkfqMpWCqJg802mDdS1NPNhlx9KxlMROeWWrx2DnHC22h4xrUEgUd/ui+tcfXTjPesb/KwWZtLJ4sO3aCgY27JB+YrXx1rsVCOtrw1FyWyT8swMmoI1WhnTnOdjPmOkonNwUrRqhGGwsFvDBW0ozXTBl+YXfDh3SUcBh9OWMpmI2Q3Mn+yPkuL7VN/mi9DbYZ5Kpfs9GqHaoK6mNhoshQMUItH/+MGoBuBFYyONhIePehWv5cpfFgSwoGAFVqUmMqyUYSjN9mzcsBN7sXkOSf6SVZCqN8v+RdTsvC3qry/sMTNCtx6crDr8fWFQzeH2JXk9kKst4Gr7A5iARambK/przvyATba9FYiQW2uGDKgoiACsup49YJ+K0bm0xW/JRGmYfQgwiCuYoIgAhdq9TV8eY9Eb+0b2LVZhlHr+nYCmbjHOg163LtnH2S/xEMXQuqPQ5PKPfvanDLTMPPaIxZN7SWkgumb31cesmvfGfIltKvDMWmxzoOnEkXsE5oOYuTHjdWY964o8bP7KySiFmdYxpTrQAlFUxk/GPzInF0pS8ahbzwV6qCVaE+5Mz7NX3VBMGgGzybQPBzPYJe8mSm/mtd89oLUHCSzwGpoKpkAmqVpnG8etJw93SFu3Y0vVcaGUt7ZRClFIyoQzPLhY7SFeHi84V8m1IxBropK64L9GNrL7saAh3boZMmJGZj/0gmulrzYZBgInwMcZRH2sbiHXVRBFNYdjcjbppMODIRs6t+sahh/9DH0V4ZRKmqaPpzqzy70OZ7FzpUosHDYYPQdZZbZqrcNtUcGPqq6vjufItOlmxqFyDiwGQ0TcS2KKJeEbYlyZroQMmfH5A/6GtcjZUhlEow44yuebHFNHIJpeyS/HOhN9bxakjBEK52PvvFEdGaDnELiwVCCxMoyFaxxQLXiCCYQCGCYAKFCIIJFCIIJlCIIJhAIYJgAoUIggkUIggmUIggmEAhgmAChQiCCRQiCCZQiCCYQCGCYAKFCIIJFCIIJlCIIJhAIYJgAoUIggkUIggmUIggmEAhgmAChQiCCRQiCCZQiCCYQCGCYAKFCIIJFCIIJlCI/wfC8uGVEKtJcQAAAABJRU5ErkJggg==";
+document.getElementById('logoImg').src="data:image/png;base64,"+LOGO_B64;
+const SCALE_MAX = 5;
+const SCALE_MIN = 1;
+const FORMS = {
+  "Probationary":{title:"BETTER PRACTICE PROBATIONARY EMPLOYEE PERFORMANCE EVALUATION FORM",position:"Probationary",rows:[["Attendance & Punctuality","Reports to work on time and follows schedule consistently."],["Willingness to Learn","Shows initiative in learning processes, systems, and assigned tasks."],["Quality of Work","Accuracy, completeness, and attention to detail in assigned work."],["Productivity","Ability to complete assigned tasks within expected turnaround time."],["Communication Skills","Professional and clear communication with teammates and clients."],["Teamwork & Cooperation","Works well with the team and follows instructions properly."],["Accountability & Reliability","Takes ownership of assigned responsibilities and follows through on tasks."],["Adaptability","Ability to adjust to new tasks, corrections, workload changes, and feedback."],["Professionalism","Demonstrates proper attitude, respect, integrity, and work ethics."],["Overall Performance & Potential","Shows readiness for regularization and long-term growth within the company."]]},
+  "Junior Staff":{title:"BETTER PRACTICE JUNIOR STAFF PERFORMANCE EVALUATION FORM",position:"Junior Staff",rows:[["Accuracy & Quality of Work","Accuracy in endorsements, onboarding, monitoring, encoding, and document handling."],["Productivity & Task Completion","Ability to complete assigned tasks, follow-ups, endorsements, and monitoring on time."],["Client Communication","Professionalism, responsiveness, and clarity in SMS, Viber, email, and client handling."],["Turnaround Time","Speed and efficiency in handling client concerns, onboarding, and endorsements."],["Monitoring & Follow-Up","Consistency in tracking pending requirements, onboarding status, and client updates."],["Team Coordination","Proper coordination with CRO, Compliance, Operations, Billing, and other teams."],["Accountability & Reliability","Ownership of tasks, attendance, punctuality, and ability to follow instructions properly."],["Adaptability & Initiative","Shows respect, integrity, proper work ethics, and professionalism in all interactions."],["Professionalism","Willingness to learn and improve skills."],["Position-Specific Performance","Performance based on assigned role responsibilities and workload."]]},
+  "Senior Staff":{title:"BETTER PRACTICE SENIOR EVALUATION FORM",position:"Senior",senior:true,rows:[["Leadership & Team Guidance","Ability to guide, support, and motivate team members effectively."],["Team Productivity & Task Management","Proper delegation, monitoring, and completion of team tasks and deadlines."],["Decision-Making & Problem Solving","Ability to resolve issues, escalations, and operational concerns efficiently."],["Communication Skills","Clear, professional, and timely communication with team members and clients."],["Quality Control & Accuracy","Reviews endorsements, onboarding, monitoring, and outputs for completeness and accuracy."],["Workload Management","Ability to balance workloads fairly and support high-volume or urgent cases."],["Accountability & Reliability","Ownership of team performance, punctuality, follow-through, and consistency."],["Coaching & Staff Development","Provides training, guidance, and constructive feedback to junior staff."],["Professionalism","Demonstrates integrity, professionalism, and proper handling of sensitive situations."],["Team Performance Outcome","Overall team performance, turnaround time, coordination, and client satisfaction under the team leader's supervision."]]}
+};
 
-<!-- ================= ADD STAFF MODAL ================= -->
-<div class="staff-add-modal" id="addStaffModal" hidden aria-hidden="true">
-  <div class="staff-add-backdrop" data-add-staff-close></div>
-  <section class="staff-add-dialog" role="dialog" aria-modal="true" aria-labelledby="addStaffTitle">
-    <div class="staff-add-head">
-      <div>
-        <div class="staff-add-kicker">Staff administration</div>
-        <h2 id="addStaffTitle">Add staff</h2>
-      </div>
-      <button class="staff-add-close" id="closeAddStaff" type="button" aria-label="Close Add Staff">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
+// Roster + the form each person is evaluated on.
+const STAFF={
+  "Mark Ian Buenzalida":"Probationary",
+  "Rose Villano":"Probationary",
+  "John Louis Marcos Dionisio":"Probationary",
+  "Aiko Yasuda":"Senior Staff",
+  "Marivie Marquez":"Junior Staff",
+  "Camila Haduca":"Junior Staff",
+  "Monique Eileen Irog-irog":"Junior Staff"
+};
+let EMPLOYEES=Object.keys(STAFF).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+const nameKey=x=>String(x||'').toLowerCase().replace(/\s+/g,' ').trim();
+let STAFF_BY_KEY={}; for(const n of EMPLOYEES) STAFF_BY_KEY[nameKey(n)]=STAFF[n];
+// Replace the built-in roster with rows from Supabase. Each row: {full_name, form_role}.
+// Anything without a usable form_role keeps its built-in mapping, then falls back to Probationary.
+window.setRoster=function(rows){
+  if(!Array.isArray(rows)||!rows.length) return false;
+  const valid=Object.keys(FORMS);
+  const next={};
+  rows.forEach(r=>{
+    const n=(r.full_name||'').trim(); if(!n) return;
+    let f=(r.form_role||'').trim();
+    if(!valid.includes(f)) f=STAFF_BY_KEY[nameKey(n)]||'Probationary';
+    next[n]=f;
+  });
+  if(!Object.keys(next).length) return false;
+  EMPLOYEES=Object.keys(next).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+  STAFF_BY_KEY={}; EMPLOYEES.forEach(n=>STAFF_BY_KEY[nameKey(n)]=next[n]);
+  if(!applyRoleFromName()) { buildHead(); buildBody(); compute(); }
+  return true;
+};
+// Switch the form to match the named employee. Returns true if the role changed.
+function applyRoleFromName(){
+  const r=STAFF_BY_KEY[nameKey(document.getElementById('empName').value)];
+  if(!r||r===role) return false;
+  role=r; render(); return true;
+}
+let role="Probationary", evaluators=6;
+const MIN_EV=1,MAX_EV=10;
+let scores={};
+let managerSaved={normal:"Aiko Yasuda", senior:"Client Relation Department"};
+
+const round1=n=>Math.round(n*10)/10;
+function ensureStore(){ if(!scores[role])scores[role]={}; FORMS[role].rows.forEach((_,i)=>{ if(!scores[role][i])scores[role][i]={}; }); }
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Column labels: once an employee is named, Eval 1 becomes the manager/department
+// and the remaining columns are filled with the other employees on the roster.
+function evaluatorNames(){
+  if(NAME_OVERRIDE){
+    const out=NAME_OVERRIDE.slice(0,evaluators);
+    while(out.length<evaluators) out.push('Eval '+(out.length+1));
+    return out;
+  }
+  const emp=(document.getElementById('empName')?.value||'').trim();
+  const mgr=(document.getElementById('manager')?.value||'').trim();
+  const out=[];
+  if(!emp){ for(let e=0;e<evaluators;e++) out.push('Eval '+(e+1)); return out; }
+  const taken=new Set([nameKey(emp)]);
+  // On the Senior form the first field is a Department, not a person, so it
+  // never becomes a column header — every column comes from the roster instead.
+  if(!FORMS[role].senior){ out.push(mgr||'Eval 1'); taken.add(nameKey(mgr)); }
+  const pool=EMPLOYEES.filter(n=>!taken.has(nameKey(n)));
+  const base=out.length;
+  for(let e=base;e<evaluators;e++) out.push(pool[e-base]||('Eval '+(e+1)));
+  return out;
+}
+let layout='grid', curEv=0;
+const LAYOUTS=['grid','pinned','single','cards'];
+
+function setLayout(l){
+  if(!LAYOUTS.includes(l)) l='grid';
+  layout=l;
+  const show=(id,on)=>{const el=document.getElementById(id); if(el) el.hidden=!on;};
+  show('gridWrap',   l==='grid'||l==='pinned');
+  show('singleWrap', l==='single');
+  show('evtabs',     l==='single');
+  show('cards',      l==='cards');
+  document.getElementById('panel').classList.toggle('pinned', l==='pinned');
+  const now=document.getElementById('layNow');
+  if(now) now.textContent=(VIEWS.find(v=>v.id===l)?.name||'')+' view';
+  paintPicker(l);
+  // Empty the layouts that are not on screen: they reuse the same element ids
+  // (av-0, sc-0 ...), so leaving them in the DOM would shadow the live ones.
+  const clear=id=>{const el=document.getElementById(id); if(el) el.innerHTML='';};
+  if(l!=='grid'&&l!=='pinned'){ clear('headRow'); clear('body'); }
+  if(l!=='single'){ clear('rows'); clear('evtabs'); }
+  if(l!=='cards'){ clear('cards'); }
+  buildHead(); buildBody(); compute();
+}
+
+function evScored(e){
+  ensureStore();
+  return FORMS[role].rows.filter((_,ci)=>scores[role][ci][e]!==undefined).length;
+}
+
+function buildHead(){
+  if(layout==='single'){ buildTabs(); return; }
+  if(layout==='cards') return;              // labels live inside each card
+  const names=evaluatorNames();
+  let h='<th class="crit">Criteria &amp; Description</th>';
+  for(let e=0;e<evaluators;e++) h+=`<th class="evh" title="${esc(names[e])}">${esc(names[e])}</th>`;
+  h+='<th class="tot">Score</th><th class="tot">Average</th>';
+  document.getElementById('headRow').innerHTML=h;
+}
+
+function buildTabs(){
+  if(curEv>evaluators-1) curEv=evaluators-1;
+  if(curEv<0) curEv=0;
+  const names=evaluatorNames(), c=document.getElementById('evtabs');
+  c.innerHTML='';
+  names.forEach((n,i)=>{
+    const b=document.createElement('button');
+    const done=evScored(i)===FORMS[role].rows.length;
+    b.className='evtab'+(i===curEv?' active':'')+(done?' done':'');
+    b.title=n+(done?' — complete':'');
+    b.innerHTML='<span class="evdot"></span>'+esc(n);
+    b.onclick=()=>{curEv=i;buildHead();buildBody();compute();};
+    c.appendChild(b);
+  });
+  document.getElementById('evWho').textContent=names[curEv]||'';
+  document.getElementById('evPrev').disabled=curEv===0;
+  document.getElementById('evNext').disabled=curEv===evaluators-1;
+  paintProgress();
+}
+function paintProgress(){
+  const el=document.getElementById('evProg');
+  if(el&&layout==='single') el.textContent=evScored(curEv)+' of '+FORMS[role].rows.length+' scored';
+}
+function refreshTabs(){
+  if(layout!=='single') return;
+  const c=document.getElementById('evtabs'); if(!c) return;
+  [...c.children].forEach((b,i)=>b.classList.toggle('done',evScored(i)===FORMS[role].rows.length));
+  paintProgress();
+}
+
+function wireInputs(host){
+  host.querySelectorAll('.score-in').forEach(inp=>{
+    inp.addEventListener('input',onScoreInput);
+    inp.addEventListener('keydown',onScoreKey);
+    inp.addEventListener('blur',onScoreBlur);
+  });
+}
+
+// Read-only is a persistent state, not a one-off: every rebuild (layout
+// switch, score reload) has to re-apply it or the grid silently unlocks.
+let RO_SCORES=false, RO_COMMENTS=false;
+function applyRO(){
+  document.querySelectorAll('.score-in').forEach(i=>{ i.readOnly=RO_SCORES; });
+  const c=document.getElementById('comment'); if(c) c.readOnly=RO_COMMENTS;
+}
+function buildBody(){
+  ensureStore();
+  if(layout==='single')      { buildSingle(); applyRO(); return; }
+  if(layout==='cards')       { buildCards();  applyRO(); return; }
+  const tb=document.getElementById('body'); tb.innerHTML='';
+  FORMS[role].rows.forEach(([name,desc],ci)=>{
+    const tr=document.createElement('tr');
+    let cells=`<td class="crit"><div class="crit-name">${ci+1}. ${name}</div><div class="crit-desc">${desc}</div></td>`;
+    const names=evaluatorNames();
+    for(let e=0;e<evaluators;e++){
+      const v=scores[role][ci][e]??'';
+      cells+=`<td data-label="${esc(names[e]||('Eval '+(e+1)))}"><input class="score-in" inputmode="decimal" data-c="${ci}" data-e="${e}" value="${v}"></td>`;
+    }
+    cells+=`<td class="calc" id="sc-${ci}" data-label="Score">0</td><td class="calc dim" id="av-${ci}" data-label="Average">0</td>`;
+    tr.innerHTML=cells; tb.appendChild(tr);
+  });
+  wireInputs(tb);
+  applyRO();
+}
+
+function buildSingle(){
+  const host=document.getElementById('rows'); host.innerHTML='';
+  FORMS[role].rows.forEach(([name,desc],ci)=>{
+    const v=scores[role][ci][curEv]??'';
+    const d=document.createElement('div'); d.className='crow';
+    d.innerHTML=`<div class="cnum">${ci+1}</div>`+
+      `<div class="ctext"><div class="crit-name">${name}</div><div class="crit-desc">${desc}</div></div>`+
+      `<input class="score-in" inputmode="decimal" data-c="${ci}" data-e="${curEv}" value="${v}">`+
+      `<div class="rowavg">avg<b id="av-${ci}">0</b><span id="sc-${ci}" hidden>0</span></div>`;
+    host.appendChild(d);
+  });
+  wireInputs(host);
+}
+
+function buildCards(){
+  const names=evaluatorNames();
+  const host=document.getElementById('cards'); host.innerHTML='';
+  FORMS[role].rows.forEach(([name,desc],ci)=>{
+    let cells='';
+    for(let e=0;e<evaluators;e++){
+      const v=scores[role][ci][e]??'';
+      cells+=`<label class="cell"><span class="nm" title="${esc(names[e])}">${esc(names[e])}</span>`+
+        `<input class="score-in" inputmode="decimal" data-c="${ci}" data-e="${e}" value="${v}"></label>`;
+    }
+    const d=document.createElement('div'); d.className='card'; d.id='card-'+ci;
+    d.innerHTML=`<div class="chead"><div class="cnum">${ci+1}</div>`+
+      `<div class="ctext"><div class="crit-name">${name}</div><div class="crit-desc">${desc}</div></div>`+
+      `<div class="cpill"><span id="av-${ci}">0</span> avg &middot; <span id="n-${ci}">0</span>/${evaluators}`+
+      `<span id="sc-${ci}" hidden>0</span></div></div>`+
+      `<div class="cgrid">${cells}</div>`;
+    host.appendChild(d);
+  });
+  wireInputs(host);
+  paintCards();
+}
+function paintCards(){
+  if(layout!=='cards') return;
+  ensureStore();
+  FORMS[role].rows.forEach((_,ci)=>{
+    let n=0; for(let e=0;e<evaluators;e++) if(scores[role][ci][e]!==undefined) n++;
+    const nEl=document.getElementById('n-'+ci); if(nEl) nEl.textContent=n;
+    const card=document.getElementById('card-'+ci); if(card) card.classList.toggle('filled',n===evaluators);
+  });
+}
+function onScoreBlur(e){
+  const inp=e.target;
+  if(cellValid(inp)) return;          // valid or empty -> allow leaving
+  // allow leaving to buttons/other controls (don't trap the user out of the grid)
+  const to=e.relatedTarget;
+  if(to && !to.classList.contains('score-in')) return;
+  inp.classList.add('bad');
+  const st=document.getElementById('status');
+  st.textContent="Enter a value from 1 to 5 (decimals allowed) before moving on.";
+  setTimeout(()=>{ if(st.textContent.startsWith("Enter a value")) st.textContent=""; },2500);
+  // pull focus back to the invalid box
+  setTimeout(()=>{ inp.focus(); inp.select(); },0);
+}
+function focusCell(ci,ev){
+  const el=document.querySelector(`.score-in[data-c="${ci}"][data-e="${ev}"]`);
+  if(el){ el.focus(); el.select(); }
+  return !!el;
+}
+function cellValid(inp){
+  const raw=inp.value.trim();
+  if(raw==="") return true; // empty is allowed (just skipped)
+  if(!/^\d+(\.\d{1,2})?$/.test(raw)) return false; // digits, optional 1-2 decimals
+  const num=Number(raw);
+  return !(isNaN(num)||num<SCALE_MIN||num>SCALE_MAX);
+}
+function onScoreKey(e){
+  const inp=e.target, ci=+inp.dataset.c, ev=+inp.dataset.e;
+  const lastRow=FORMS[role].rows.length-1, lastCol=evaluators-1;
+  const navKeys=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter","Tab"];
+  // If trying to leave this box but the value is invalid, block it
+  if(navKeys.includes(e.key) && !cellValid(inp)){
+    e.preventDefault();
+    inp.classList.add('bad');
+    inp.focus(); inp.select();
+    const st=document.getElementById('status');
+    st.textContent="Enter a value from 1 to 5 (decimals allowed) before moving on.";
+    setTimeout(()=>{ if(st.textContent.startsWith("Enter a value")) st.textContent=""; },2500);
+    return;
+  }
+  let handled=true;
+  switch(e.key){
+    case "ArrowUp":   focusCell(ci>0?ci-1:lastRow, ev); break;
+    case "ArrowDown":
+    case "Enter":
+      if(ci<lastRow) focusCell(ci+1, ev);
+      else if(e.key==="Enter" && layout==='single' && curEv<evaluators-1) document.getElementById('evNext').click();
+      else focusCell(0, ev);
+      break;
+    case "ArrowRight":
+      // jump to next column only when cursor is at end of the text
+      if(inp.selectionStart===inp.value.length){
+        if(ev<lastCol) focusCell(ci, ev+1);
+        else if(ci<lastRow) focusCell(ci+1, 0); // wrap to next row start
+        else handled=false;
+      } else handled=false;
+      break;
+    case "ArrowLeft":
+      if(inp.selectionStart===0){
+        if(ev>0) focusCell(ci, ev-1);
+        else if(ci>0) focusCell(ci-1, lastCol); // wrap to prev row end
+        else handled=false;
+      } else handled=false;
+      break;
+    default: handled=false;
+  }
+  if(handled) e.preventDefault();
+}
+function onScoreInput(e){
+  const inp=e.target, ci=+inp.dataset.c, ev=+inp.dataset.e, raw=inp.value.trim();
+  if(raw===''){ delete scores[role][ci][ev]; inp.classList.remove('bad'); compute(); refreshTabs();
+    if(window.__scoreHook) window.__scoreHook(); return; }
+  if(raw==="."){ inp.classList.add('bad'); return; }
+  const typing=/^\d+\.$/.test(raw);              // e.g. "4." while still typing
+  const num=Number(raw);
+  if(isNaN(num)||num<SCALE_MIN||num>SCALE_MAX||(!typing&&!/^\d+(\.\d{1,2})?$/.test(raw))){
+    inp.classList.add('bad'); return;
+  }
+  inp.classList.remove('bad'); scores[role][ci][ev]=num; compute(); refreshTabs();
+  if(window.__scoreHook) window.__scoreHook();
+}
+function interpret(avg){
+  if(avg>=4.5)return"Outstanding"; if(avg>=3.5)return"Very Good";
+  if(avg>=2.5)return"Satisfactory"; if(avg>=1.5)return"Needs Improvement";
+  if(avg>0)return"Poor"; return"";
+}
+function compute(){
+  let avgVals=[], scoreVals=[];
+  FORMS[role].rows.forEach((_,ci)=>{
+    const obj=scores[role][ci], vals=[];
+    for(let e=0;e<evaluators;e++) if(obj[e]!==undefined) vals.push(obj[e]);
+    const sum=round1(vals.reduce((a,b)=>a+b,0));
+    const avg=vals.length?round1(sum/vals.length):0;
+    const scEl=document.getElementById('sc-'+ci); if(scEl) scEl.textContent=sum;
+    const avEl=document.getElementById('av-'+ci); if(avEl) avEl.textContent=avg;
+    if(vals.length){ avgVals.push(avg); scoreVals.push(sum); }
+  });
+  const totalScore=round1(scoreVals.reduce((a,b)=>a+b,0));
+  const avgScore=avgVals.length?round1(avgVals.reduce((a,b)=>a+b,0)/avgVals.length):0;
+  document.getElementById('totalScore').textContent=totalScore;
+  document.getElementById('totalAvg').textContent=avgScore;
+  const word=interpret(avgScore);
+  document.getElementById('interp').innerHTML=word?`Interpretation: <b>${word}</b>`:'';
+  paintCards();
+}
+function currentData(){
+  const scoreRows=[], avgRows=[];
+  FORMS[role].rows.forEach((_,ci)=>{
+    const obj=scores[role][ci], vals=[];
+    for(let e=0;e<evaluators;e++) if(obj[e]!==undefined) vals.push(obj[e]);
+    if(vals.length){
+      scoreRows.push(round1(vals.reduce((a,b)=>a+b,0)));
+      avgRows.push(round1(vals.reduce((a,b)=>a+b,0)/vals.length));
+    }else{ scoreRows.push(null); avgRows.push(null); }
+  });
+  const filledScores=scoreRows.filter(v=>v!==null);
+  const totalScore=round1(filledScores.reduce((a,b)=>a+b,0)); // sum of the criterion scores (cell values)
+  const filledAvg=avgRows.filter(v=>v!==null);
+  const avgScore=filledAvg.length?round1(filledAvg.reduce((a,b)=>a+b,0)/filledAvg.length):0; // mean rating 1–5
+  // rows = the value placed in the form's Rating cell = the SCORE (sum of evaluators)
+  const maxPossible=FORMS[role].rows.length*SCALE_MAX*evaluators;
+  return {rows:scoreRows, scoreRows, avgRows, totalScore, avgScore, maxPossible};
+}
+function render(){
+  setLayout(layout);
+  document.getElementById('position').value=FORMS[role].position;
+  const mField=document.getElementById('managerField');
+  const mInput=document.getElementById('manager');
+  if(FORMS[role].senior){
+    // Department is a place, not a person — free text is correct here.
+    mField.querySelector('label').textContent="Department";
+    mInput.readOnly=false;
+    if(managerSaved.senior===undefined) managerSaved.senior="CRO";
+    mInput.value=managerSaved.senior;
+  }else{
+    // The evaluator is whoever is signed in — the database already enforces
+    // this via evaluator_id, so the field must not be able to say otherwise.
+    mField.querySelector('label').textContent="Evaluator";
+    mInput.readOnly=true;
+    mInput.value = window.__currentUserName || managerSaved.normal || '';
+  }
+  document.getElementById('evVal').textContent=evaluators;
+  compute();
+}
+
+const drawer=document.getElementById('drawer'), scrim=document.getElementById('scrim');
+function openDrawer(v){
+  drawer.classList.toggle('open',v);
+  scrim.hidden=false; scrim.classList.toggle('open',v);
+  drawer.setAttribute('aria-hidden',String(!v));
+  document.getElementById('burger').setAttribute('aria-expanded',String(v));
+  document.body.style.overflow=v?'hidden':'';
+  if(v) document.getElementById('layTrigger').focus();
+  else document.getElementById('burger').focus();
+}
+document.getElementById('burger').onclick=()=>openDrawer(!drawer.classList.contains('open'));
+document.getElementById('drawerClose').onclick=()=>openDrawer(false);
+scrim.onclick=()=>openDrawer(false);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&drawer.classList.contains('open')) openDrawer(false); });
+// ---- criteria view picker (custom listbox) ----
+const VIEWS=[
+  {id:'grid',   name:'Full grid',      ds:'Every evaluator in one wide table',
+   ico:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16M3 10h18"/></svg>'},
+  {id:'pinned', name:'Pinned criteria',ds:'Criteria column stays put while scores scroll',
+   ico:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M13 12h6M17 9l3 3-3 3" stroke-linecap="round"/></svg>'},
+  {id:'single', name:'One at a time',  ds:'Score as one evaluator, then move on',
+   ico:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="7" r="3"/><path d="M6 20v-1a6 6 0 0112 0v1"/></svg>'},
+  {id:'cards',  name:'Criterion cards',ds:'One card per criterion, no scrolling',
+   ico:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>'}];
+const TICK='<svg class="tick" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+const layWrap=document.getElementById('layWrap'), layMenu=document.getElementById('layMenu'),
+      layTrigger=document.getElementById('layTrigger');
+let layCursor=0;
+
+VIEWS.forEach((v,i)=>{
+  const b=document.createElement('button');
+  b.className='lay-opt'; b.type='button'; b.setAttribute('role','option'); b.dataset.lay=v.id;
+  b.innerHTML=`<span class="ico">${v.ico}</span><span class="txt"><span class="nm">${v.name}</span>`+
+              `<span class="ds">${v.ds}</span></span>${TICK}`;
+  b.addEventListener('click',()=>{ setLayout(v.id); openPicker(false); openDrawer(false); });
+  b.addEventListener('mousemove',()=>{ layCursor=i; paintCursor(); });
+  layMenu.appendChild(b);
+});
+
+function paintPicker(l){
+  const v=VIEWS.find(x=>x.id===l)||VIEWS[0];
+  document.getElementById('layCur').textContent=v.name;
+  document.getElementById('layIco').innerHTML=v.ico;
+  [...layMenu.children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.lay===l)));
+  layCursor=Math.max(0,VIEWS.findIndex(x=>x.id===l));
+  paintCursor();
+}
+function paintCursor(){
+  [...layMenu.children].forEach((b,i)=>b.classList.toggle('cursor',i===layCursor));
+}
+function openPicker(v){
+  layWrap.classList.toggle('open',v);
+  layTrigger.setAttribute('aria-expanded',String(v));
+  if(v) paintCursor();
+}
+layTrigger.addEventListener('click',e=>{ e.stopPropagation(); openPicker(!layWrap.classList.contains('open')); });
+document.addEventListener('click',e=>{ if(!layWrap.contains(e.target)) openPicker(false); });
+layWrap.addEventListener('keydown',e=>{
+  const open=layWrap.classList.contains('open');
+  if(e.key==='Escape'&&open){ e.stopPropagation(); openPicker(false); layTrigger.focus(); return; }
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!open){ openPicker(true); return; }
+    layCursor=(layCursor+(e.key==='ArrowDown'?1:-1)+VIEWS.length)%VIEWS.length;
+    paintCursor();
+  }else if((e.key==='Enter'||e.key===' ')&&open){
+    e.preventDefault(); layMenu.children[layCursor].click();
+  }
+});
+const gotoEv=d=>{ curEv=Math.min(Math.max(curEv+d,0),evaluators-1);
+  buildHead(); buildBody(); compute();
+  const f=document.querySelector('#rows .score-in'); if(f){f.focus();f.select();} };
+document.getElementById('evPrev').onclick=()=>gotoEv(-1);
+document.getElementById('evNext').onclick=()=>gotoEv(1);
+document.getElementById('evPlus').onclick=()=>{if(evaluators<MAX_EV){evaluators++;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
+document.getElementById('evMinus').onclick=()=>{if(evaluators>MIN_EV){evaluators--;buildHead();buildBody();compute();}document.getElementById('evVal').textContent=evaluators;};
+document.getElementById('resetBtn').onclick=async()=>{
+  if(!await uiConfirm("Clear this form?",
+      "Scores, the employee name, and comments will all be cleared. This cannot be undone.",
+      { ok: "Clear form", danger: true })) return;
+  scores[role]={};ensureStore();buildBody();compute();
+  const empN=document.getElementById('empName');
+  empN.value=""; empN.classList.remove('bad'); buildHead();
+  document.getElementById('comment').value="";
+  if(window.__scoreHook) window.__scoreHook();
+  const st=document.getElementById('status');
+  st.textContent="Form cleared.";
+  setTimeout(()=>st.textContent="",3000);
+};
+
+function requireName(){
+  const inp=document.getElementById('empName');
+  let name=inp.value.trim();
+  if(!name){
+    inp.classList.add('bad');
+    inp.focus();
+    uiAlert("Employee name needed", "Enter the name of the person being evaluated first.");
+    return false;
+  }
+  name=toProperCase(name);
+  // Reject anything that isn't an exact roster match — no self-invented names.
+  if(window.__isRosterName && !window.__isRosterName(name)){
+    inp.classList.add('bad');
+    inp.focus();
+    uiAlert("Not on the roster", "\"" + name + "\" doesn't match anyone on the staff list. Pick a name from the suggestions.");
+    return false;
+  }
+  inp.value=name;
+  inp.classList.remove('bad');
+  return true;
+}
+function requireValidScores(){
+  const boxes=document.querySelectorAll('.score-in');
+  for(const inp of boxes){
+    if(!cellValid(inp)){
+      inp.classList.add('bad');
+      inp.focus(); inp.select();
+      const st=document.getElementById('status');
+      st.textContent="Fix the highlighted score (must be 1–5, decimals allowed).";
+      setTimeout(()=>{ if(st.textContent.startsWith("Fix the highlighted")) st.textContent=""; },2500);
+      return false;
+    }
+  }
+  return true;
+}
+// ---------------------------------------------------------------
+// Bridge used by the Supabase module below. Column names come from the
+// roster by default; in reviewer mode they are the actual evaluators.
+// ---------------------------------------------------------------
+let NAME_OVERRIDE = null;
+window.evalApi = {
+  formRole: () => role,
+  criteriaCount: () => FORMS[role].rows.length,
+
+  // reviewer mode: one column per person who submitted
+  setColumns(names){
+    NAME_OVERRIDE = names.slice();
+    evaluators = Math.max(1, names.length);
+    document.getElementById('evVal').textContent = evaluators;
+    curEv = 0;
+    buildHead(); buildBody(); compute();
+  },
+  clearColumns(){ NAME_OVERRIDE = null; },
+
+  // wipe every score for the current form
+  clearScores(){ scores[role] = {}; ensureStore(); buildHead(); buildBody(); compute(); },
+
+  // {criterionIndex: value} for one column
+  setColumnScores(idx, obj){
+    ensureStore();
+    FORMS[role].rows.forEach((_, ci) => {
+      const v = obj?.[ci] ?? obj?.[String(ci)];
+      if (v === undefined || v === null) delete scores[role][ci][idx];
+      else scores[role][ci][idx] = Number(v);
+    });
+    buildHead(); buildBody(); compute();
+  },
+  getColumnScores(idx){
+    ensureStore();
+    const out = {};
+    FORMS[role].rows.forEach((_, ci) => {
+      const v = scores[role][ci][idx];
+      if (v !== undefined) out[ci] = v;
+    });
+    return out;
+  },
+  columnComplete(idx){
+    ensureStore();
+    return FORMS[role].rows.every((_, ci) => scores[role][ci][idx] !== undefined);
+  },
+  average(){ return Number(document.getElementById('totalAvg').textContent) || 0; },
+  // the mean for ONE column — reviewers save each evaluator's row separately,
+  // so the whole-grid average above is the wrong number for that
+  columnAverage(idx){
+    ensureStore();
+    const vals=[];
+    FORMS[role].rows.forEach((_, ci) => {
+      const v = scores[role][ci][idx];
+      if(v !== undefined && v !== null && v !== '') vals.push(Number(v));
+    });
+    return vals.length ? round1(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+  },
+  comments(){ return document.getElementById('comment').value; },
+  setComments(t){ document.getElementById('comment').value = t || ''; },
+  employeeName(){ return document.getElementById('empName').value.trim(); },
+  // Set the employee programmatically: applies the right criteria form and
+  // leaves the autocomplete closed (dispatching 'input' would open it).
+  setEmployee(name){
+    const inp = document.getElementById('empName');
+    inp.value = name || '';
+    inp.classList.remove('bad');
+    document.querySelectorAll('.ac-box').forEach(b => b.classList.remove('open'));
+    if(!applyRoleFromName()){ buildHead(); buildBody(); compute(); }
+  },
+  onScoreChange(fn){ window.__scoreHook = fn; },
+  // commentsOn defaults to the score setting; reviewers editing scores still
+  // get a locked comment box, because in review it holds every evaluator's
+  // notes merged into one blob and saving it back would corrupt them
+  setReadOnly(on, commentsOn){
+    RO_SCORES = !!on;
+    RO_COMMENTS = commentsOn === undefined ? !!on : !!commentsOn;
+    applyRO();
+  }
+};
+
+// ---------------------------------------------------------------
+// In-page replacements for window.confirm / window.alert, so every
+// prompt matches the app rather than the browser chrome.
+// ---------------------------------------------------------------
+function uiDialog({ title, message = '', ok = 'OK', cancel = null, danger = false }){
+  return new Promise(resolve => {
+    const scrim = document.createElement('div');
+    scrim.className = 'dlg-scrim';
+    scrim.innerHTML =
+      '<div class="dlg" role="dialog" aria-modal="true">' +
+        '<div class="dlg-top"><div class="dlg-ttl"></div><div class="dlg-msg"></div></div>' +
+        '<div class="dlg-foot"></div>' +
+      '</div>';
+    scrim.querySelector('.dlg-ttl').textContent = title;
+    const msgEl = scrim.querySelector('.dlg-msg');
+    msgEl.textContent = message;
+    if(!message) msgEl.remove();
+
+    const foot = scrim.querySelector('.dlg-foot');
+    const done = v => {
+      scrim.classList.remove('in');
+      document.removeEventListener('keydown', onKey, true);
+      setTimeout(() => { scrim.remove(); document.body.style.overflow = prevOverflow; }, 160);
+      resolve(v);
+    };
+    if(cancel){
+      const c = document.createElement('button');
+      c.className = 'cancel'; c.type = 'button'; c.textContent = cancel;
+      c.addEventListener('click', () => done(false));
+      foot.appendChild(c);
+    }
+    const o = document.createElement('button');
+    o.className = 'ok' + (danger ? ' danger' : ''); o.type = 'button'; o.textContent = ok;
+    o.addEventListener('click', () => done(true));
+    foot.appendChild(o);
+
+    function onKey(e){
+      if(e.key === 'Escape'){ e.stopPropagation(); done(!cancel ? true : false); }
+      else if(e.key === 'Enter'){ e.stopPropagation(); done(true); }
+    }
+    document.addEventListener('keydown', onKey, true);
+    scrim.addEventListener('click', e => { if(e.target === scrim && cancel) done(false); });
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(scrim);
+    requestAnimationFrame(() => { scrim.classList.add('in'); o.focus(); });
+  });
+}
+window.uiAlert   = (title, message) => uiDialog({ title, message });
+window.uiConfirm = (title, message, opts = {}) =>
+  uiDialog({ title, message, ok: opts.ok || 'Continue', cancel: opts.cancel || 'Cancel', danger: !!opts.danger });
+
+function canExport(){ return requireName() && requireValidScores(); }
+
+document.getElementById('printBtn').onclick=()=>{ if(!canExport()) return; openPrint(); };
+
+// Ctrl+P / Cmd+P prints the evaluation form, not the web page.
+document.addEventListener('keydown',e=>{
+  const key=(e.key||'').toLowerCase();
+  if(key!=='p' || !(e.ctrlKey||e.metaKey) || e.altKey || e.shiftKey) return;
+  e.preventDefault();                     // stop the browser's own print dialog
+  if(document.getElementById('__printFrame')) return;   // already printing
+  const el=document.activeElement;
+  if(el && el.blur) el.blur();            // commit whatever cell is being edited
+  if(!canExport()) return;                // same name/score checks as the button
+  openPrint();
+});
+
+document.getElementById('pdfBtn').onclick=()=>{
+  if(!canExport()) return;
+  const btn=document.getElementById('pdfBtn'), st=document.getElementById('status');
+  btn.disabled=true; st.textContent="Generating PDF…";
+  try{ buildPDF(); st.textContent="PDF downloaded."; }
+  catch(err){ console.error(err); st.textContent="Couldn't generate the PDF. Try again."; }
+  finally{ btn.disabled=false; setTimeout(()=>st.textContent="",4000); }
+};
+
+document.getElementById('exportBtn').onclick=async()=>{
+  if(!canExport()) return;
+  const btn=document.getElementById('exportBtn'), st=document.getElementById('status');
+  btn.disabled=true; st.textContent="Generating…";
+  try{ buildDocx(); st.textContent="Word downloaded."; }
+  catch(err){ console.error(err); st.textContent="Couldn't generate the file. Try again."; }
+  finally{ btn.disabled=false; setTimeout(()=>st.textContent="",4000); }
+};
+
+// ---- Print preview: render the form as HTML in a new window and open print dialog ----
+function formHTML(){
+  const f=FORMS[role], data=currentData();
+  const empName=document.getElementById('empName').value.trim();
+  const manager=document.getElementById('manager').value.trim();
+  const dateStr=document.getElementById('date').value;
+  const comment=document.getElementById('comment').value.trim();
+  const cur=interpret(data.avgScore);
+  const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  const bold=!f.senior;
+  let metaHTML;
+  if(f.senior){
+    metaHTML=`<p><b>Manager Name:</b> ${esc(empName||"________________________")}</p>
+      <p><b>Department:</b> ${esc(manager||"__________________________")}</p>
+      <p><b>Date:</b> ${esc(dateStr||"_______________")}</p>`;
+  }else{
+    metaHTML=`<p class="b"><b>Employee Name: ${esc(empName||"________________________")}</b></p>
+      <p class="b"><b>Position: ${esc(f.position)}</b></p>
+      <p class="b"><b>Evaluator (Manager): ${esc(manager||"_______________________")}</b></p>
+      <p class="b"><b>Date: ${esc(dateStr||"_______________")}</b></p>`;
+  }
+  let rowsHTML="";
+  f.rows.forEach(([name,desc],i)=>{
+    const r=data.rows[i];
+    const no=bold?`<b>${i+1}</b>`:`${i+1}`;
+    rowsHTML+=`<tr><td>${no}</td><td>${esc(name)}</td><td>${esc(desc)}</td><td class="rate"><b>${r!==null?r:""}</b></td></tr>`;
+  });
+  const bands=["4.5 – 5.0 = Outstanding","3.5 – 4.4 = Very Good","2.5 – 3.4 = Satisfactory","1.5 – 2.4 = Needs Improvement","1.0 – 1.4 = Poor"]
+    .map(t=>{const on=cur&&t.indexOf(cur)>-1;return `<div${on?' class="hl"':(bold?' class="b"':'')}>${bold&&!on?'<b>'+t+'</b>':t}</div>`}).join("");
+  const sign=!f.senior?`<p style="margin-top:14px"><b>Evaluator's Signature: _______________________</b></p>`:"";
+  const dateEnd=!f.senior?`<p style="margin-top:2px"><b>Date: ${esc(dateStr||"_______________")}</b></p>`:"";
+  const confStyle=f.senior?'font-style:italic;font-weight:normal':'font-weight:bold;font-style:italic';
+  const scaleLine=bold?`<b>5 – Excellent | 4 – Very Good | 3 – Satisfactory | 2 – Needs Improvement | 1 – Poor</b>`:`5 – Excellent | 4 – Very Good | 3 – Satisfactory | 2 – Needs Improvement | 1 – Poor`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(f.title)}</title>
+  <style>
+    @page{size:8.5in 13in;margin:0.6in}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;color:#13202b;font-size:10pt;margin:0}
+    .logo{display:block;margin:0 auto 8px;width:52px;height:52px}
+    h1{color:#15ACE3;font-size:13pt;text-align:center;margin:0 0 4px}
+    .conf{${confStyle};margin:0 0 12px}
+    p{margin:2px 0}
+    .scale{margin:10px 0 12px}
+    table{border-collapse:collapse;width:100%;margin-bottom:12px;table-layout:fixed}
+    th,td{border:1px solid #aab; padding:6px 7px;vertical-align:middle;font-size:10pt;text-align:center}
+    th{background:#e2f4fc}
+    th.rate,td.rate{white-space:nowrap}
+    col.cNo{width:8%} col.cCrit{width:28%} col.cDesc{width:46%} col.cRate{width:18%}
+    .hl{color:#0e7fab;font-weight:bold}
+    ul.guide-list{margin:4px 0 12px 0;padding-left:20px}
+    ul.guide-list li{margin:2px 0}
+  </style></head><body>
+    <img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="logo">
+    <h1>${esc(f.title)}</h1>
+    <p class="conf">Confidential – For Internal Use Only</p>
+    ${metaHTML}
+    <div class="scale"><p><b>Rating Scale:</b></p><p>${scaleLine}</p></div>
+    <table><colgroup><col class="cNo"><col class="cCrit"><col class="cDesc"><col class="cRate"></colgroup><thead><tr><th>No.</th><th>Criteria</th><th>Description</th><th class="rate">Rating (1–5)</th></tr></thead>
+    <tbody>${rowsHTML}</tbody></table>
+    <div class="guide">
+      <p><b>Scoring Guide:</b></p>
+      <ul class="guide-list">
+        <li><b>Total Score: ${data.totalScore||0}</b></li>
+        <li><b>Average Score: ${data.avgScore||0}</b></li>
+      </ul>
+      <p style="margin-top:8px"><b>Performance Interpretation:</b></p>
+      ${bands}
+      <p style="margin-top:10px"><b>Evaluator's Overall Comments:</b></p>
+      <p>${comment?esc(comment):"&nbsp;"}</p>
+      ${sign}
+      ${dateEnd}
     </div>
+  </body></html>`;
+}
+function openPrint(){
+  // Remove any previous print frame so it only ever prints once
+  const old=document.getElementById('__printFrame');
+  if(old) old.remove();
+  const frame=document.createElement('iframe');
+  frame.id='__printFrame';
+  frame.style.position='fixed';
+  frame.style.right='0';
+  frame.style.bottom='0';
+  frame.style.width='0';
+  frame.style.height='0';
+  frame.style.border='0';
+  frame.setAttribute('aria-hidden','true');
+  document.body.appendChild(frame);
+  let printed=false;
+  const doPrint=()=>{
+    if(printed) return; printed=true;
+    try{
+      const win=frame.contentWindow;
+      win.focus();
+      win.print();
+    }catch(e){ console.error(e); document.getElementById('status').textContent="Couldn't open print. Try again."; }
+    // clean up shortly after the dialog is dismissed
+    setTimeout(()=>{ const f=document.getElementById('__printFrame'); if(f) f.remove(); }, 1500);
+  };
+  frame.onload=doPrint;
+  const doc=frame.contentWindow.document;
+  doc.open(); doc.write(formHTML()); doc.close();
+  // fallback in case onload already fired before handler attached
+  setTimeout(doPrint, 700);
+}
 
-    <div class="staff-add-body">
-      <div class="mgr-add staff-add-form">
-        <div class="mgr-lbl">Person</div>
-        <input id="mgrName" placeholder="Full name" autocomplete="off">
-        <input id="mgrEmail" type="email" placeholder="Email for sign-in" autocomplete="off">
-        <input id="mgrPass" type="password" placeholder="Temporary password (8+ characters)" autocomplete="new-password">
+// ---- Dependency-free .docx generation (Word XML zipped in-browser) ----
+function xmlEsc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+const FONT="Calibri";
+function run(text,{bold=false,italic=false,color=null,sz=22}={}){
+  let rpr=`<w:rPr><w:rFonts w:ascii="${FONT}" w:hAnsi="${FONT}"/>`;
+  if(bold)rpr+="<w:b/><w:bCs/>"; if(italic)rpr+="<w:i/><w:iCs/>";
+  if(color)rpr+=`<w:color w:val="${color}"/>`;
+  rpr+=`<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr>`;
+  return `<w:r>${rpr}<w:t xml:space="preserve">${xmlEsc(text)}</w:t></w:r>`;
+}
+function para(runs,{align=null,after=160,before=0}={}){
+  let ppr=`<w:pPr><w:spacing w:after="${after}"${before?` w:before="${before}"`:""} w:line="278" w:lineRule="auto"/>`;
+  if(align)ppr+=`<w:jc w:val="${align}"/>`;
+  ppr+="</w:pPr>";
+  return `<w:p>${ppr}${runs.join("")}</w:p>`;
+}
+function bullet(runs,{after=160,before=0}={}){
+  const ppr=`<w:pPr><w:spacing w:after="${after}"${before?` w:before="${before}"`:""} w:line="278" w:lineRule="auto"/><w:ind w:left="360" w:hanging="180"/></w:pPr>`;
+  return `<w:p>${ppr}${run("\u2022  ",{bold:true})}${runs.join("")}</w:p>`;
+}
+function tcell(content,w,fill){
+  const shd=fill?`<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>`:"";
+  return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${shd}`+
+    `<w:tcMar><w:top w:w="60" w:type="dxa"/><w:left w:w="100" w:type="dxa"/>`+
+    `<w:bottom w:w="60" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tcMar>`+
+    `<w:vAlign w:val="center"/></w:tcPr>${content}</w:tc>`;
+}
+function tcellPad(content,w,fill){
+  const shd=fill?`<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>`:"";
+  return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${shd}`+
+    `<w:tcMar><w:top w:w="60" w:type="dxa"/><w:left w:w="120" w:type="dxa"/>`+
+    `<w:bottom w:w="60" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tcMar>`+
+    `<w:vAlign w:val="center"/></w:tcPr>${content}</w:tc>`;
+}
+// in-cell paragraph: no space after, centered, 1.16 line spacing
+function cpar(runs){ return `<w:p><w:pPr><w:spacing w:after="0" w:line="278" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>${runs.join("")}</w:p>`; }
 
-        <div class="mgr-lbl">Evaluation form</div>
-        <select id="mgrRole">
-          <option value="Probationary">Probationary</option>
-          <option value="Junior Staff">Junior Staff</option>
-          <option value="Senior Staff">Senior Staff</option>
-        </select>
+function buildDocx(){
+  const f=FORMS[role], data=currentData();
+  const empName=document.getElementById('empName').value.trim();
+  const manager=document.getElementById('manager').value.trim();
+  const dateStr=document.getElementById('date').value;
+  const comment=document.getElementById('comment').value.trim();
 
-        <div class="mgr-lbl">Access level</div>
-        <select id="mgrAccess">
-          <option value="employee">Employee access</option>
-          <option value="manager">Manager access</option>
-        </select>
+  const COLS=[760,2900,3980,1660], TW=COLS.reduce((a,b)=>a+b,0);
+  let tb=`<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblBorders>`;
+  ["top","left","bottom","right","insideH","insideV"].forEach(s=>{tb+=`<w:${s} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`;});
+  tb+=`</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>`;
+  COLS.forEach(c=>tb+=`<w:gridCol w:w="${c}"/>`); tb+="</w:tblGrid>";
+  tb+="<w:tr>"+
+    tcellPad(cpar([run("No.",{bold:true})]),COLS[0],"EBF8FA")+
+    tcellPad(cpar([run("Criteria",{bold:true})]),COLS[1],"EBF8FA")+
+    tcellPad(cpar([run("Description",{bold:true})]),COLS[2],"EBF8FA")+
+    tcellPad(cpar([run("Rating (1\u20135)",{bold:true})]),COLS[3],"EBF8FA")+
+    "</w:tr>";
+  f.rows.forEach(([name,desc],i)=>{
+    const rating=data.rows[i];
+    tb+="<w:tr>"+
+      tcellPad(cpar([run(String(i+1),{bold:!f.senior})]),COLS[0])+
+      tcellPad(cpar([run(name)]),COLS[1])+
+      tcellPad(cpar([run(desc)]),COLS[2])+
+      tcellPad(cpar([run(rating!==null?String(rating):"",{bold:true})]),COLS[3])+
+      "</w:tr>";
+  });
+  tb+="</w:tbl>";
 
-        <button class="btn-add staff-add-submit" id="mgrAdd" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Create user</span>
-        </button>
-      </div>
+  const LOGO_EMU=46*9525; // 46px square
+  const logoPara=`<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="40"/></w:pPr><w:r><w:drawing>`+
+    `<wp:inline distT="0" distB="0" distL="0" distR="0">`+
+    `<wp:extent cx="${LOGO_EMU}" cy="${LOGO_EMU}"/><wp:effectExtent l="0" t="0" r="0" b="0"/>`+
+    `<wp:docPr id="1" name="Logo"/>`+
+    `<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>`+
+    `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">`+
+    `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="1" name="Logo"/><pic:cNvPicPr/></pic:nvPicPr>`+
+    `<pic:blipFill><a:blip r:embed="rId10"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>`+
+    `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${LOGO_EMU}" cy="${LOGO_EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>`+
+    `</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+  let body=logoPara
+  +para([run(f.title,{bold:true,sz:22,color:"15ACE3"})],{align:"center",after:20});
+  body+=para([run("Confidential \u2013 For Internal Use Only",{bold:!f.senior,italic:true})],{after:160});
+  if(f.senior){
+    body+=para([run("Manager Name: ",{bold:true}),run(empName||"________________________")],{after:40});
+    body+=para([run("Department: ",{bold:true}),run(manager||"__________________________")],{after:40});
+    body+=para([run("Date: ",{bold:true}),run(dateStr||"_______________")],{after:140});
+  }else{
+    body+=para([run("Employee Name: "+(empName||"________________________"),{bold:true})],{after:40});
+    body+=para([run("Position: "+f.position,{bold:true})],{after:40});
+    body+=para([run("Evaluator (Manager): "+(manager||"_______________________"),{bold:true})],{after:40});
+    body+=para([run("Date: "+(dateStr||"_______________"),{bold:true})],{after:140});
+  }
+  body+=para([run("Rating Scale:",{bold:true})],{after:20});
+  body+=para([run("5 \u2013 Excellent | 4 \u2013 Very Good | 3 \u2013 Satisfactory | 2 \u2013 Needs Improvement | 1 \u2013 Poor",{bold:!f.senior})],{after:100});
+  body+=tb;
+  body+=para([run("Scoring Guide:",{bold:true})],{before:60,after:30});
+  body+=bullet([run("Total Score: ",{bold:true}),run((data.totalScore||0)+"",{bold:true})],{after:30});
+  body+=bullet([run("Average Score: ",{bold:true}),run(String(data.avgScore||0),{bold:true})],{after:100});
+  body+=para([run("Performance Interpretation:",{bold:true})],{after:20});
+  const cur=interpret(data.avgScore);
+  ["4.5 \u2013 5.0 = Outstanding","3.5 \u2013 4.4 = Very Good","2.5 \u2013 3.4 = Satisfactory","1.5 \u2013 2.4 = Needs Improvement","1.0 \u2013 1.4 = Poor"].forEach(t=>{
+    const isCur=cur&&t.indexOf(cur)>-1;
+    body+=para([run(t,{bold:!f.senior||isCur,color:isCur?"0E7FAB":null})],{after:0});
+  });
+  body+=para([run("Evaluator's Overall Comments:",{bold:true})],{before:50,after:40});
+  body+=para([run(comment||"\u00a0")],{after:120});
+  if(!f.senior){
+    body+=para([run("Evaluator's Signature: "+"_______________________",{bold:true})]);
+    body+=para([run("Date: "+(dateStr||"_______________"),{bold:true})]);
+  }
 
-      <div class="staff-add-status" id="addStaffStatus" aria-live="polite"></div>
-    </div>
-  </section>
-</div>
+  const documentXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'+
+    '<w:body>'+body+
+    '<w:sectPr><w:pgSz w:w="12240" w:h="18720" w:code="128"/>'+
+    '<w:pgMar w:top="800" w:right="1080" w:bottom="650" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/>'+
+    '</w:sectPr></w:body></w:document>';
+  const contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+    '<Default Extension="xml" ContentType="application/xml"/>'+
+    '<Default Extension="png" ContentType="image/png"/>'+
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
+    '</Types>';
+  const relsXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'+
+    '</Relationships>';
 
+  const docRelsXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId10" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>'+
+    '</Relationships>';
 
-<!-- ================= ACCOUNT SETTINGS MODAL ================= -->
-<div class="account-settings-modal" id="accountSettingsModal" hidden aria-hidden="true">
-  <div class="account-settings-backdrop" data-account-settings-close></div>
-  <section class="account-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="accountSettingsTitle">
-    <div class="account-settings-head">
-      <div>
-        <div class="account-settings-kicker">My account</div>
-        <h2 id="accountSettingsTitle">Settings</h2>
-      </div>
-      <button class="account-settings-close" id="closeAccountSettings" type="button" aria-label="Close settings">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
+  const logoBytes=b64ToBytes(LOGO_B64);
+  const blob=zipStore([
+    {name:"[Content_Types].xml",data:contentTypes},
+    {name:"_rels/.rels",data:relsXml},
+    {name:"word/_rels/document.xml.rels",data:docRelsXml},
+    {name:"word/media/logo.png",data:logoBytes},
+    {name:"word/document.xml",data:documentXml}
+  ]);
+  const safe=(empName.replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"_"))||"Form";
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`${safe}_Evaluation.docx`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
 
-    <div class="account-settings-body">
-      <section class="settings-section">
-        <div class="settings-section-title">Profile picture</div>
-        <div class="settings-photo-row">
-          <div class="settings-avatar-preview" id="settingsAvatarPreview">—</div>
-          <div class="settings-photo-copy">
-            <strong id="settingsUserName">Signed in user</strong>
-            <span>JPG, PNG or WEBP · maximum 5 MB</span>
-          </div>
-        </div>
+// ---- Minimal ZIP writer (stored, no compression) ----
+function b64ToBytes(b64){
+  const bin=atob(b64); const out=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
+  return out;
+}
+const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(bytes){let c=0xFFFFFFFF;for(let i=0;i<bytes.length;i++)c=CRC_TABLE[(c^bytes[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zipStore(files){
+  const enc=new TextEncoder();
+  const chunks=[], central=[]; let offset=0;
+  const u16=v=>[v&0xFF,(v>>>8)&0xFF];
+  const u32=v=>[v&0xFF,(v>>>8)&0xFF,(v>>>16)&0xFF,(v>>>24)&0xFF];
+  files.forEach(f=>{
+    const nameB=enc.encode(f.name);
+    const dataB=(f.data instanceof Uint8Array)?f.data:enc.encode(f.data);
+    const crc=crc32(dataB);
+    const local=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),
+      u32(crc),u32(dataB.length),u32(dataB.length),u16(nameB.length),u16(0));
+    chunks.push(new Uint8Array(local),nameB,dataB);
+    const localLen=local.length+nameB.length+dataB.length;
+    const cen=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),
+      u32(crc),u32(dataB.length),u32(dataB.length),u16(nameB.length),u16(0),u16(0),u16(0),u16(0),
+      u32(0),u32(offset));
+    central.push(new Uint8Array(cen),nameB);
+    offset+=localLen;
+  });
+  let cenSize=0; central.forEach(c=>cenSize+=c.length);
+  const end=[].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),
+    u32(cenSize),u32(offset),u16(0));
+  const parts=[...chunks,...central,new Uint8Array(end)];
+  return new Blob(parts,{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+}
 
-        <input id="settingsPhotoInput" class="settings-file-input" type="file" accept="image/jpeg,image/png,image/webp">
-        <div class="settings-photo-actions">
-          <button class="settings-btn settings-btn-primary" id="chooseProfilePhoto" type="button">Choose picture</button>
-          <button class="settings-btn settings-btn-ghost" id="removeProfilePhoto" type="button">Remove picture</button>
-        </div>
-        <div class="settings-status" id="photoSettingsStatus" aria-live="polite"></div>
-      </section>
+// ---- Dependency-free PDF generation (vector text + table + embedded logo) ----
+const HELV={' ':278,'!':278,'"':355,'#':556,'$':556,'%':889,'&':667,"'":191,'(':333,')':333,'*':389,'+':584,',':278,'-':333,'.':278,'/':278,'0':556,'1':556,'2':556,'3':556,'4':556,'5':556,'6':556,'7':556,'8':556,'9':556,':':278,';':278,'<':584,'=':584,'>':584,'?':556,'@':1015,'A':667,'B':667,'C':722,'D':722,'E':667,'F':611,'G':778,'H':722,'I':278,'J':500,'K':667,'L':556,'M':833,'N':722,'O':778,'P':667,'Q':778,'R':722,'S':667,'T':611,'U':722,'V':667,'W':944,'X':667,'Y':667,'Z':611,'[':278,'\\':278,']':278,'^':469,'_':556,'`':333,'a':556,'b':556,'c':500,'d':556,'e':556,'f':278,'g':556,'h':556,'i':222,'j':222,'k':500,'l':222,'m':833,'n':556,'o':556,'p':556,'q':556,'r':333,'s':500,'t':278,'u':556,'v':500,'w':722,'x':500,'y':500,'z':500,'{':334,'|':260,'}':334,'~':584};
+const HELVB={' ':278,'!':333,'"':474,'#':556,'$':556,'%':889,'&':722,"'":238,'(':333,')':333,'*':389,'+':584,',':278,'-':333,'.':278,'/':278,'0':556,'1':556,'2':556,'3':556,'4':556,'5':556,'6':556,'7':556,'8':556,'9':556,':':333,';':333,'<':584,'=':584,'>':584,'?':611,'@':975,'A':722,'B':722,'C':722,'D':722,'E':667,'F':611,'G':778,'H':722,'I':278,'J':556,'K':722,'L':611,'M':833,'N':722,'O':778,'P':667,'Q':778,'R':722,'S':667,'T':611,'U':722,'V':667,'W':944,'X':667,'Y':667,'Z':611,'[':333,'\\':278,']':333,'^':584,'_':556,'`':333,'a':556,'b':611,'c':556,'d':611,'e':556,'f':333,'g':611,'h':611,'i':278,'j':278,'k':556,'l':278,'m':889,'n':611,'o':611,'p':611,'q':611,'r':389,'s':556,'t':333,'u':611,'v':556,'w':778,'x':556,'y':556,'z':500,'{':389,'|':280,'}':389,'~':584};
+function twF(s,size,bold){const T=bold?HELVB:HELV;let w=0;for(const ch of String(s))w+=(T[ch]||556);return w*size/1000;}
+function wrapF(text,size,maxW,bold){const words=String(text).split(/\s+/);const lines=[];let cur='';for(const word of words){const test=cur?cur+' '+word:word;if(twF(test,size,bold)>maxW&&cur){lines.push(cur);cur=word;}else cur=test;}if(cur)lines.push(cur);return lines.length?lines:[''];}
+function pdfEsc(s){return String(s).replace(/[\u2013\u2014]/g,"-").replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[^\x20-\x7E]/g,'');}
 
-      <div class="settings-divider"></div>
+function buildPDF(){
+  const f=FORMS[role], data=currentData();
+  const empName=document.getElementById('empName').value.trim();
+  const manager=document.getElementById('manager').value.trim();
+  const dateStr=document.getElementById('date').value;
+  const comment=document.getElementById('comment').value.trim();
+  const cur=interpret(data.avgScore);
 
-      <section class="settings-section">
-        <div class="settings-section-title">Change password</div>
+  const W=612,H=936,M=54;
+  const blue="0.082 0.675 0.890", black="0 0 0", deep="0.055 0.498 0.671";
+  const ops=[];
+  const T=(x,y,s,size,bold,color)=>ops.push(`BT /${bold?'FB':'F1'} ${size} Tf ${color||black} rg 1 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm (${pdfEsc(s)}) Tj ET`);
+  const L=(x1,y1,x2,y2)=>ops.push(`0.6 0.78 0.86 RG 0.8 w ${x1.toFixed(2)} ${y1.toFixed(2)} m ${x2.toFixed(2)} ${y2.toFixed(2)} l S`);
+  const RF=(x,y,w,h,c)=>ops.push(`${c} rg ${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`);
+  // label+value helper with proper spacing
+  const KV=(x,y,k,v)=>{ T(x,y,k,10,true); T(x+twF(k,10,true)+3,y,v,10,false); };
+  // fully-bold "key value" (matches Prob/Junior where whole meta line is bold)
+  const KVB=(x,y,k,v)=>{ T(x,y,k,10,true); T(x+twF(k,10,true)+3,y,v,10,true); };
+  const BUL=(x,y,k,v)=>{ T(x,y,"\u2022",10,true); T(x+12,y,k,10,true); T(x+12+twF(k,10,true)+3,y,v,10,true); };
 
-        <label class="settings-label" for="settingsNewPassword">New password</label>
-        <div class="settings-password-wrap">
-          <input id="settingsNewPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters">
-          <button class="settings-password-toggle" type="button" data-password-target="settingsNewPassword" aria-label="Show password">Show</button>
-        </div>
+  let y=H-M;
+  const LS=46;
+  ops.push(`q ${LS} 0 0 ${LS} ${((W-LS)/2).toFixed(2)} ${(y-LS).toFixed(2)} cm /Im1 Do Q`);
+  y-=LS+16;
+  const title=f.title, ts=11;
+  T((W-twF(title,ts,true))/2,y,title,ts,true,blue); y-=18;
+  T(M,y,"Confidential - For Internal Use Only",10,true); y-=18;
+  if(f.senior){
+    KV(M,y,"Manager Name:",empName||"________________________"); y-=15;
+    KV(M,y,"Department:",manager||"__________________________"); y-=15;
+    KV(M,y,"Date:",dateStr||"_______________"); y-=15;
+  }else{
+    KVB(M,y,"Employee Name:",empName||"________________________"); y-=15;
+    KVB(M,y,"Position:",f.position); y-=15;
+    KVB(M,y,"Evaluator (Manager):",manager||"_______________________"); y-=15;
+    KVB(M,y,"Date:",dateStr||"_______________"); y-=15;
+  }
+  y-=4;
+  T(M,y,"Rating Scale:",10,true); y-=13;
+  T(M,y,"5 - Excellent | 4 - Very Good | 3 - Satisfactory | 2 - Needs Improvement | 1 - Poor",10,!f.senior); y-=18;
 
-        <label class="settings-label" for="settingsConfirmPassword">Confirm new password</label>
-        <div class="settings-password-wrap">
-          <input id="settingsConfirmPassword" type="password" autocomplete="new-password" placeholder="Enter the new password again">
-          <button class="settings-password-toggle" type="button" data-password-target="settingsConfirmPassword" aria-label="Show password">Show</button>
-        </div>
+  // centered-text helper
+  const TC=(cx,cw,yy,s,size,bold,color)=>T(cx+cw/2-twF(s,size,bold)/2,yy,s,size,bold,color);
+  const cols=[44,150,238,82], x0=M, tableW=cols.reduce((a,b)=>a+b,0);
+  const colX=[x0]; for(let i=0;i<cols.length;i++) colX.push(colX[i]+cols[i]);
+  const hh=22, tts=10;
+  RF(x0,y-hh+5,tableW,hh,"0.886 0.957 0.988");
+  TC(colX[0],cols[0],y-11,"No.",tts,true);
+  TC(colX[1],cols[1],y-11,"Criteria",tts,true);
+  TC(colX[2],cols[2],y-11,"Description",tts,true);
+  TC(colX[3],cols[3],y-11,"Rating (1-5)",tts,true);
+  const ytop=y+5; y-=hh;
+  const pad=7,lh=12;
+  f.rows.forEach(([name,desc],i)=>{
+    const r=data.rows[i];
+    const nameLines=wrapF(name,tts,cols[1]-2*5,false);
+    const descLines=wrapF(desc,tts,cols[2]-2*5,false);
+    const n=Math.max(nameLines.length,descLines.length,1);
+    const rh=n*lh+2*pad;
+    const noBold=!f.senior;
+    TC(colX[0],cols[0], y-rh/2-tts/2+2, String(i+1), tts, noBold);
+    const nameStart=y - (rh-(nameLines.length*lh))/2 - tts + 2;
+    nameLines.forEach((ln,j)=>TC(colX[1],cols[1], nameStart-j*lh, ln, tts, false));
+    const descStart=y - (rh-(descLines.length*lh))/2 - tts + 2;
+    descLines.forEach((ln,j)=>TC(colX[2],cols[2], descStart-j*lh, ln, tts, false));
+    const rate=r!==null?String(r):"";
+    TC(colX[3],cols[3], y-rh/2-tts/2+2, rate, tts, true);
+    y-=rh; L(x0,y,x0+tableW,y);
+  });
+  const ybot=y;
+  colX.forEach(cx=>L(cx,ytop,cx,ybot));
+  L(x0,ytop,x0+tableW,ytop); L(x0,ytop-hh,x0+tableW,ytop-hh);
+  y-=16;
+  T(M,y,"Scoring Guide:",10,true); y-=15;
+  BUL(M,y,"Total Score:",(data.totalScore||0)+""); y-=14;
+  BUL(M,y,"Average Score:",String(data.avgScore||0)); y-=18;
+  T(M,y,"Performance Interpretation:",10,true); y-=13;
+  ["4.5 - 5.0 = Outstanding","3.5 - 4.4 = Very Good","2.5 - 3.4 = Satisfactory","1.5 - 2.4 = Needs Improvement","1.0 - 1.4 = Poor"].forEach(t=>{
+    const on=cur&&t.indexOf(cur)>-1;
+    T(M,y,t,10,!f.senior||on,on?deep:black); y-=12;
+  });
+  y-=8;
+  T(M,y,"Evaluator's Overall Comments:",10,true); y-=14;
+  wrapF(comment||" ",10,tableW,false).forEach(ln=>{ T(M,y,ln,10,false); y-=13; });
+  if(!f.senior){
+    y-=6;
+    KVB(M,y,"Evaluator's Signature:","_______________________"); y-=13;
+    KVB(M,y,"Date:",dateStr||"_______________"); y-=13;
+  }
 
-        <button class="settings-btn settings-btn-primary settings-password-save" id="changeOwnPassword" type="button">Change password</button>
-        <div class="settings-status" id="passwordSettingsStatus" aria-live="polite"></div>
-      </section>
-    </div>
-  </section>
-</div>
+  // assemble PDF bytes
+  const content=ops.join("\n");
+  const enc=new TextEncoder();
+  const jpg=b64ToBytes(LOGO_JPG_B64);
+  const parts=[]; let pdfLen=0;
+  const push=(buf)=>{ parts.push(buf); pdfLen+=buf.length; };
+  const pushStr=(s)=>push(enc.encode(s));
+  const offsets=[];
+  pushStr("%PDF-1.4\n");
+  const obj=(num,headStr,binBuf,tailStr)=>{
+    offsets[num]=pdfLen;
+    pushStr(`${num} 0 obj\n`);
+    pushStr(headStr);
+    if(binBuf) push(binBuf);
+    if(tailStr) pushStr(tailStr);
+    pushStr("\nendobj\n");
+  };
+  obj(1,"<< /Type /Catalog /Pages 2 0 R >>");
+  obj(2,"<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+  obj(3,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 5 0 R /FB 6 0 R >> /XObject << /Im1 7 0 R >> >> /Contents 4 0 R >>`);
+  obj(4,`<< /Length ${enc.encode(content).length} >>\nstream\n${content}\nendstream`);
+  obj(5,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  obj(6,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+  obj(7,`<< /Type /XObject /Subtype /Image /Width 140 /Height 140 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`,jpg,"\nendstream");
+  const xrefStart=pdfLen;
+  let xref=`xref\n0 8\n0000000000 65535 f \n`;
+  for(let i=1;i<=7;i++) xref+=String(offsets[i]).padStart(10,'0')+" 00000 n \n";
+  pushStr(xref);
+  pushStr(`trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
 
-<script src="js/evaluation.js"></script>
-<script src="js/initial-view-restore.js?v=20260822-2231"></script>
-<script src="js/logo-file-source.js?v=20260819-2314"></script>
-<script type="module" src="js/supabase.js?v=20260825-1553"></script>
-<script src="js/dashboard-loader.js?v=20260822-2231"></script>
-<script src="js/complete-redirect.js?v=20260822-1250"></script>
-<script src="js/add-staff-modal.js?v=20260820-1406"></script>
-<script src="js/criteria-average-visibility.js?v=20260819-1631"></script>
-<script src="js/mobile-layout-options.js?v=20260819-2130"></script>
-<script type="module" src="js/autocomplete-progress.js?v=20260819-2211"></script>
-<script src="js/hide-self-autocomplete.js?v=20260819-2234"></script>
-<script type="module" src="js/account-settings.js?v=20260820-1520"></script>
-<script type="module" src="js/account-appearance.js?v=20260828-1630"></script>
-<script type="module" src="js/profile-avatar-sync.js?v=20260825-1720"></script>
-<script type="module" src="js/recent-evaluation-results-link.js?v=20260822-1250"></script>
-<script src="js/autocomplete-immediate-load.js?v=20260820-1611"></script>
-<script src="js/hide-empty-evaluator-header.js?v=20260820-1621"></script>
-<script src="js/dashboard-result-selection-state.js?v=20260822-1250"></script>
-<script src="js/global-motion.js?v=20260822-1250"></script>
-<script type="module" src="js/current-round-progress.js?v=20260825-1816"></script>
-<script type="module" src="js/current-round-progress-drilldown.js?v=20260825-1819"></script>
-<script type="module" src="js/round-exemptions.js?v=20260828-1342"></script>
-<script type="module" src="js/undo-destructive-actions.js?v=20260827-0748"></script>
-<script type="module" src="js/performer-records-popup.js?v=20260827-1608"></script>
-<script type="module" src="js/dashboard-detail-enhancements.js?v=20260828-1155"></script>
-<script type="module" src="js/staff-profile-popup.js?v=20260824-1448"></script>
+  const blob=new Blob(parts,{type:"application/pdf"});
+  const safe=(empName.replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"_"))||"Form";
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`${safe}_Evaluation.pdf`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
 
-<script src="js/ui-polish-hotfix.js?v=20260829-1858"></script>
+function toProperCase(s){
+  return s.toLowerCase()
+    .replace(/\s+/g,' ').trim()
+    .replace(/\b([a-z])/g, (m,c)=>c.toUpperCase())
+    // keep common name particles lowercase (de, dela, van, etc.) unless first word
+    .replace(/\b(De|Dela|Del|Della|Van|Von|Da|Di|La|Le)\b/g, (m,p,off)=> off===0? m : p.toLowerCase())
+    // fix Mc/Mac and apostrophes/hyphens: O'brien -> O'Brien, mary-jane -> Mary-Jane
+    .replace(/([A-Za-z])([''-])([a-z])/g,(m,a,sep,b)=>a+sep+b.toUpperCase());
+}
+const empNameEl=document.getElementById('empName');
+empNameEl.addEventListener('input',e=>{ if(e.target.value.trim()) e.target.classList.remove('bad'); if(!applyRoleFromName()) buildHead(); });
+empNameEl.addEventListener('blur',e=>{ const v=e.target.value.trim(); if(v) e.target.value=toProperCase(v); });
+empNameEl.addEventListener('keydown',e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    const v=e.target.value.trim();
+    if(v) e.target.value=toProperCase(v);
+    focusCell(0,0); // jump to the first score box
+  }
+});
+
+// remember edits to the Manager/Department field per role type
+document.getElementById('manager').addEventListener('input',e=>{
+  // Read-only on every form except Senior (Department), so this only ever
+  // fires for a genuine department edit.
+  if(FORMS[role].senior){ managerSaved.senior=e.target.value; buildHead(); }
+});
+
+// ---- Employee name autocomplete (predictive suggestions) ----
+
+const acNorm=s=>s.toLowerCase().replace(/[^a-z\s-]/g,"").trim();
+function acSuggest(q){
+  q=acNorm(q); if(!q) return [];
+  return EMPLOYEES.map(name=>{
+    const parts=acNorm(name).split(/[\s-]+/);
+    const initials=parts.map(p=>p[0]).join("");
+    let s=-1;
+    if(parts[0].startsWith(q)) s=0;                 // "mark" -> Mark Ian
+    else if(parts.some(p=>p.startsWith(q))) s=1;    // "ian"  -> Mark Ian
+    else if(initials.startsWith(q)) s=2;            // "jl"   -> John Louis
+    else if(acNorm(name).includes(q)) s=3;          // fallback substring
+    return {name,s};
+  }).filter(r=>r.s>=0).sort((a,b)=>a.s-b.s||a.name.localeCompare(b.name))
+    .slice(0,5).map(r=>r.name);
+}
+(function initAutocomplete(){
+  const inp=document.getElementById('empName');
+  const wrap=inp.closest('.field');
+  wrap.style.position='relative';
+
+  const box=document.createElement('div');
+  box.className='ac-box';
+  wrap.appendChild(box);
+
+  let items=[], idx=-1;
+  const open=()=>box.classList.add('open');
+  const close=()=>{ box.classList.remove('open'); idx=-1; };
+  const isOpen=()=>box.classList.contains('open');
+
+  function paint(){
+    box.innerHTML='';
+    items.forEach((n,i)=>{
+      const d=document.createElement('div');
+      d.className='ac-item'+(i===idx?' sel':'');
+      d.textContent=n;
+      d.addEventListener('mousedown',ev=>{ ev.preventDefault(); pick(n); });
+      box.appendChild(d);
+    });
+    items.length?open():close();
+  }
+  function pick(name){ inp.value=name; inp.classList.remove('bad'); close(); inp.focus(); if(!applyRoleFromName()) buildHead(); }
+  function move(step){
+    if(!items.length) return;
+    idx=(idx+step+items.length)%items.length;
+    [...box.children].forEach((c,i)=>c.classList.toggle('sel',i===idx));
+  }
+
+  inp.addEventListener('input',()=>{ items=acSuggest(inp.value); idx=-1; paint(); });
+  inp.addEventListener('focus',()=>{ if(inp.value.trim()){ items=acSuggest(inp.value); idx=-1; paint(); } });
+  inp.addEventListener('blur',()=>setTimeout(close,120));
+
+  // capture phase: runs BEFORE the Enter -> first-score-box handler above
+  inp.addEventListener('keydown',e=>{
+    if(!isOpen()) return;
+    if(e.key==='ArrowDown'){ e.preventDefault(); e.stopPropagation(); move(1); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); e.stopPropagation(); move(-1); }
+    else if(e.key==='Escape'){ e.stopPropagation(); close(); }
+    else if(e.key==='Enter'||e.key==='Tab'){
+      if(idx>=0){ e.preventDefault(); e.stopPropagation(); pick(items[idx]); }
+      else close();
+    }
+  },true);
+})();
+
+const d=new Date();
+document.getElementById('date').value=d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+render();
+</script>
+<script type="module">
+/* =========================================================
+   SUPABASE — session guard, account panel, roster
+   ========================================================= */
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const SUPABASE_URL = "https://giosjwjhalhmwcuyzfos.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_";
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+const gate = document.getElementById('gate');
+
+// Safety net: if the Supabase library or the network fails, never leave the user
+// staring at a permanently blank gate — give them a way back to the login page.
+const stuck = setTimeout(() => {
+  if(document.getElementById('gate')){
+    gate.innerHTML = 'Could not reach the sign-in service. ' +
+      '<a href="login.html" style="color:var(--lagoon-deep);font-weight:700">Go to login</a>';
+  }
+}, 8000);
+
+function initials(name){
+  const p = (name||'').trim().split(/\s+/).filter(Boolean);
+  return ((p[0]?.[0]||'') + (p.length>1 ? p[p.length-1][0] : '')).toUpperCase() || '—';
+}
+
+// ---- 1. require a session ----------------------------------------------
+const { data:{ session } } = await supabase.auth.getSession();
+if(!session){
+  clearTimeout(stuck);
+  window.location.replace('login.html');
+} else {
+  clearTimeout(stuck);
+  // The gate stays up until the criteria form is in its real state — evaluator
+  // mode applied, one column shown — so nothing flashes the pre-auth default
+  // (six empty columns, no name) before settling.
+
+  // ---- 2. who is signed in --------------------------------------------
+  const uid = session.user.id;
+  let me = null;
+  try{
+    const { data } = await supabase.from('profiles')
+      .select('id, full_name, position, role, form_role').eq('id', uid).maybeSingle();
+    me = data;
+  }catch(_){}
+
+  const name = me?.full_name || session.user.email || 'Signed in';
+  document.getElementById('acctName').textContent = name;
+  document.getElementById('acctInitials').textContent = initials(me?.full_name || session.user.email);
+  document.getElementById('acctRole').textContent =
+    [me?.position, me?.role==='manager' ? 'Manager access' : null].filter(Boolean).join(' · ') || session.user.email;
+
+  // default the Manager / Evaluator field to whoever is signed in
+  const mgr = document.getElementById('manager');
+  window.__currentUserName = me?.full_name || session.user.email || '';
+  if(mgr && !FORMS[role].senior){ mgr.readOnly = true; mgr.value = window.__currentUserName; }
+
+  // ---- 3. roster from the database ------------------------------------
+  try{
+    const { data:rows, error } = await supabase.from('profiles')
+      .select('full_name, position, role, form_role').order('full_name');
+    if(!error && rows && rows.length > 1){
+      window.setRoster(rows);
+    }else if(rows && rows.length <= 1){
+      console.info('Roster: only your own profile is readable (row-level security), keeping the built-in list.');
+    }
+  }catch(err){ console.info('Roster fetch failed, keeping the built-in list.', err); }
+
+  // ---- 3b. manager-only staff panel -----------------------------------
+  // Everything here goes through the manage-users Edge Function, which re-checks
+  // that the caller is a manager before touching anything. The browser never
+  // holds an admin key — hiding this panel is convenience, not the security.
+  // Three tiers of access. Everyone scores their own column; what differs is
+  // what else the sidebar exposes.
+  //   full   — manager / Senior Staff: results, history, roster, export, lock, reset
+  //   viewer — Junior Staff: results and history, read only
+  //   basic  — Probationary: criteria view only
+  const canAdmin = (me?.role === 'manager') || (me?.form_role === 'Senior Staff');
+  const canView  = canAdmin || (me?.form_role === 'Junior Staff');
+
+  // The sidebar panel itself is shown to anyone who can view results; the
+  // roster sections inside it stay manager/senior only.
+  if(canView){
+    // Accordion wiring lives here, not in the manager block: a Junior sees the
+    // Results and History sections, so they need the click handlers too.
+    const SECTIONS = [['secResults','sumResults'], ['secHistory','sumHistory'],
+                      ['secRoles','sumRoles'], ['secAdd','sumAdd']];
+    SECTIONS.forEach(([secId, sumId]) => {
+      const sec = document.getElementById(secId);
+      const sum = document.getElementById(sumId);
+      if(!sec || !sum) return;
+      sum.addEventListener('click', () => {
+        const opening = !sec.classList.contains('open');
+        SECTIONS.forEach(([s2, b2]) => {
+          document.getElementById(s2)?.classList.remove('open');
+          document.getElementById(b2)?.setAttribute('aria-expanded','false');
+        });
+        if(opening){
+          sec.classList.add('open');
+          sum.setAttribute('aria-expanded','true');
+        }
+      });
+    });
+
+    document.getElementById('mgrPanel').classList.add('on');
+    document.querySelector('#mgrPanel h3').textContent =
+      canAdmin ? 'Staff administration' : 'Evaluations';
+    if(!canAdmin){
+      document.getElementById('secRoles').classList.add('hide');
+      document.getElementById('secAdd').classList.add('hide');
+    }
+  }
+  if(canAdmin){
+    const isManager = me?.role === 'manager';
+    const panel = document.getElementById('mgrPanel');
+    const list  = document.getElementById('mgrList');
+    const msg   = document.getElementById('mgrMsg');
+    const FORM_ROLES = ['Probationary','Junior Staff','Senior Staff'];
+    panel.classList.add('on');
+    if(!isManager){
+      // Senior staff administer employees only.
+      const acc = document.getElementById('mgrAccess');
+      const mgrOpt = acc.querySelector('option[value="manager"]');
+      if(mgrOpt) mgrOpt.remove();
+      const hint = panel.querySelector('.mgr-hint');
+      if(hint) hint.textContent = 'Senior staff can add and remove employees. Manager accounts are managed by a manager.';
+    }
+
+    const say = (t, cls='') => { msg.textContent = t; msg.className = 'mgr-msg ' + cls; };
+
+    async function admin(payload){
+      const { data, error } = await supabase.functions.invoke('manage-users', { body: payload });
+      if(error){
+        let detail = error.message;
+        try{ detail = (await error.context?.json())?.error || detail; }catch(_){}
+        throw new Error(detail);
+      }
+      if(data?.error) throw new Error(data.error);
+      return data;
+    }
+
+    async function reload(){
+      try{
+        const { users } = await admin({ action:'list' });
+        renderList(users);
+        window.setRoster(users);
+      }catch(err){ say('Could not load staff: ' + err.message, 'err'); }
+    }
+
+    function renderList(rows){
+      list.innerHTML = '';
+      document.getElementById('rolesCount').textContent = rows.length;
+      if(!rows.length){
+        list.innerHTML = '<div class="mgr-empty">Nobody on the roster yet.</div>';
+        return;
+      }
+      rows.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'mgr-row';
+
+        const nm = document.createElement('div');
+        nm.className = 'mgr-nm';
+        nm.textContent = r.full_name;
+        nm.title = (r.email || 'No sign-in account') + (r.role==='manager' ? ' · manager' : '');
+        if(r.role === 'manager'){
+          const t = document.createElement('span'); t.className='tag mg'; t.textContent='mgr'; nm.appendChild(t);
+        }
+        if(!r.has_login){
+          const t = document.createElement('span'); t.className='tag no'; t.textContent='no login'; nm.appendChild(t);
+        }
+
+        const sel = document.createElement('select');
+        sel.className = 'mgr-sel';
+        FORM_ROLES.forEach(fr => {
+          const o = document.createElement('option');
+          o.value = fr; o.textContent = fr; o.selected = (r.form_role === fr);
+          sel.appendChild(o);
+        });
+        sel.addEventListener('change', async () => {
+          const prev = r.form_role;
+          const next = sel.value;
+          // Confirm first — the form role decides which criteria the person is
+          // scored against, and Senior Staff also unlocks admin access.
+          const extra = next === 'Senior Staff'
+            ? ' Senior Staff can also manage other users and finalise evaluations.'
+            : (prev === 'Senior Staff'
+                ? ' They will lose the ability to manage users and finalise evaluations.'
+                : '');
+          const ok = await uiConfirm(
+            'Change ' + r.full_name + "'s form role?",
+            'From ' + (prev || 'none') + ' to ' + next + '.' + extra +
+            ' Their next evaluation will use the ' + next + ' criteria.',
+            { ok: 'Change role' });
+          if(!ok){ sel.value = prev; return; }
+
+          sel.disabled = true;
+          say('Saving…');
+          try{
+            await admin({ action:'set_role', id:r.id, form_role:next });
+            r.form_role = next;
+            say('');
+            reload();
+            await uiAlert('Role updated', r.full_name + ' → ' + next + '.');
+          }catch(err){
+            sel.value = prev;
+            say('');
+            await uiAlert('Could not change the role', err.message);
+          }
+          sel.disabled = false;
+        });
+
+        const del = document.createElement('button');
+        del.className = 'mgr-del';
+        del.title = 'Remove ' + r.full_name;
+        del.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+        const locked = (r.role === 'manager') && !isManager;
+        sel.disabled = locked;
+        del.disabled = (r.id === uid) || locked;
+        if(locked){ del.title = 'Only a manager can change this account'; }
+        del.addEventListener('click', async () => {
+          if(!await uiConfirm('Remove ' + r.full_name + '?',
+              'This deletes their sign-in account and roster entry. It cannot be undone.',
+              { ok: 'Remove', danger: true })) return;
+          del.disabled = true; say('Removing ' + r.full_name + '…');
+          try{
+            await admin({ action:'delete', id:r.id });
+            say(r.full_name + ' removed.', 'ok');
+            reload();
+          }catch(err){ del.disabled = false; say(err.message, 'err'); }
+        });
+
+        const ctl = document.createElement('div');
+        ctl.className = 'mgr-ctl';
+        ctl.append(sel, del);
+        row.append(nm, ctl);
+        list.appendChild(row);
+      });
+    }
+
+    document.getElementById('mgrAdd').addEventListener('click', async () => {
+      const btn = document.getElementById('mgrAdd');
+      const full_name = document.getElementById('mgrName').value.trim();
+      const email     = document.getElementById('mgrEmail').value.trim();
+      const password  = document.getElementById('mgrPass').value;
+      const form_role = document.getElementById('mgrRole').value;
+      const role      = document.getElementById('mgrAccess').value;
+
+      if(!full_name){ uiAlert('Name needed', 'Enter the new person\'s full name.'); return; }
+      if(!email.includes('@')){ uiAlert('Email needed', 'Enter a valid email address for sign-in.'); return; }
+      if(password.length < 8){ uiAlert('Password too short', 'Use at least 8 characters for the temporary password.'); return; }
+
+      const ok = await uiConfirm('Create ' + full_name + '?',
+        full_name + ' will be able to sign in with ' + email + ' as ' +
+        (role === 'manager' ? 'a manager' : 'an employee') + '.',
+        { ok: 'Create user' });
+      if(!ok) return;
+
+      btn.disabled = true; say('Creating account…');
+      try{
+        await admin({ action:'create', full_name, email, password, form_role, role });
+        document.getElementById('mgrName').value = '';
+        document.getElementById('mgrEmail').value = '';
+        document.getElementById('mgrPass').value = '';
+        say('');
+        reload();
+        await uiAlert('User created', full_name + ' can now sign in with ' + email + '.');
+      }catch(err){
+        say('');
+        await uiAlert('Could not create user', err.message);
+      }
+      btn.disabled = false;
+    });
+
+    reload();
+  }
+
+  // ---- 3c. evaluation mode ---------------------------------------------
+  // Staff score one colleague at a time and save their own column.
+  // Managers and Senior Staff see every submitted column and export the result.
+  const isReviewer = canView;      // may open other people's results
+  const isAdmin    = canAdmin;     // may also export, lock, reset and archive
+  const api = window.evalApi;
+
+  const el = id => document.getElementById(id);
+  const show = (id, on) => el(id).classList.toggle('hide', !on);
+  const stateEl = el('whoState');
+  const setState = (text, cls='') => { stateEl.textContent = text; stateEl.className = 'pill-state ' + cls; };
+
+  el('whoV').textContent = me?.full_name || session.user.email;
+
+  // Everyone scores their colleagues, managers and seniors included. Reviewers
+  // additionally open anyone's collected results from the sidebar.
+  let mode = 'mine';                       // 'mine' | 'review'
+  const reviewing = () => mode === 'review';
+
+  function applyMode(){
+    const mine = !reviewing();
+    show('saveBtn',  mine);
+    show('printBtn', !mine && isAdmin);
+    show('pdfBtn',   !mine && isAdmin);
+    show('exportBtn',!mine && isAdmin);
+    show('lockBtn',  !mine && isAdmin);
+    // corrections only on a live round — archived history stays frozen
+    show('fixBtn',   !mine && isAdmin && !archiveCtx);
+    show('resetBtn', mine || isAdmin);      // viewers get no destructive controls
+    el('resetBtn').textContent = mine ? 'Clear scores'
+      : (archiveCtx ? 'Delete history' : 'Reset a submission');
+    show('backBar',  !mine);
+    show('progWrap', !mine && !!target);
+    el('whoK').textContent = mine ? 'Evaluating as' : 'Results for';
+    // In review the bar names the employee; when scoring it names you.
+    el('whoV').textContent = mine
+      ? (me?.full_name || session.user.email)
+      : (api.employeeName() || '—');
+    el('empName').readOnly = !mine;        // in review the sidebar picks the person
+    // No stepper anywhere: scoring your own shows one column, and reviewing
+    // shows one column per person who actually submitted.
+  }
+
+  // name -> id, so we know who is being evaluated
+  let idByName = new Map();
+  let nameById = new Map();
+  async function loadIds(){
+    const { data } = await supabase.from('profiles').select('id, full_name');
+    (data ?? []).forEach(p => { idByName.set(p.full_name.toLowerCase(), p.id); nameById.set(p.id, p.full_name); });
+  }
+  await loadIds();
+
+  let target = null;      // employee being evaluated
+  let targetName = '';    // the name shown in the field for that employee
+  let reviewRows = [];        // rows behind the reviewer's columns, in column order
+  let fixDirty = false;       // reviewer has edited scores that aren't saved yet
+  let viewingArchive = null;  // archived_at of the record on screen (null = live view)
+  let archiveCtx = null;      // { pid, name, when } for that archived record
+  let myRow = null;       // this evaluator's saved row for that employee
+  let anyLocked = false;
+  let dirty = false;      // edits made since the last save
+  let lastWarn = 0;       // throttles the finish-first warning
+
+  applyMode();
+  // One column from the outset — the grid otherwise shows the default six
+  // until the first employee change lands.
+  api.setColumns([ me?.full_name || 'You' ]);
+
+  // The page now matches what the person is actually meant to see —
+  // reveal it and drop the loading screen.
+  document.getElementById('wrap').classList.remove('hide');
+  gate.remove();
+
+  function targetId(){ return idByName.get(api.employeeName().toLowerCase()) || null; }
+
+  function filledCount(){ return Object.keys(api.getColumnScores(0)).length; }
+
+  // Staff must finish and submit one colleague before starting another.
+  function blockedFromLeaving(){
+    if(reviewing() || !target || anyLocked) return null;
+    const filled = filledCount(), total = api.criteriaCount();
+    if(filled === 0) return null;                  // nothing started yet
+    if(filled < total)
+      return 'Finish scoring ' + targetName + ' first — ' + filled + ' of ' + total + ' criteria done.';
+    if(dirty)
+      return 'Submit your scores for ' + targetName + ' before moving on.';
+    return null;
+  }
+
+  async function onEmployeeChange(){
+    const id = targetId();
+    if(id === target) return;
+    const stop = blockedFromLeaving();
+    if(stop){
+      el('empName').value = targetName;   // put the previous name back
+      const now = Date.now();
+      if(now - lastWarn > 4000){ lastWarn = now; uiAlert('Not finished yet', stop); }
+      else setState(stop, 'dirty');
+      return;
+    }
+    target = id;
+    targetName = api.employeeName();
+    dirty = false;
+    if(reviewing()) el('whoV').textContent = targetName || '—';
+    api.clearScores();
+    api.setComments('');
+    myRow = null; anyLocked = false;
+    if(!id){
+      api.clearColumns();
+      el('progWrap').classList.add('hide');
+      setState('No employee selected');
+      return;
+    }
+    if(id === uid && !reviewing()){
+      setState('You cannot evaluate yourself', 'locked');
+      api.setReadOnly(true);
+      return;
+    }
+    reviewing() ? await loadAll(id) : await loadMine(id);
+  }
+
+  // ----- staff: their own single column -----
+  async function loadMine(id){
+    api.clearColumns();
+    api.setColumns([ me?.full_name || 'You' ]);
+    const { data, error } = await supabase.from('evaluations')
+      .select('id, scores, comments, locked')
+      .eq('employee_id', id).eq('evaluator_id', uid).eq('archived', false).maybeSingle();
+    if(error){ setState('Could not load your evaluation', 'locked'); return; }
+    myRow = data || null;
+    if(myRow){
+      api.setColumnScores(0, myRow.scores || {});
+      api.setComments(myRow.comments || '');
+      anyLocked = !!myRow.locked;
+      api.setReadOnly(anyLocked);
+      dirty = false;
+      setState(anyLocked ? 'Submitted — locked until this round is archived'
+                         : 'Draft saved — you can still edit',
+               anyLocked ? 'locked' : 'saved');
+    }else{
+      api.setReadOnly(false);
+      dirty = false;
+      setState('Not submitted yet');
+    }
+    el('saveBtn').disabled = anyLocked;
+  }
+
+  // ----- reviewer: every submitted column -----
+  async function loadAll(id){
+    const { data, error } = await supabase.from('evaluations')
+      .select('id, evaluator_id, scores, comments, locked')
+      .eq('employee_id', id).eq('archived', false);
+    if(error){ setState('Could not load evaluations', 'locked'); return; }
+    const rows = data ?? [];
+    paintProgress(id, rows);
+    if(!rows.length){
+      api.clearColumns();
+      api.setColumns(['No submissions yet']);
+      setState('Nobody has evaluated this person', '');
+      el('lockBtn').disabled = true;
+      reviewRows = []; fixDirty = false;
+      el('fixBtn').disabled = true;
+      return;
+    }
+    rows.sort((a,b) => (nameById.get(a.evaluator_id)||'').localeCompare(nameById.get(b.evaluator_id)||''));
+    api.setColumns(rows.map(r => nameById.get(r.evaluator_id) || 'Unknown'));
+    rows.forEach((r,i) => api.setColumnScores(i, r.scores || {}));
+    const notes = rows.map(r => {
+      const t = (r.comments||'').trim();
+      return t ? (nameById.get(r.evaluator_id)||'Evaluator') + ': ' + t : '';
+    }).filter(Boolean).join('\n');
+    api.setComments(notes);
+    anyLocked = rows.every(r => r.locked);
+    el('lockBtn').disabled = false;
+    el('lockBtn').textContent = anyLocked ? 'Unlock evaluations' : 'Lock evaluations';
+    // column order must match reviewRows so a correction lands on the right row
+    reviewRows = rows.map(r => ({ id: r.id, evaluator_id: r.evaluator_id }));
+    fixDirty = false;
+    el('fixBtn').disabled = true;
+    // admins may correct an evaluator's mistake in place; comments stay locked
+    api.setReadOnly(!isAdmin, true);
+    setState(rows.length + ' of ' + (idByName.size - 1) + ' submitted' + (anyLocked ? ' · locked' : ''),
+             anyLocked ? 'locked' : 'saved');
+  }
+
+  // ----- progress: who has scored this person, who hasn't -----
+  // Everyone evaluates everyone, so the expected set is all staff bar the employee.
+  function paintProgress(employeeId, rows){
+    if(!reviewing()) return;
+    el('progWrap').classList.remove('hide');
+    const expected = [...nameById.entries()].filter(([pid]) => pid !== employeeId);
+    const doneIds = new Set(rows.map(r => r.evaluator_id));
+    const n = expected.filter(([pid]) => doneIds.has(pid)).length;
+    const total = expected.length;
+    el('progNum').textContent = n + ' / ' + total;
+    el('progFill').style.width = total ? (n / total * 100) + '%' : '0%';
+    el('progBar').classList.toggle('done', total > 0 && n === total);
+    const list = el('progList');
+    list.innerHTML = '';
+    expected
+      .sort((a,b) => a[1].localeCompare(b[1]))
+      .forEach(([pid, name]) => {
+        const c = document.createElement('span');
+        const ok = doneIds.has(pid);
+        c.className = 'prog-chip' + (ok ? ' ok' : '');
+        c.innerHTML = '<span class="dot"></span>' + esc(name);
+        c.title = ok ? name + ' has submitted' : name + ' has not submitted yet';
+        list.appendChild(c);
+      });
+  }
+
+  // ----- saving -----
+  el('saveBtn').addEventListener('click', async () => {
+    const id = targetId();
+    if(!id){ uiAlert('No employee chosen', 'Pick the colleague you are evaluating first.'); return; }
+    if(id === uid){ uiAlert('Not allowed', 'You cannot evaluate yourself.'); return; }
+    // A complete column is a final submission: it locks, and only reopens when
+    // a reviewer archives the round (or resets this submission). An incomplete
+    // one saves as an editable draft.
+    const complete = api.columnComplete(0);
+    if(complete && !await uiConfirm('Submit your evaluation of ' + targetName + '?',
+        'Your scores are final once submitted — you will not be able to change them. ' +
+        'A reviewer can reopen them if something is wrong.', { ok: 'Submit' })) return;
+    const btn = el('saveBtn');
+    btn.disabled = true; el('status').textContent = 'Saving…';
+    const payload = {
+      employee_id: id,
+      evaluator_id: uid,
+      scores: api.getColumnScores(0),
+      average: api.average(),
+      comments: api.comments(),
+      form_role: api.formRole(),
+      locked: complete,
+      updated_at: new Date().toISOString()
+    };
+    // No plain upsert here: the uniqueness rule is a *partial* index
+    // (one active row per pair, but unlimited archived ones — see the
+    // archiving feature), and Postgres can't match ON CONFLICT to a partial
+    // index without repeating its WHERE clause, which supabase-js doesn't
+    // expose. So: find the active row for this pair, update it if it exists,
+    // insert if it doesn't.
+    const { data: existing, error: findErr } = await supabase.from('evaluations')
+      .select('id').eq('evaluator_id', uid).eq('employee_id', id)
+      .eq('archived', false).maybeSingle();
+    const { error } = findErr ? { message: findErr.message }
+      : existing
+        ? await supabase.from('evaluations').update(payload).eq('id', existing.id)
+        : await supabase.from('evaluations').insert(payload);
+    btn.disabled = false;
+    if(error){
+      el('status').textContent = '';
+      setState('Save failed', 'locked');
+      uiAlert('Could not save', error.message);
+      return;
+    }
+    el('status').textContent = 'Saved.';
+    setTimeout(() => { if(el('status').textContent === 'Saved.') el('status').textContent = ''; }, 2500);
+    dirty = false;
+    if(complete){
+      anyLocked = true;
+      api.setReadOnly(true);
+      el('saveBtn').disabled = true;
+      setState('Submitted — locked', 'locked');
+      await goToNextColleague();
+    }else{
+      setState('Draft saved (incomplete)', 'saved');
+    }
+    if(window.__refreshResults) window.__refreshResults();
+  });
+
+  // ----- move on to the next colleague -----
+  // After a complete submission, open the next person this evaluator has not
+  // scored yet, in roster order. Nobody left means the round is finished.
+  async function goToNextColleague(){
+    const { data } = await supabase.from('evaluations')
+      .select('employee_id').eq('evaluator_id', uid).eq('archived', false);
+    const done = new Set((data ?? []).map(r => r.employee_id));
+    const queue = [...nameById.entries()]
+      .filter(([pid]) => pid !== uid && !done.has(pid))
+      .sort((a,b) => a[1].localeCompare(b[1]));
+
+    if(!queue.length){
+      api.clearScores(); api.setComments('');
+      api.setEmployee('');
+      target = null; targetName = ''; dirty = false;
+      setState('All colleagues evaluated', 'saved');
+      await uiAlert('All done', 'You have evaluated everyone. Thank you.');
+      return;
+    }
+    const [nextId, nextName] = queue[0];
+    await uiAlert('Saved', 'Next up: ' + nextName + '.');
+    api.setEmployee(nextName);
+    target = null;                 // force a fresh load for the new person
+    await onEmployeeChange();
+    document.querySelector('.score-in')?.focus();
+  }
+
+  // ----- reviewer corrections -----
+  // Each column belongs to a different evaluator, so this writes one row per
+  // column rather than a single payload.
+  el('fixBtn').addEventListener('click', async () => {
+    if(!reviewing() || archiveCtx || !isAdmin || !reviewRows.length) return;
+    const who = api.employeeName();
+    if(!await uiConfirm('Save corrections?',
+        'The edited scores replace what those evaluators submitted for ' + who + '. ' +
+        'Their own comments are left untouched.', { ok: 'Save corrections' })) return;
+    const btn = el('fixBtn');
+    btn.disabled = true; el('status').textContent = 'Saving…';
+    const failed = [];
+    for(let i = 0; i < reviewRows.length; i++){
+      const r = reviewRows[i];
+      const { data, error } = await supabase.from('evaluations').update({
+        scores: api.getColumnScores(i),
+        average: api.columnAverage(i),
+        updated_at: new Date().toISOString()
+      }).eq('id', r.id).select('id');
+      // an RLS block returns no error and no rows — treat that as a failure
+      if(error || !data || !data.length){
+        failed.push(nameById.get(r.evaluator_id) || 'Unknown');
+      }
+    }
+    el('status').textContent = '';
+    if(failed.length){
+      uiAlert('Some corrections did not save',
+        'These columns were rejected by the database: ' + failed.join(', ') + '.');
+    }
+    fixDirty = false;
+    await loadAll(target);
+    if(window.__refreshResults) window.__refreshResults();
+    if(!failed.length) uiAlert('Corrections saved', who + "'s scores have been updated.");
+  });
+
+  // ----- locking -----
+  el('lockBtn').addEventListener('click', async () => {
+    const id = targetId();
+    if(!id) return;
+    const next = !anyLocked;
+    if(!await uiConfirm(next ? 'Lock these evaluations?' : 'Unlock these evaluations?',
+        next ? 'Evaluators will not be able to change their scores until you unlock them.'
+             : 'Evaluators will be able to change their scores again.',
+        { ok: next ? 'Lock' : 'Unlock' })) return;
+    const btn = el('lockBtn'); btn.disabled = true;
+    const { error } = await supabase.from('evaluations')
+      .update({ locked: next }).eq('employee_id', id).eq('archived', false);
+    btn.disabled = false;
+    if(error){ uiAlert('Could not change the lock', error.message); return; }
+    await loadAll(id);
+  });
+
+  // mark unsaved edits
+  {
+    api.onScoreChange(() => {
+      if(reviewing()){
+        // an admin correcting someone else's column
+        if(isAdmin && !archiveCtx && reviewRows.length){
+          fixDirty = true;
+          el('fixBtn').disabled = false;
+          setState('Unsaved corrections', 'dirty');
+        }
+        return;
+      }
+      if(anyLocked || !target) return;
+      dirty = true;
+      const filled = filledCount(), total = api.criteriaCount();
+      setState(filled < total ? ('Unsaved · ' + filled + ' of ' + total + ' scored') : 'Unsaved changes', 'dirty');
+    });
+  }
+
+  window.addEventListener('beforeunload', e => {
+    if(dirty && !reviewing()){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  el('empName').addEventListener('input', () => {
+    if(!reviewing() && document.querySelectorAll('th.evh, #rows .crow').length > api.criteriaCount())
+      api.setColumns([ me?.full_name || 'You' ]);
+  });
+
+  window.__isRosterName = name => idByName.has((name||'').trim().toLowerCase());
+  el('empName').addEventListener('blur', () => {
+    const inp = el('empName');
+    const v = inp.value.trim();
+    if(v && !window.__isRosterName(v)){
+      inp.classList.add('bad');
+      uiAlert('Not on the roster', '"' + v + '" doesn\'t match anyone on the staff list. Pick a name from the suggestions.');
+      inp.value = targetName || '';
+      inp.classList.remove('bad');
+    }
+  });
+  el('empName').addEventListener('change', onEmployeeChange);
+  el('empName').addEventListener('blur', onEmployeeChange);
+  // The autocomplete sets the value without firing 'change', so poll — but
+  // silently: never while the field has focus, and only on an exact match.
+  // (An alert() here fires repeatedly and blocks every other click.)
+  setInterval(() => {
+    if(document.activeElement === el('empName')) return;
+    const typed = api.employeeName().toLowerCase();
+    if(typed && !idByName.has(typed)) return;
+    onEmployeeChange();
+  }, 900);
+
+  // ---- 3d. sidebar results (reviewers only) ----------------------------
+  if(isReviewer){
+    el('secResults').classList.remove('hide');
+
+    async function loadResults(){
+      const { data, error } = await supabase.from('evaluations')
+        .select('employee_id, evaluator_id, locked').eq('archived', false);
+      if(error){ el('resList').innerHTML = '<div class="res-empty">Could not load results.</div>'; return; }
+      const rows = data ?? [];
+      const byEmployee = new Map();
+      rows.forEach(r => {
+        if(!byEmployee.has(r.employee_id)) byEmployee.set(r.employee_id, new Set());
+        byEmployee.get(r.employee_id).add(r.evaluator_id);
+      });
+
+      const people = [...nameById.entries()].sort((a,b) => a[1].localeCompare(b[1]));
+      const list = el('resList');
+      list.innerHTML = '';
+      let complete = 0;
+
+      people.forEach(([pid, name]) => {
+        const total = people.length - 1;               // everyone but themselves
+        const n = (byEmployee.get(pid) || new Set()).size;
+        const full = total > 0 && n >= total;
+        if(full) complete++;
+
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'res-row' + (full ? ' full' : '') + (pid === target && reviewing() ? ' on' : '');
+        b.innerHTML = `<div class="res-top"><span class="res-nm">${esc(name)}</span>` +
+                      `<span class="res-ct">${n}/${total}</span></div>` +
+                      `<div class="res-bar"><span style="width:${total ? (n/total*100) : 0}%"></span></div>`;
+        b.title = full ? 'Everyone has scored ' + name : (total - n) + ' still to score ' + name;
+        b.addEventListener('click', () => openResults(pid, name));
+        list.appendChild(b);
+      });
+
+      if(!people.length) list.innerHTML = '<div class="res-empty">No staff on the roster.</div>';
+      el('resDone').textContent = complete + '/' + people.length;
+    }
+
+    // open one person's collected scores in the main form
+    async function openResults(pid, name){
+      const stop = blockedFromLeaving();
+      if(stop){ uiAlert('Not finished yet', stop); return; }
+      mode = 'review';
+      if(window.__clearArchiveView) window.__clearArchiveView();
+      api.setEmployee(name);
+      applyMode();
+      target = null;                 // force a reload for this person
+      await onEmployeeChange();
+      loadResults();
+      openDrawer(false);
+    }
+
+    el('backBtn').addEventListener('click', async () => {
+      mode = 'mine';
+      applyMode();
+      api.clearColumns();
+      api.setEmployee('');
+      target = null; targetName = ''; dirty = false;
+      api.clearScores(); api.setComments(''); api.setReadOnly(false);
+      setState('No employee selected');
+    });
+
+    el('sumResults').addEventListener('click', () => {
+      if(el('secResults').classList.contains('open')) loadResults();
+    });
+    window.__refreshResults = loadResults;
+    loadResults();
+  }
+
+  // ---- 3e. archiving + history (reviewers only) ------------------------
+  // Printing or exporting a completed round finalises it: the rows are frozen
+  // and moved to History, which clears the way for the next round.
+  if(isReviewer){
+    el('secHistory').classList.remove('hide');
+
+    async function archiveRound(){
+      const id = target;
+      if(!id || viewingArchive) return;
+      const name = api.employeeName();
+      if(!await uiConfirm('Finalise this evaluation?',
+          name + "'s evaluation moves to History and can no longer be edited. " +
+          'A new evaluation round opens for ' + name + '.', { ok: 'Finalise' })) return;
+      const stamp = new Date().toISOString();
+      const { error } = await supabase.from('evaluations')
+        .update({ archived: true, archived_at: stamp, archived_by: uid, locked: true })
+        .eq('employee_id', id).eq('archived', false);
+      if(error){ uiAlert('Could not archive', error.message); return; }
+      await uiAlert('Archived', name + "'s evaluation is in History. A new round is now open.");
+      await loadHistory();
+      if(window.__refreshResults) window.__refreshResults();
+      target = null;
+      await onEmployeeChange();
+    }
+
+    // Only admins finalise a round; viewers never see these buttons anyway.
+    if(isAdmin){
+      ['printBtn','pdfBtn','exportBtn'].forEach(bid => {
+        el(bid).addEventListener('click', () => {
+          if(!reviewing() || viewingArchive) return;
+          setTimeout(archiveRound, 1200);    // let the document render first
+        });
+      });
+    }
+
+    async function loadHistory(){
+      const { data, error } = await supabase.from('evaluations')
+        .select('employee_id, evaluator_id, scores, comments, average, archived_at, form_role')
+        .eq('archived', true).order('archived_at', { ascending: false });
+      const list = el('hisList');
+      if(error){ list.innerHTML = '<div class="his-empty">Could not load history.</div>'; return; }
+      const rows = data ?? [];
+      // group by employee + the moment it was archived
+      const groups = new Map();
+      rows.forEach(r => {
+        const key = r.employee_id + '|' + r.archived_at;
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(r);
+      });
+      list.innerHTML = '';
+      el('hisCount').textContent = groups.size;
+      if(!groups.size){ list.innerHTML = '<div class="his-empty">Nothing archived yet.</div>'; return; }
+      [...groups.entries()].forEach(([key, rs]) => {
+        const [pid, when] = key.split('|');
+        const name = nameById.get(pid) || 'Unknown';
+        const avg = rs.length
+          ? Math.round(rs.reduce((a,r) => a + (Number(r.average)||0), 0) / rs.length * 10) / 10
+          : 0;
+        const d = new Date(when);
+        const row = document.createElement('div');
+        row.className = 'his-row';
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'his-main';
+        b.innerHTML = `<div class="his-nm">${esc(name)}</div>` +
+          `<div class="his-meta"><span>${d.toLocaleDateString()}</span>` +
+          `<span class="dot">·</span>` +
+          `<span>${rs.length} evaluator${rs.length===1?'':'s'}</span></div>`;
+        b.addEventListener('click', () => openArchive(pid, name, when, rs, row));
+        row.appendChild(b);
+        // average sits on the same centre line as the delete icon
+        const avgEl = document.createElement('div');
+        avgEl.className = 'his-avg';
+        avgEl.title = 'Average score';
+        avgEl.textContent = avg;
+        row.appendChild(avgEl);
+        // only admins may remove a finalised round
+        if(isAdmin){
+          const del = document.createElement('button');
+          del.type = 'button'; del.className = 'his-del';
+          del.title = 'Delete this history record';
+          del.setAttribute('aria-label', 'Delete ' + name + "'s archived evaluation");
+          del.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+            'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg>';
+          del.addEventListener('click', e => {
+            e.stopPropagation();
+            deleteArchiveRecord({ pid, name, when });
+          });
+          row.appendChild(del);
+        }
+        list.appendChild(row);
+      });
+    }
+
+    // Removing a history record wipes that whole finalised round for good.
+    async function deleteArchiveRecord(ctx){
+      if(!isAdmin || !ctx) return;
+      if(!await uiConfirm('Delete this history record?',
+          ctx.name + "'s archived evaluation from " + new Date(ctx.when).toLocaleString() +
+          ' will be permanently removed. This cannot be undone.',
+          { ok: 'Delete history', danger: true })) return;
+      const { data: gone, error } = await supabase.from('evaluations')
+        .delete().eq('employee_id', ctx.pid).eq('archived', true).eq('archived_at', ctx.when)
+        .select('id');
+      if(error){ uiAlert('Could not delete', error.message); return; }
+      // RLS removes rows silently when a policy blocks them — nothing back means nothing went
+      if(!gone || !gone.length){
+        uiAlert('Nothing was deleted',
+          'The database refused to remove that record. Your account may not have permission to ' +
+          'delete archived evaluations.');
+        return;
+      }
+      const wasOpen = viewingArchive === ctx.when && target === ctx.pid;
+      await loadHistory();
+      if(wasOpen) el('backBtn').click();
+      await uiAlert('Deleted', ctx.name + "'s history record has been removed.");
+    }
+    window.__deleteArchive = deleteArchiveRecord;
+
+    function openArchive(pid, name, when, rs, rowEl){
+      const stop = blockedFromLeaving();
+      if(stop){ uiAlert('Not finished yet', stop); return; }
+      mode = 'review';
+      viewingArchive = when;
+      archiveCtx = { pid, name, when };
+      api.setEmployee(name);
+      applyMode();
+      target = pid; targetName = name;
+      rs.sort((a,b) => (nameById.get(a.evaluator_id)||'').localeCompare(nameById.get(b.evaluator_id)||''));
+      api.clearScores();
+      api.setColumns(rs.map(r => nameById.get(r.evaluator_id) || 'Unknown'));
+      rs.forEach((r,i) => api.setColumnScores(i, r.scores || {}));
+      api.setComments(rs.map(r => {
+        const t = (r.comments||'').trim();
+        return t ? (nameById.get(r.evaluator_id)||'Evaluator') + ': ' + t : '';
+      }).filter(Boolean).join('\n'));
+      api.setReadOnly(true);
+      reviewRows = []; fixDirty = false;
+      show('fixBtn', false);
+      el('archNote').classList.remove('hide');
+      el('archText').textContent = 'Archived ' + new Date(when).toLocaleString() +
+        ' — read only. Print and export still work.';
+      show('progWrap', false);
+      show('lockBtn', false);
+      setState('Archived record', 'locked');
+      [...el('hisList').children].forEach(c => c.classList.remove('on'));
+      if(rowEl) rowEl.classList.add('on');
+      openDrawer(false);
+    }
+
+    // leaving an archived record returns to the live view
+    el('backBtn').addEventListener('click', () => {
+      viewingArchive = null; archiveCtx = null;
+      fixDirty = false;
+      el('archNote').classList.add('hide');
+      el('resetBtn').textContent = reviewing() ? 'Reset a submission' : 'Clear scores';
+      [...el('hisList').children].forEach(c => c.classList.remove('on'));
+    });
+    window.__clearArchiveView = () => {
+      viewingArchive = null; archiveCtx = null;
+      el('archNote').classList.add('hide');
+      el('resetBtn').textContent = reviewing() ? 'Reset a submission' : 'Clear scores';
+      show('lockBtn', true);
+    };
+
+    el('sumHistory').addEventListener('click', () => {
+      if(el('secHistory').classList.contains('open')) loadHistory();
+    });
+    loadHistory();
+  }
+
+  // ---- 3f. reset a wrong submission (admins only) ----------------------
+  // Deleting an active row lets that evaluator score the person again from
+  // scratch. Archived rounds are never touched.
+  if(isAdmin){
+    async function openResetDialog(){
+      const id = target;
+      if(!id){ uiAlert('No employee open', 'Choose someone from the sidebar first.'); return; }
+      const { data, error } = await supabase.from('evaluations')
+        .select('id, evaluator_id, average')
+        .eq('employee_id', id).eq('archived', false);
+      if(error){ uiAlert('Could not load submissions', error.message); return; }
+      const rows = data ?? [];
+
+      const scrim = document.createElement('div');
+      scrim.className = 'rm-scrim';
+      const who = api.employeeName();
+      scrim.innerHTML =
+        '<div class="rm-box">' +
+          '<div class="rm-top"><div class="rm-ttl">Reset a submission</div>' +
+          '<div class="rm-sub">Whose scores for ' + who + ' should be cleared? ' +
+          'They can then evaluate ' + who + ' again.</div></div>' +
+          '<div class="rm-body" id="rmBody"></div>' +
+          '<div class="rm-foot">' +
+            '<button type="button" id="rmClose">Close</button>' +
+            '<button type="button" class="all" id="rmAll">Clear all</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(scrim);
+      const close = () => { scrim.remove(); document.body.style.overflow = ''; };
+      document.body.style.overflow = 'hidden';
+      scrim.addEventListener('click', e => { if(e.target === scrim) close(); });
+      scrim.querySelector('#rmClose').addEventListener('click', close);
+
+      const body = scrim.querySelector('#rmBody');
+      function paint(){
+        body.innerHTML = '';
+        if(!rows.length){ body.innerHTML = '<div class="rm-empty">No submissions to clear.</div>'; return; }
+        rows.forEach(r => {
+          const name = nameById.get(r.evaluator_id) || 'Unknown';
+          const item = document.createElement('div');
+          item.className = 'rm-item';
+          item.innerHTML = '<span class="rm-nm">' + esc(name) + '</span>' +
+            '<span class="rm-avg">avg ' + (r.average ?? 0) + '</span>';
+          const x = document.createElement('button');
+          x.className = 'rm-x'; x.type = 'button'; x.textContent = 'Clear';
+          x.addEventListener('click', async () => {
+            if(!await uiConfirm('Clear ' + name + "'s scores?",
+                'This removes their scores for ' + who + '. They will be able to evaluate ' +
+                who + ' again.', { ok: 'Clear scores', danger: true })) return;
+            x.disabled = true; x.textContent = 'Clearing…';
+            const { error } = await supabase.from('evaluations').delete().eq('id', r.id);
+            if(error){ x.disabled = false; x.textContent = 'Clear';
+              uiAlert('Could not clear', error.message); return; }
+            rows.splice(rows.indexOf(r), 1);
+            paint();
+            await refreshAfterReset();
+          });
+          item.appendChild(x);
+          body.appendChild(item);
+        });
+      }
+      paint();
+
+      scrim.querySelector('#rmAll').addEventListener('click', async () => {
+        if(!rows.length){ close(); return; }
+        if(!await uiConfirm('Clear all submissions?',
+            'All ' + rows.length + ' submissions for ' + who + ' will be removed and everyone ' +
+            'will need to evaluate ' + who + ' again. This cannot be undone.',
+            { ok: 'Clear all', danger: true })) return;
+        const { error } = await supabase.from('evaluations')
+          .delete().eq('employee_id', target).eq('archived', false);
+        if(error){ uiAlert('Could not clear', error.message); return; }
+        close();
+        await refreshAfterReset();
+      });
+    }
+
+    async function refreshAfterReset(){
+      if(window.__refreshResults) window.__refreshResults();
+      const id = target; target = null;
+      el('empName').value = nameById.get(id) || '';
+      await onEmployeeChange();
+    }
+
+    // in review the Clear button picks a submission; when scoring it still
+    // clears the form in front of you
+    el('resetBtn').addEventListener('click', e => {
+      if(!reviewing()) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      // viewing a finalised round: the same button deletes that record instead
+      if(archiveCtx && window.__deleteArchive){ window.__deleteArchive(archiveCtx); return; }
+      openResetDialog();
+    }, true);
+  }
+
+  // ---- 4. sign out ------------------------------------------------------
+  document.getElementById('signOut').addEventListener('click', async () => {
+    const b = document.getElementById('signOut');
+    if(dirty && !await uiConfirm('Sign out with unsaved scores?',
+        'Your unsaved scores will be lost.', { ok: 'Sign out', danger: true })) return;
+    dirty = false;              // deliberate exit — skip the leave prompt
+    b.disabled = true;
+    const label = b.querySelector('span'); if(label) label.textContent = 'Signing out…';
+    try{ await supabase.auth.signOut(); }
+    catch(err){ console.warn('Sign out error', err); }
+    window.location.replace('login.html');
+  });
+
+  supabase.auth.onAuthStateChange((event) => {
+    if(event === 'SIGNED_OUT') window.location.replace('login.html');
+  });
+}
+</script>
 </body>
 </html>
