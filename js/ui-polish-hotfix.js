@@ -809,6 +809,172 @@
         color:var(--ink-soft) !important;
       }
 
+
+      /* =====================================================
+         BUTTON THEME / CONTRAST — EXACT REMAINING STATES
+         ===================================================== */
+
+      /* All ordinary enabled action buttons follow the user's accent. */
+      html[data-bp-theme] body .actions .btn:not(:disabled):not(#resetBtn),
+      html[data-bp-theme] body .settings-btn-primary:not(:disabled),
+      html[data-bp-theme] body .btn-add:not(:disabled){
+        background:linear-gradient(
+          180deg,
+          var(--lagoon),
+          var(--lagoon-deep)
+        ) !important;
+        border-color:rgba(var(--bp-accent-rgb),.72) !important;
+        color:var(--bp-theme-contrast,#fff) !important;
+        opacity:1 !important;
+        filter:none !important;
+        box-shadow:0 10px 24px -10px rgba(var(--bp-accent-rgb),.58) !important;
+      }
+
+      /* Disabled buttons remain unmistakably disabled but still readable.
+         Do NOT tint them bright accent, since that looks clickable. */
+      html[data-bp-theme="dark"] body .actions .btn:disabled:not(#resetBtn),
+      html[data-bp-theme="amoled"] body .actions .btn:disabled:not(#resetBtn){
+        background:var(--bp-theme-surface-3) !important;
+        border:1.5px solid var(--line) !important;
+        color:var(--ink-soft) !important;
+        opacity:1 !important;
+        filter:none !important;
+        text-shadow:none !important;
+        box-shadow:none !important;
+      }
+
+      html[data-bp-theme="light"] body .actions .btn:disabled:not(#resetBtn){
+        background:#e7eef3 !important;
+        border:1.5px solid #c7d7e2 !important;
+        color:#637583 !important;
+        opacity:1 !important;
+        filter:none !important;
+        text-shadow:none !important;
+        box-shadow:none !important;
+      }
+
+      /* Clear/reset remains destructive red when enabled. */
+      html[data-bp-theme] body #resetBtn:not(:disabled),
+      html[data-bp-theme] body .btn.danger:not(:disabled),
+      html[data-bp-theme] body .danger:not(:disabled){
+        background:linear-gradient(180deg,#e65c56,#c62f2f) !important;
+        border-color:#d84a45 !important;
+        color:#fff !important;
+        opacity:1 !important;
+        box-shadow:0 10px 24px -11px rgba(198,47,47,.72) !important;
+      }
+
+      /* Confirm / alert dialog button rows.
+         Primary action follows selected site color instead of hard-coded cyan. */
+      html[data-bp-theme] body :where(.dlg-foot,.rm-foot,.confirm-actions,.modal-actions)
+        button:not(.cancel):not(.danger):not([data-danger]):not(.destructive){
+        background:linear-gradient(
+          180deg,
+          var(--lagoon),
+          var(--lagoon-deep)
+        ) !important;
+        border:1.5px solid rgba(var(--bp-accent-rgb),.75) !important;
+        color:var(--bp-theme-contrast,#fff) !important;
+        opacity:1 !important;
+        box-shadow:0 8px 20px -10px rgba(var(--bp-accent-rgb),.65) !important;
+      }
+
+      /* Generic uiConfirm-style dialogs sometimes have no named footer class.
+         Target the buttons inside the dialog, while excluding close/X controls. */
+      html[data-bp-theme] body [role="dialog"]
+        button:not(.cancel):not(.danger):not([data-danger]):not(.destructive)
+        :not(svg){
+        opacity:1;
+      }
+
+      html[data-bp-theme] body [role="dialog"] button:not(
+        .account-settings-close,
+        .staff-add-close,
+        .performer-records-close,
+        .team-average-close,
+        .team-evaluator-popup-close,
+        .round-progress-close,
+        .staff-profile-close,
+        .x,
+        .cancel,
+        .danger,
+        .destructive
+      ):not([data-danger]):not(:disabled){
+        color:var(--bp-theme-contrast,#fff) !important;
+      }
+
+      /* Explicit common OK/Confirm/Restore button classes. */
+      html[data-bp-theme] body [role="dialog"] :where(
+        .ok,.confirm,.restore,.primary,.confirm-btn,.ok-btn,.restore-btn
+      ):not(:disabled){
+        background:linear-gradient(
+          180deg,
+          var(--lagoon),
+          var(--lagoon-deep)
+        ) !important;
+        border-color:rgba(var(--bp-accent-rgb),.75) !important;
+        color:var(--bp-theme-contrast,#fff) !important;
+        opacity:1 !important;
+      }
+
+      /* Cancel should never be a bright white unreadable slab in dark/AMOLED. */
+      html[data-bp-theme="dark"] body [role="dialog"] :where(
+        .cancel,.cancel-btn,[data-cancel]
+      ),
+      html[data-bp-theme="amoled"] body [role="dialog"] :where(
+        .cancel,.cancel-btn,[data-cancel]
+      ){
+        background:var(--bp-theme-surface-3) !important;
+        border:1.5px solid var(--line) !important;
+        color:var(--ink-soft) !important;
+        opacity:1 !important;
+        box-shadow:none !important;
+        filter:none !important;
+      }
+
+      html[data-bp-theme="light"] body [role="dialog"] :where(
+        .cancel,.cancel-btn,[data-cancel]
+      ){
+        background:#f4f8fb !important;
+        border:1.5px solid #c9dfee !important;
+        color:#28455c !important;
+        opacity:1 !important;
+        box-shadow:none !important;
+      }
+
+      /* Dialog destructive action remains red, independent of accent. */
+      html[data-bp-theme] body [role="dialog"] :where(
+        .danger,.danger-btn,.destructive,[data-danger]
+      ):not(:disabled){
+        background:linear-gradient(180deg,#e65c56,#c62f2f) !important;
+        border-color:#d84a45 !important;
+        color:#fff !important;
+        opacity:1 !important;
+      }
+
+      /* Any disabled dialog button must still have legible copy. */
+      html[data-bp-theme="dark"] body [role="dialog"] button:disabled,
+      html[data-bp-theme="amoled"] body [role="dialog"] button:disabled{
+        background:var(--bp-theme-surface-3) !important;
+        border-color:var(--line) !important;
+        color:var(--ink-soft) !important;
+        opacity:1 !important;
+        filter:none !important;
+        box-shadow:none !important;
+      }
+
+      /* In-progress / submitted status chips are labels, not buttons.
+         Keep readable with the current custom accent. */
+      html[data-bp-theme] body :where(
+        .review-remark-status.in-progress,
+        .review-status.in-progress,
+        .status-pill.in-progress
+      ){
+        color:var(--lagoon) !important;
+        border-color:rgba(var(--bp-accent-rgb),.65) !important;
+        background:rgba(var(--bp-accent-rgb),.10) !important;
+      }
+
     `;
 
     document.head.appendChild(style);
