@@ -975,6 +975,118 @@
         background:rgba(var(--bp-accent-rgb),.10) !important;
       }
 
+
+      /* =====================================================
+         STAFF EXEMPTION STACKED CONFIRM — EXACT BUTTON CLASSES
+         ===================================================== */
+
+      html[data-bp-theme] body .round-exemption-stacked-primary:not(:disabled){
+        background:linear-gradient(
+          180deg,
+          var(--lagoon),
+          var(--lagoon-deep)
+        ) !important;
+        border:1.5px solid rgba(var(--bp-accent-rgb),.78) !important;
+        color:var(--bp-theme-contrast,#fff) !important;
+        opacity:1 !important;
+        filter:none !important;
+        box-shadow:0 9px 22px -11px rgba(var(--bp-accent-rgb),.72) !important;
+      }
+
+      html[data-bp-theme="dark"] body .round-exemption-stacked-secondary,
+      html[data-bp-theme="amoled"] body .round-exemption-stacked-secondary{
+        background:var(--bp-theme-surface-3) !important;
+        border:1.5px solid var(--line) !important;
+        color:var(--ink-soft) !important;
+        opacity:1 !important;
+        filter:none !important;
+        box-shadow:none !important;
+      }
+
+      html[data-bp-theme="light"] body .round-exemption-stacked-secondary{
+        background:#f4f8fb !important;
+        border:1.5px solid #c9dfee !important;
+        color:#28455c !important;
+        opacity:1 !important;
+        box-shadow:none !important;
+      }
+
+      html[data-bp-theme] body .round-exemption-stacked-primary:hover:not(:disabled){
+        filter:brightness(1.07) !important;
+        border-color:var(--lagoon) !important;
+      }
+
+      html[data-bp-theme="dark"] body .round-exemption-stacked-secondary:hover,
+      html[data-bp-theme="amoled"] body .round-exemption-stacked-secondary:hover{
+        background:rgba(var(--bp-accent-rgb),.10) !important;
+        border-color:rgba(var(--bp-accent-rgb),.5) !important;
+        color:var(--ink) !important;
+      }
+
+      /* =====================================================
+         MOBILE SCROLL STABILITY
+         - no smooth programmatic page movement
+         - stop scroll anchoring from moving the viewport while
+           dynamic score/progress/result content updates
+         - keep normal vertical finger scrolling
+         ===================================================== */
+      @media(max-width:760px){
+        html{
+          scroll-behavior:auto !important;
+          overscroll-behavior-y:auto !important;
+        }
+
+        body{
+          overflow-x:hidden !important;
+          overflow-y:visible !important;
+          overscroll-behavior-y:auto !important;
+          touch-action:pan-y !important;
+        }
+
+        body :where(
+          #formView,
+          #dashboardView,
+          .main,
+          .panel,
+          #singleWrap,
+          #rows,
+          #cards,
+          .comment,
+          .actions,
+          .totals,
+          .prog-wrap,
+          .review-remarks,
+          .team-average-dialog,
+          .team-evaluator-dialog,
+          .round-progress-dialog,
+          .staff-profile-card
+        ){
+          overflow-anchor:none !important;
+        }
+
+        body :where(
+          input,
+          textarea,
+          select,
+          button,
+          a,
+          [role="button"]
+        ){
+          touch-action:manipulation;
+        }
+
+        /* A little real bottom breathing room prevents the final button/card
+           from sitting exactly under the dynamic mobile browser toolbar. */
+        #formView,
+        #dashboardView{
+          padding-bottom:max(36px, env(safe-area-inset-bottom)) !important;
+        }
+
+        .actions{
+          margin-bottom:max(18px, env(safe-area-inset-bottom)) !important;
+        }
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -988,14 +1100,6 @@
     setTimeout(installPolish, 100);
     setTimeout(installPolish, 500);
     setTimeout(installPolish, 1200);
-
-    const headObserver = new MutationObserver(() => {
-      const hotfix = document.getElementById(STYLE_ID);
-      if(hotfix && hotfix !== document.head.lastElementChild){
-        document.head.appendChild(hotfix);
-      }
-    });
-    headObserver.observe(document.head,{childList:true});
   }
 
   if (document.readyState === "loading") {
