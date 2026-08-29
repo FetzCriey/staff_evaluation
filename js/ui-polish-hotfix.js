@@ -652,6 +652,163 @@
         color:var(--ink-soft) !important;
       }
 
+
+      /* =====================================================
+         EXACT ROOT-CAUSE FIXES — AMOLED / DARK
+         ===================================================== */
+
+      /* dashboard-result-selection-state.js injects:
+         body.suppress-result-selection #resList .res-row.on {
+           background:#fff !important;
+         }
+         Match and exceed that specificity so theme wins. */
+      html[data-bp-theme="dark"] body.suppress-result-selection #resList .res-row.on,
+      html[data-bp-theme="amoled"] body.suppress-result-selection #resList .res-row.on{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+        color:var(--ink) !important;
+        box-shadow:none !important;
+      }
+
+      html[data-bp-theme="dark"] body.suppress-result-selection #resList .res-row.on:hover,
+      html[data-bp-theme="amoled"] body.suppress-result-selection #resList .res-row.on:hover{
+        background:var(--bp-theme-surface-3) !important;
+        border-color:var(--lagoon) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] body.suppress-result-selection #resList .res-row.on .res-nm,
+      html[data-bp-theme="amoled"] body.suppress-result-selection #resList .res-row.on .res-nm{
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] body.suppress-result-selection #resList .res-row.on .res-ct,
+      html[data-bp-theme="amoled"] body.suppress-result-selection #resList .res-row.on .res-ct{
+        color:var(--muted) !important;
+      }
+
+      /* index.css contains a later generic .panel,.card { background:#fff }.
+         In dark themes every ordinary evaluation criterion card must follow
+         the selected surface instead of the legacy white fallback. */
+      html[data-bp-theme="dark"] body .card:not(.team-average-evaluator-card):not(.exempted),
+      html[data-bp-theme="amoled"] body .card:not(.team-average-evaluator-card):not(.exempted){
+        background:var(--panel) !important;
+        border-color:var(--bp-card-border,var(--line)) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] body .card :where(.crit-name,.ctext,.nm),
+      html[data-bp-theme="amoled"] body .card :where(.crit-name,.ctext,.nm){
+        color:var(--ink) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] body .card :where(.crit-desc,.cpill),
+      html[data-bp-theme="amoled"] body .card :where(.crit-desc,.cpill){
+        color:var(--muted) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] body .card .cpill,
+      html[data-bp-theme="amoled"] body .card .cpill{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+      }
+
+      /* Exact classes used after tapping a Team Average graph point. */
+      html[data-bp-theme="dark"] .team-average-evaluator-card:not(.exempted),
+      html[data-bp-theme="amoled"] .team-average-evaluator-card:not(.exempted){
+        background:var(--panel) !important;
+        border-color:var(--bp-card-border,var(--line)) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] .team-average-evaluator-card:not(.exempted) .team-average-evaluator-name,
+      html[data-bp-theme="dark"] .team-average-evaluator-card:not(.exempted) .team-average-evaluator-score,
+      html[data-bp-theme="amoled"] .team-average-evaluator-card:not(.exempted) .team-average-evaluator-name,
+      html[data-bp-theme="amoled"] .team-average-evaluator-card:not(.exempted) .team-average-evaluator-score{
+        color:var(--ink) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] .team-average-evaluator-card:not(.exempted) .team-average-evaluator-meta,
+      html[data-bp-theme="amoled"] .team-average-evaluator-card:not(.exempted) .team-average-evaluator-meta{
+        color:var(--muted) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] .team-average-evaluator-card:not(.exempted) .team-average-evaluator-bar,
+      html[data-bp-theme="amoled"] .team-average-evaluator-card:not(.exempted) .team-average-evaluator-bar{
+        background:var(--bp-theme-surface-3) !important;
+      }
+
+      /* Keep exempted records intentionally warm, but make their copy readable. */
+      html[data-bp-theme="dark"] .team-average-evaluator-card.exempted,
+      html[data-bp-theme="amoled"] .team-average-evaluator-card.exempted{
+        background:#171208 !important;
+        border-color:#66552a !important;
+      }
+
+      html[data-bp-theme="dark"] .team-average-evaluator-card.exempted :where(.team-average-evaluator-name,.team-average-evaluator-meta),
+      html[data-bp-theme="amoled"] .team-average-evaluator-card.exempted :where(.team-average-evaluator-name,.team-average-evaluator-meta){
+        color:#e9d8aa !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] .team-average-evaluator-card.exempted .team-average-evaluator-reason,
+      html[data-bp-theme="amoled"] .team-average-evaluator-card.exempted .team-average-evaluator-reason{
+        background:#211a0c !important;
+        border-color:#66552a !important;
+        color:#e9d8aa !important;
+      }
+
+      /* Clear Scores: disabled must still be readable instead of faded cyan. */
+      html[data-bp-theme="dark"] body #resetBtn:disabled,
+      html[data-bp-theme="amoled"] body #resetBtn:disabled{
+        background:var(--bp-theme-surface-3) !important;
+        border:1.5px solid var(--line) !important;
+        color:var(--ink-soft) !important;
+        opacity:1 !important;
+        box-shadow:none !important;
+        filter:none !important;
+      }
+
+      html[data-bp-theme="dark"] body #resetBtn:not(:disabled),
+      html[data-bp-theme="amoled"] body #resetBtn:not(:disabled){
+        background:linear-gradient(180deg,#df5a54,#b92f2f) !important;
+        border:1.5px solid #c84b4b !important;
+        color:#fff !important;
+        opacity:1 !important;
+      }
+
+      /* Not Started: no white pill in Dark/AMOLED. */
+      html[data-bp-theme="dark"] body .round-progress-state.not-started,
+      html[data-bp-theme="amoled"] body .round-progress-state.not-started,
+      html[data-bp-theme="dark"] body .round-drilldown-badge.not-started,
+      html[data-bp-theme="amoled"] body .round-drilldown-badge.not-started{
+        background:var(--bp-theme-surface-3) !important;
+        border-color:var(--line) !important;
+        color:var(--ink-soft) !important;
+        opacity:1 !important;
+      }
+
+      /* Disabled export/correction controls: retain readable labels. */
+      html[data-bp-theme="dark"] body .actions .btn:disabled,
+      html[data-bp-theme="amoled"] body .actions .btn:disabled{
+        background:var(--bp-theme-surface-3) !important;
+        border:1.5px solid var(--line) !important;
+        color:var(--muted) !important;
+        box-shadow:none !important;
+        opacity:1 !important;
+        filter:none !important;
+      }
+
+      /* Reset remains specially readable even inside the general disabled rule. */
+      html[data-bp-theme="dark"] body .actions #resetBtn:disabled,
+      html[data-bp-theme="amoled"] body .actions #resetBtn:disabled{
+        color:var(--ink-soft) !important;
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -665,6 +822,14 @@
     setTimeout(installPolish, 100);
     setTimeout(installPolish, 500);
     setTimeout(installPolish, 1200);
+
+    const headObserver = new MutationObserver(() => {
+      const hotfix = document.getElementById(STYLE_ID);
+      if(hotfix && hotfix !== document.head.lastElementChild){
+        document.head.appendChild(hotfix);
+      }
+    });
+    headObserver.observe(document.head,{childList:true});
   }
 
   if (document.readyState === "loading") {
