@@ -1,6 +1,6 @@
 (() => {
   const STYLE_ID = "bpAppearanceOverhaul";
-  const VERSION = "20260903-1448";
+  const VERSION = "20260903-1454";
 
   function installStyles(){
     const old = document.getElementById(STYLE_ID);
@@ -288,6 +288,78 @@
       ){
         color:var(--muted) !important;
         opacity:1 !important;
+      }
+
+
+      /* ---------- ROLE SELECT / NATIVE DROPDOWN THEME MATCH ---------- */
+      :where(.mgr-sel, .mgr select, #mgrPanel select){
+        color-scheme:light;
+        min-height:42px !important;
+        padding:0 38px 0 12px !important;
+        border:1px solid var(--line) !important;
+        border-radius:var(--bp-radius-md) !important;
+        background:var(--panel,#fff) !important;
+        color:var(--ink) !important;
+        font:inherit !important;
+        font-size:12px !important;
+        font-weight:750 !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.08),
+          0 8px 20px -18px rgba(8,52,76,.5) !important;
+      }
+
+      :where(.mgr-sel, .mgr select, #mgrPanel select):hover{
+        border-color:rgba(var(--bp-accent-rgb),.42) !important;
+      }
+
+      :where(.mgr-sel, .mgr select, #mgrPanel select):focus{
+        outline:none !important;
+        border-color:rgba(var(--bp-accent-rgb),.78) !important;
+        box-shadow:
+          0 0 0 3px rgba(var(--bp-accent-rgb),.16),
+          0 8px 22px -18px rgba(var(--bp-accent-rgb),.7) !important;
+      }
+
+      :where(.mgr-sel, .mgr select, #mgrPanel select) option{
+        background:#fff;
+        color:#152330;
+        font-weight:650;
+      }
+
+      :where(.mgr-sel, .mgr select, #mgrPanel select) option:checked{
+        background:rgba(var(--bp-accent-rgb),.16);
+        color:#152330;
+      }
+
+      html[data-bp-theme="dark"] :where(.mgr-sel, .mgr select, #mgrPanel select),
+      html[data-bp-theme="amoled"] :where(.mgr-sel, .mgr select, #mgrPanel select){
+        color-scheme:dark;
+        background:var(--bp-theme-surface-2) !important;
+        border-color:rgba(var(--bp-accent-rgb),.34) !important;
+        color:var(--ink) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.025),
+          0 10px 24px -20px rgba(0,0,0,.95) !important;
+      }
+
+      html[data-bp-theme="dark"] :where(.mgr-sel, .mgr select, #mgrPanel select):focus,
+      html[data-bp-theme="amoled"] :where(.mgr-sel, .mgr select, #mgrPanel select):focus{
+        border-color:rgba(var(--bp-accent-rgb),.9) !important;
+        box-shadow:
+          0 0 0 3px rgba(var(--bp-accent-rgb),.20),
+          0 12px 28px -20px rgba(var(--bp-accent-rgb),.85) !important;
+      }
+
+      html[data-bp-theme="dark"] :where(.mgr-sel, .mgr select, #mgrPanel select) option,
+      html[data-bp-theme="amoled"] :where(.mgr-sel, .mgr select, #mgrPanel select) option{
+        background:var(--bp-theme-surface-2) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] :where(.mgr-sel, .mgr select, #mgrPanel select) option:checked,
+      html[data-bp-theme="amoled"] :where(.mgr-sel, .mgr select, #mgrPanel select) option:checked{
+        background:rgba(var(--bp-accent-rgb),.22) !important;
+        color:var(--ink) !important;
       }
 
       /* ---------- DROPDOWN CONSISTENCY ---------- */
