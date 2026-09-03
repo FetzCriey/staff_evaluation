@@ -1,6 +1,6 @@
 (() => {
   const STYLE_ID = "bpAppearanceOverhaul";
-  const VERSION = "20260903-1518";
+  const VERSION = "20260903-1526";
 
   function installStyles(){
     const old = document.getElementById(STYLE_ID);
@@ -608,6 +608,79 @@
 
 
 
+
+      /* ---------- SIDEBAR FIXED TOP + SCROLLABLE MIDDLE + FIXED BOTTOM ---------- */
+      #drawer{
+        position:fixed !important;
+        top:0 !important;
+        bottom:0 !important;
+        height:100dvh !important;
+        max-height:100dvh !important;
+        display:flex !important;
+        flex-direction:column !important;
+        overflow:hidden !important;
+      }
+
+      #drawer .bp-drawer-fixed-top{
+        flex:0 0 auto !important;
+        position:relative !important;
+        z-index:520 !important;
+        background:var(--panel,#fff) !important;
+        border-bottom:1px solid var(--line) !important;
+        box-shadow:0 16px 28px -28px rgba(8,52,76,.55) !important;
+      }
+
+      #drawer .bp-drawer-middle{
+        flex:1 1 auto !important;
+        min-height:0 !important;
+        overflow-y:auto !important;
+        overflow-x:visible !important;
+        overscroll-behavior:contain !important;
+        -webkit-overflow-scrolling:touch !important;
+        padding-top:10px !important;
+        padding-bottom:14px !important;
+      }
+
+      #drawer #acct{
+        flex:0 0 auto !important;
+        position:relative !important;
+        inset:auto !important;
+        margin-top:0 !important;
+        z-index:520 !important;
+        background:var(--panel,#fff) !important;
+        border-top:1px solid var(--line) !important;
+        box-shadow:0 -18px 28px -26px rgba(8,52,76,.55) !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer .bp-drawer-fixed-top,
+      html[data-bp-theme="amoled"] #drawer .bp-drawer-fixed-top,
+      html[data-bp-theme="dark"] #drawer #acct,
+      html[data-bp-theme="amoled"] #drawer #acct{
+        background:var(--bp-theme-surface-1,var(--panel)) !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer .bp-drawer-fixed-top,
+      html[data-bp-theme="amoled"] #drawer .bp-drawer-fixed-top{
+        box-shadow:0 16px 34px -26px rgba(0,0,0,.92) !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer #acct,
+      html[data-bp-theme="amoled"] #drawer #acct{
+        box-shadow:0 -18px 34px -24px rgba(0,0,0,.92) !important;
+      }
+
+      #drawer :where(.bp-role-menu,.lay-menu){
+        z-index:760 !important;
+      }
+
+      @media(max-width:760px){
+        #drawer,
+        #drawer .bp-drawer-middle{
+          max-height:100dvh !important;
+        }
+      }
+
+
       /* ---------- SIDEBAR VIEWPORT LAYOUT ---------- */
       #drawer{
         position:fixed !important;
@@ -963,17 +1036,41 @@
   function structureDrawerForFixedAccount(){
     const drawer = document.getElementById("drawer");
     const acct = drawer?.querySelector("#acct");
-    if(!drawer || !acct || drawer.querySelector(".bp-drawer-scroll")) return;
+    if(!drawer || !acct) return;
 
-    const scroll = document.createElement("div");
-    scroll.className = "bp-drawer-scroll";
+    if(drawer.querySelector(".bp-drawer-fixed-top") && drawer.querySelector(".bp-drawer-middle")) return;
 
-    const children = [...drawer.children];
-    children.forEach(child => {
-      if(child !== acct) scroll.appendChild(child);
-    });
+    // Unwrap the previous single scroll wrapper if present.
+    const oldScroll = drawer.querySelector(".bp-drawer-scroll");
+    if(oldScroll){
+      [...oldScroll.children].forEach(child => drawer.insertBefore(child, oldScroll));
+      oldScroll.remove();
+    }
 
-    drawer.insertBefore(scroll,acct);
+    const top = document.createElement("div");
+    top.className = "bp-drawer-fixed-top";
+
+    const middle = document.createElement("div");
+    middle.className = "bp-drawer-middle";
+
+    const drawerTop = drawer.querySelector(".drawer-top");
+    const nav = drawer.querySelector(".dash-drawer-nav");
+
+    if(drawerTop) top.appendChild(drawerTop);
+    if(nav) top.appendChild(nav);
+
+    const remaining = [...drawer.children].filter(child =>
+      child !== top &&
+      child !== middle &&
+      child !== acct &&
+      child !== drawerTop &&
+      child !== nav
+    );
+
+    remaining.forEach(child => middle.appendChild(child));
+
+    drawer.insertBefore(top, drawer.firstChild);
+    drawer.insertBefore(middle, acct);
   }
 
   function enhance(){
