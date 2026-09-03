@@ -1198,6 +1198,371 @@
         }
       }
 
+
+      /* =====================================================
+         CURRENT ROUND — EXEMPTED STAFF IN DARK / AMOLED
+         ===================================================== */
+      html[data-bp-theme="dark"] .round-exempted-person,
+      html[data-bp-theme="amoled"] .round-exempted-person{
+        background:rgba(138,100,29,.16) !important;
+        border-color:rgba(236,217,166,.50) !important;
+        color:var(--ink) !important;
+        box-shadow:none !important;
+      }
+
+      html[data-bp-theme="dark"] .round-exempted-name,
+      html[data-bp-theme="amoled"] .round-exempted-name{
+        color:var(--ink) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] .round-exempted-reason,
+      html[data-bp-theme="amoled"] .round-exempted-reason,
+      html[data-bp-theme="dark"] .round-exempted-note,
+      html[data-bp-theme="amoled"] .round-exempted-note{
+        color:#dccb9e !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] .round-exempted-avatar,
+      html[data-bp-theme="amoled"] .round-exempted-avatar{
+        background:rgba(138,100,29,.28) !important;
+        border-color:rgba(236,217,166,.46) !important;
+        color:#f2ddb0 !important;
+        box-shadow:none !important;
+      }
+
+      html[data-bp-theme="dark"] .round-exempted-state,
+      html[data-bp-theme="amoled"] .round-exempted-state{
+        background:rgba(138,100,29,.28) !important;
+        border-color:rgba(236,217,166,.50) !important;
+        color:#f2d99a !important;
+        opacity:1 !important;
+      }
+
+
+      /* =====================================================
+         PREMIUM SIDEBAR — FINAL CASCADE FIX
+         Loaded after account-appearance so theme CSS cannot
+         turn the premium header back into the old dark banner.
+         ===================================================== */
+      #drawer.drawer{
+        width:310px !important;
+        max-width:88vw !important;
+        padding:14px !important;
+        gap:10px !important;
+        background:var(--panel) !important;
+        color:var(--ink) !important;
+        border-right:1px solid var(--line) !important;
+      }
+
+      #drawer .drawer-top{
+        padding:4px 2px 12px !important;
+        background:transparent !important;
+        color:var(--ink) !important;
+        border:0 !important;
+        box-shadow:none !important;
+      }
+
+      #drawer .drawer-brand{
+        gap:10px !important;
+      }
+
+      #drawer .drawer-brand-logo{
+        width:42px !important;
+        height:42px !important;
+        flex:0 0 42px !important;
+        padding:4px !important;
+        border:1px solid rgba(var(--bp-accent-rgb,21,172,227),.20) !important;
+        border-radius:13px !important;
+        background:#fff !important;
+        box-shadow:0 8px 20px -14px rgba(8,52,76,.50) !important;
+      }
+
+      #drawer .drawer-brand-copy .t{
+        color:var(--ink) !important;
+        font-size:16px !important;
+        font-weight:800 !important;
+        opacity:1 !important;
+      }
+
+      #drawer .drawer-brand-copy .s{
+        color:var(--muted) !important;
+        font-size:9px !important;
+        font-weight:700 !important;
+        opacity:1 !important;
+      }
+
+      #drawer #drawerClose.x{
+        width:40px !important;
+        height:40px !important;
+        flex:0 0 40px !important;
+        display:grid !important;
+        place-items:center !important;
+        border:1px solid var(--line) !important;
+        border-radius:13px !important;
+        background:var(--bp-theme-surface-2,#f5f9fc) !important;
+        color:var(--ink-soft) !important;
+        box-shadow:none !important;
+      }
+
+      #drawer .dash-drawer-nav{
+        display:flex !important;
+        flex-direction:column !important;
+        gap:7px !important;
+        padding:0 0 10px !important;
+        margin:0 !important;
+        border-bottom:1px solid var(--line) !important;
+      }
+
+      #drawer .dash-drawer-link{
+        min-height:49px !important;
+        display:flex !important;
+        align-items:center !important;
+        gap:10px !important;
+        width:100% !important;
+        padding:7px 10px 7px 8px !important;
+        border:1px solid transparent !important;
+        border-radius:14px !important;
+        background:transparent !important;
+        color:var(--ink-soft) !important;
+        font-weight:750 !important;
+        text-transform:none !important;
+        opacity:1 !important;
+      }
+
+      #drawer .dash-drawer-link::after{
+        content:"›" !important;
+        margin-left:auto !important;
+        color:var(--muted) !important;
+        font-size:21px !important;
+        line-height:1 !important;
+      }
+
+      #drawer .dash-drawer-ico{
+        width:36px !important;
+        height:36px !important;
+        flex:0 0 36px !important;
+        display:grid !important;
+        place-items:center !important;
+        border:1px solid var(--line) !important;
+        border-radius:11px !important;
+        background:var(--bp-theme-surface-2,#f5f9fc) !important;
+        color:var(--ink-soft) !important;
+        opacity:1 !important;
+      }
+
+      #drawer .dash-drawer-link.on{
+        background:rgba(var(--bp-accent-rgb,21,172,227),.10) !important;
+        border-color:rgba(var(--bp-accent-rgb,21,172,227),.28) !important;
+        color:var(--ink) !important;
+        box-shadow:none !important;
+      }
+
+      #drawer .dash-drawer-link.on .dash-drawer-ico{
+        background:linear-gradient(
+          145deg,
+          var(--lagoon,#15ace3),
+          var(--lagoon-deep,#0b7fb0)
+        ) !important;
+        border-color:transparent !important;
+        color:#fff !important;
+      }
+
+      /* The old criteria-view box is hidden on the dashboard.
+         It still remains available when the evaluation form is active. */
+      #drawer .lay{
+        margin-top:0 !important;
+      }
+
+      #drawer #mgrPanel.mgr{
+        margin-top:0 !important;
+        padding:4px 0 0 !important;
+        border-top:0 !important;
+      }
+
+      #drawer #mgrPanel > h3{
+        margin:0 0 8px 4px !important;
+        color:var(--muted) !important;
+        font-size:9px !important;
+        font-weight:850 !important;
+        letter-spacing:.14em !important;
+        opacity:1 !important;
+      }
+
+      #drawer .mgr-sec{
+        margin:0 0 7px !important;
+        padding:0 !important;
+        border:0 !important;
+        border-radius:14px !important;
+        background:transparent !important;
+        overflow:visible !important;
+      }
+
+      #drawer .mgr-sum,
+      #drawer #openRoundExemptions,
+      #drawer #openAddStaff{
+        min-height:46px !important;
+        width:100% !important;
+        display:flex !important;
+        align-items:center !important;
+        gap:9px !important;
+        padding:8px 10px !important;
+        border:1px solid var(--line) !important;
+        border-radius:13px !important;
+        background:var(--panel) !important;
+        color:var(--ink-soft) !important;
+        font-family:inherit !important;
+        font-size:11.5px !important;
+        font-weight:750 !important;
+        text-align:left !important;
+        opacity:1 !important;
+        visibility:visible !important;
+        box-shadow:none !important;
+      }
+
+      #drawer .mgr-sum .lbl,
+      #drawer #openAddStaff > span:last-child,
+      #drawer .round-exemption-sidebar-label,
+      #drawer .round-exemption-sidebar-kicker{
+        color:inherit !important;
+        opacity:1 !important;
+        visibility:visible !important;
+      }
+
+      #drawer #openAddStaff{
+        justify-content:flex-start !important;
+      }
+
+      #drawer #openAddStaff .mgr-add-launch-icon{
+        width:32px !important;
+        height:32px !important;
+        flex:0 0 32px !important;
+        display:grid !important;
+        place-items:center !important;
+        border:1px solid rgba(var(--bp-accent-rgb,21,172,227),.24) !important;
+        border-radius:10px !important;
+        background:rgba(var(--bp-accent-rgb,21,172,227),.09) !important;
+        color:var(--lagoon-deep) !important;
+        opacity:1 !important;
+        visibility:visible !important;
+      }
+
+      #drawer #openAddStaff > span:last-child{
+        display:block !important;
+        color:var(--ink) !important;
+        font-size:11.5px !important;
+        font-weight:800 !important;
+      }
+
+      #drawer #openRoundExemptions{
+        background:rgba(181,132,35,.055) !important;
+        border-color:rgba(181,132,35,.24) !important;
+      }
+
+      #drawer .round-exemption-sidebar-kicker{
+        color:var(--muted) !important;
+        font-size:8px !important;
+      }
+
+      #drawer .round-exemption-sidebar-label{
+        color:var(--ink) !important;
+        font-size:11.5px !important;
+      }
+
+      #drawer .round-exemption-sidebar-count,
+      #drawer .mgr-sum .cnt{
+        flex:0 0 auto !important;
+        min-width:26px !important;
+        padding:3px 7px !important;
+        border-radius:999px !important;
+        color:var(--lagoon-deep) !important;
+        background:rgba(var(--bp-accent-rgb,21,172,227),.09) !important;
+        opacity:1 !important;
+      }
+
+      #drawer .mgr-panel-body{
+        margin-top:6px !important;
+        padding:8px !important;
+        border:1px solid var(--line) !important;
+        border-radius:12px !important;
+        background:var(--bp-theme-surface-2,#f5f9fc) !important;
+      }
+
+      #drawer #acct.acct{
+        margin-top:auto !important;
+        padding:10px 0 0 !important;
+        border-top:1px solid var(--line) !important;
+      }
+
+      #drawer .acct-row{
+        padding:3px 2px 9px !important;
+        border:0 !important;
+        background:transparent !important;
+      }
+
+      #drawer .acct-settings-btn,
+      #drawer #signOut.signout{
+        min-height:44px !important;
+        width:100% !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:flex-start !important;
+        gap:10px !important;
+        margin:0 0 7px !important;
+        padding:9px 11px !important;
+        border:1px solid var(--line) !important;
+        border-radius:12px !important;
+        box-shadow:none !important;
+      }
+
+      #drawer .acct-settings-btn{
+        background:var(--bp-theme-surface-2,#f5f9fc) !important;
+        color:var(--ink-soft) !important;
+      }
+
+      #drawer #signOut.signout{
+        background:rgba(200,72,72,.055) !important;
+        border-color:rgba(200,72,72,.20) !important;
+        color:#c54f4f !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer.drawer,
+      html[data-bp-theme="amoled"] #drawer.drawer{
+        background:var(--panel) !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer .drawer-top,
+      html[data-bp-theme="amoled"] #drawer .drawer-top{
+        background:transparent !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer :where(
+        .mgr-sum,#openRoundExemptions,#openAddStaff
+      ),
+      html[data-bp-theme="amoled"] #drawer :where(
+        .mgr-sum,#openRoundExemptions,#openAddStaff
+      ){
+        background:var(--bp-theme-surface-2) !important;
+        color:var(--ink) !important;
+        border-color:var(--line) !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer #signOut.signout,
+      html[data-bp-theme="amoled"] #drawer #signOut.signout{
+        background:rgba(239,94,94,.08) !important;
+        border-color:rgba(239,94,94,.22) !important;
+        color:#ff9d9d !important;
+      }
+
+      @media(max-width:600px){
+        #drawer.drawer{
+          width:min(315px,88vw) !important;
+          padding:12px !important;
+          border-radius:0 20px 20px 0 !important;
+        }
+      }
+
     `;
 
     document.head.appendChild(style);
