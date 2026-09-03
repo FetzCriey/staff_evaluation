@@ -1,6 +1,6 @@
 (() => {
   const STYLE_ID = "bpAppearanceOverhaul";
-  const VERSION = "20260903-1454";
+  const VERSION = "20260903-1502";
 
   function installStyles(){
     const old = document.getElementById(STYLE_ID);
@@ -290,6 +290,162 @@
         opacity:1 !important;
       }
 
+
+
+      /* ---------- FULLY CUSTOM THEMED ROLE DROPDOWN ---------- */
+      #mgrPanel .bp-role-select-wrap{
+        position:relative !important;
+        width:100% !important;
+        min-width:0 !important;
+      }
+
+      #mgrPanel .bp-role-native{
+        position:absolute !important;
+        width:1px !important;
+        height:1px !important;
+        opacity:0 !important;
+        pointer-events:none !important;
+      }
+
+      #mgrPanel .bp-role-trigger{
+        width:100% !important;
+        min-height:42px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:10px !important;
+        padding:0 11px 0 12px !important;
+        border:1px solid var(--line) !important;
+        border-radius:12px !important;
+        background:var(--panel,#fff) !important;
+        color:var(--ink) !important;
+        font:inherit !important;
+        font-size:12px !important;
+        font-weight:800 !important;
+        text-align:left !important;
+        cursor:pointer !important;
+        box-shadow:0 8px 22px -19px rgba(8,52,76,.55) !important;
+      }
+
+      #mgrPanel .bp-role-trigger:hover{
+        border-color:rgba(var(--bp-accent-rgb),.48) !important;
+      }
+
+      #mgrPanel .bp-role-select-wrap.is-open .bp-role-trigger,
+      #mgrPanel .bp-role-trigger:focus-visible{
+        outline:none !important;
+        border-color:rgba(var(--bp-accent-rgb),.88) !important;
+        box-shadow:
+          0 0 0 3px rgba(var(--bp-accent-rgb),.18),
+          0 10px 26px -19px rgba(var(--bp-accent-rgb),.82) !important;
+      }
+
+      #mgrPanel .bp-role-chevron{
+        width:16px !important;
+        height:16px !important;
+        flex:0 0 16px !important;
+        transition:transform .16s ease !important;
+      }
+
+      #mgrPanel .bp-role-select-wrap.is-open .bp-role-chevron{
+        transform:rotate(180deg) !important;
+      }
+
+      #mgrPanel .bp-role-menu{
+        position:absolute !important;
+        z-index:9999 !important;
+        top:calc(100% + 5px) !important;
+        left:0 !important;
+        right:0 !important;
+        display:none !important;
+        padding:5px !important;
+        border:1px solid var(--line) !important;
+        border-radius:12px !important;
+        background:var(--panel,#fff) !important;
+        color:var(--ink) !important;
+        box-shadow:0 20px 46px -24px rgba(8,52,76,.62) !important;
+        overflow:hidden !important;
+      }
+
+      #mgrPanel .bp-role-select-wrap.is-open .bp-role-menu{
+        display:block !important;
+      }
+
+      #mgrPanel .bp-role-option{
+        width:100% !important;
+        min-height:36px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:10px !important;
+        padding:7px 9px !important;
+        border:0 !important;
+        border-radius:8px !important;
+        background:transparent !important;
+        color:var(--ink) !important;
+        font:inherit !important;
+        font-size:12px !important;
+        font-weight:750 !important;
+        text-align:left !important;
+        cursor:pointer !important;
+        box-shadow:none !important;
+      }
+
+      #mgrPanel .bp-role-option:hover,
+      #mgrPanel .bp-role-option:focus-visible{
+        outline:none !important;
+        background:rgba(var(--bp-accent-rgb),.10) !important;
+      }
+
+      #mgrPanel .bp-role-option.is-selected{
+        background:rgba(var(--bp-accent-rgb),.18) !important;
+        color:var(--lagoon-deep) !important;
+      }
+
+      #mgrPanel .bp-role-check{
+        width:16px !important;
+        height:16px !important;
+        opacity:0 !important;
+        flex:0 0 16px !important;
+      }
+
+      #mgrPanel .bp-role-option.is-selected .bp-role-check{
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] #mgrPanel .bp-role-trigger,
+      html[data-bp-theme="dark"] #mgrPanel .bp-role-menu,
+      html[data-bp-theme="amoled"] #mgrPanel .bp-role-trigger,
+      html[data-bp-theme="amoled"] #mgrPanel .bp-role-menu{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:rgba(var(--bp-accent-rgb),.32) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] #mgrPanel .bp-role-menu,
+      html[data-bp-theme="amoled"] #mgrPanel .bp-role-menu{
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.025),
+          0 24px 54px -24px rgba(0,0,0,.95) !important;
+      }
+
+      html[data-bp-theme="dark"] #mgrPanel .bp-role-option,
+      html[data-bp-theme="amoled"] #mgrPanel .bp-role-option{
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] #mgrPanel .bp-role-option:hover,
+      html[data-bp-theme="dark"] #mgrPanel .bp-role-option:focus-visible,
+      html[data-bp-theme="amoled"] #mgrPanel .bp-role-option:hover,
+      html[data-bp-theme="amoled"] #mgrPanel .bp-role-option:focus-visible{
+        background:rgba(var(--bp-accent-rgb),.11) !important;
+      }
+
+      html[data-bp-theme="dark"] #mgrPanel .bp-role-option.is-selected,
+      html[data-bp-theme="amoled"] #mgrPanel .bp-role-option.is-selected{
+        background:rgba(var(--bp-accent-rgb),.20) !important;
+        color:var(--ink) !important;
+      }
 
       /* ---------- ROLE SELECT / NATIVE DROPDOWN THEME MATCH ---------- */
       :where(.mgr-sel, .mgr select, #mgrPanel select){
@@ -581,9 +737,120 @@
     }
   }
 
+
+  function closeRoleDropdowns(except){
+    document.querySelectorAll("#mgrPanel .bp-role-select-wrap.is-open").forEach(wrap => {
+      if(wrap !== except){
+        wrap.classList.remove("is-open");
+        const btn = wrap.querySelector(".bp-role-trigger");
+        if(btn) btn.setAttribute("aria-expanded","false");
+      }
+    });
+  }
+
+  function buildRoleDropdown(select){
+    if(!select || select.dataset.bpRoleEnhanced === "1") return;
+    if(select.closest(".bp-role-select-wrap")) return;
+
+    select.dataset.bpRoleEnhanced = "1";
+    select.classList.add("bp-role-native");
+
+    const wrap = document.createElement("div");
+    wrap.className = "bp-role-select-wrap";
+
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "bp-role-trigger";
+    trigger.setAttribute("aria-haspopup","listbox");
+    trigger.setAttribute("aria-expanded","false");
+    trigger.innerHTML = `
+      <span class="bp-role-value"></span>
+      <svg class="bp-role-chevron" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true">
+        <path d="m7 10 5 5 5-5"/>
+      </svg>`;
+
+    const menu = document.createElement("div");
+    menu.className = "bp-role-menu";
+    menu.setAttribute("role","listbox");
+
+    select.parentNode.insertBefore(wrap,select);
+    wrap.appendChild(select);
+    wrap.appendChild(trigger);
+    wrap.appendChild(menu);
+
+    function sync(){
+      const value = trigger.querySelector(".bp-role-value");
+      const selected = select.options[select.selectedIndex];
+      value.textContent = selected ? selected.textContent : "";
+
+      menu.innerHTML = "";
+      [...select.options].forEach((opt,index) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "bp-role-option" + (index === select.selectedIndex ? " is-selected" : "");
+        item.setAttribute("role","option");
+        item.setAttribute("aria-selected", index === select.selectedIndex ? "true" : "false");
+        item.innerHTML = `
+          <span></span>
+          <svg class="bp-role-check" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="m5 12 4 4L19 6"/>
+          </svg>`;
+        item.querySelector("span").textContent = opt.textContent;
+
+        item.addEventListener("click",() => {
+          if(select.selectedIndex !== index){
+            select.selectedIndex = index;
+            select.dispatchEvent(new Event("change",{bubbles:true}));
+          }
+          sync();
+          wrap.classList.remove("is-open");
+          trigger.setAttribute("aria-expanded","false");
+          trigger.focus();
+        });
+
+        menu.appendChild(item);
+      });
+    }
+
+    trigger.addEventListener("click",event => {
+      event.stopPropagation();
+      const opening = !wrap.classList.contains("is-open");
+      closeRoleDropdowns(wrap);
+      wrap.classList.toggle("is-open",opening);
+      trigger.setAttribute("aria-expanded",opening ? "true" : "false");
+    });
+
+    select.addEventListener("change",sync);
+    sync();
+  }
+
+  function enhanceRoleDropdowns(){
+    document.querySelectorAll("#mgrPanel select").forEach(buildRoleDropdown);
+  }
+
+  function watchRoleDropdowns(){
+    const panel = document.getElementById("mgrPanel");
+    if(!panel || panel.dataset.bpRoleWatch === "1") return;
+    panel.dataset.bpRoleWatch = "1";
+
+    const observer = new MutationObserver(() => enhanceRoleDropdowns());
+    observer.observe(panel,{childList:true,subtree:true});
+  }
+
+  document.addEventListener("click",() => closeRoleDropdowns());
+  document.addEventListener("keydown",event => {
+    if(event.key === "Escape") closeRoleDropdowns();
+  });
+
   function enhance(){
     installStyles();
     replaceSidebarIcons();
+    enhanceRoleDropdowns();
+    watchRoleDropdowns();
   }
 
   if(document.readyState === "loading"){
