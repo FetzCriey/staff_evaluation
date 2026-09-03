@@ -1563,6 +1563,118 @@
         }
       }
 
+
+      /* =====================================================
+         SIDEBAR ACCOUNT SECTION — FLAT PREMIUM LAYOUT
+         Remove the outer rounded account box so the profile
+         and action rows read as separate menu items.
+         ===================================================== */
+      #drawer #acct.acct{
+        margin-top:auto !important;
+        padding:12px 0 0 !important;
+        border-top:1px solid var(--line) !important;
+        border-right:0 !important;
+        border-bottom:0 !important;
+        border-left:0 !important;
+        border-radius:0 !important;
+        background:transparent !important;
+        box-shadow:none !important;
+        overflow:visible !important;
+      }
+
+      #drawer #acct .acct-row{
+        display:flex !important;
+        align-items:center !important;
+        gap:10px !important;
+        padding:4px 2px 10px !important;
+        margin:0 !important;
+        border:0 !important;
+        border-radius:0 !important;
+        background:transparent !important;
+        box-shadow:none !important;
+      }
+
+      #drawer #acct .acct-txt{
+        min-width:0 !important;
+      }
+
+      #drawer #acct .acct-nm{
+        color:var(--ink) !important;
+        font-size:12.5px !important;
+        font-weight:800 !important;
+        line-height:1.25 !important;
+        opacity:1 !important;
+      }
+
+      #drawer #acct .acct-rl{
+        margin-top:2px !important;
+        color:var(--muted) !important;
+        font-size:10.5px !important;
+        line-height:1.3 !important;
+        opacity:1 !important;
+      }
+
+      #drawer #acct .avatar{
+        width:38px !important;
+        height:38px !important;
+        flex:0 0 38px !important;
+        border:0 !important;
+        border-radius:11px !important;
+        background:linear-gradient(
+          145deg,
+          var(--lagoon,#15ace3),
+          var(--lagoon-deep,#0b7fb0)
+        ) !important;
+        color:#fff !important;
+        box-shadow:0 8px 18px -12px rgba(var(--bp-accent-rgb,21,172,227),.9) !important;
+      }
+
+      #drawer #acct .acct-settings-btn,
+      #drawer #acct #signOut.signout{
+        width:100% !important;
+        min-height:44px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:flex-start !important;
+        gap:10px !important;
+        margin:0 0 7px !important;
+        padding:9px 11px !important;
+        border-radius:12px !important;
+        box-shadow:none !important;
+      }
+
+      #drawer #acct .acct-settings-btn{
+        border:1px solid var(--line) !important;
+        background:var(--bp-theme-surface-2,#f5f9fc) !important;
+        color:var(--ink-soft) !important;
+      }
+
+      #drawer #acct #signOut.signout{
+        border:1px solid rgba(200,72,72,.20) !important;
+        background:rgba(200,72,72,.055) !important;
+        color:#c54f4f !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer #acct.acct,
+      html[data-bp-theme="amoled"] #drawer #acct.acct{
+        background:transparent !important;
+        border-top-color:var(--line) !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer #acct .acct-settings-btn,
+      html[data-bp-theme="amoled"] #drawer #acct .acct-settings-btn{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer #acct #signOut.signout,
+      html[data-bp-theme="amoled"] #drawer #acct #signOut.signout{
+        background:rgba(239,94,94,.08) !important;
+        border-color:rgba(239,94,94,.22) !important;
+        color:#ff9d9d !important;
+      }
+
     `;
 
     document.head.appendChild(style);
