@@ -1726,6 +1726,298 @@
         opacity:.78 !important;
       }
 
+
+      /* =====================================================
+         APPEARANCE — PREMIUM REDESIGN
+         Match the new card-style reference while preserving
+         the existing theme/accent behavior.
+         ===================================================== */
+      #accountSettingsModal .bp-appearance-section{
+        position:relative !important;
+        gap:14px !important;
+        padding:18px !important;
+        border:1px solid var(--line) !important;
+        border-radius:18px !important;
+        background:
+          linear-gradient(180deg,
+            color-mix(in srgb,var(--panel) 96%,var(--lagoon) 4%),
+            var(--panel)
+          ) !important;
+        box-shadow:0 14px 34px -28px rgba(8,52,76,.52) !important;
+      }
+
+      #accountSettingsModal .bp-appearance-section .settings-section-title{
+        margin:0 !important;
+        color:var(--ink) !important;
+        font-family:"Bricolage Grotesque","Inter",sans-serif !important;
+        font-size:18px !important;
+        line-height:1.15 !important;
+        font-weight:800 !important;
+        letter-spacing:-.01em !important;
+      }
+
+      #accountSettingsModal .bp-appearance-help{
+        margin:-7px 0 2px !important;
+        color:var(--muted) !important;
+        font-size:11.5px !important;
+        line-height:1.45 !important;
+      }
+
+      #accountSettingsModal .bp-theme-choices{
+        gap:10px !important;
+      }
+
+      #accountSettingsModal .bp-theme-choice{
+        position:relative !important;
+        min-height:92px !important;
+        padding:10px !important;
+        border:1.5px solid var(--line) !important;
+        border-radius:14px !important;
+        background:var(--bp-theme-surface-2) !important;
+        color:var(--ink-soft) !important;
+        box-shadow:0 7px 18px -17px rgba(8,52,76,.58) !important;
+        transform:none !important;
+      }
+
+      #accountSettingsModal .bp-theme-choice:hover{
+        border-color:rgba(var(--bp-accent-rgb,21,172,227),.56) !important;
+        transform:translateY(-1px) !important;
+      }
+
+      #accountSettingsModal .bp-theme-choice[aria-pressed="true"]{
+        border-color:var(--lagoon) !important;
+        background:
+          linear-gradient(180deg,
+            rgba(var(--bp-accent-rgb,21,172,227),.08),
+            var(--bp-theme-surface-2)
+          ) !important;
+        box-shadow:
+          0 0 0 2px rgba(var(--bp-accent-rgb,21,172,227),.12),
+          0 10px 24px -20px rgba(var(--bp-accent-rgb,21,172,227),.9) !important;
+      }
+
+      #accountSettingsModal .bp-theme-choice[aria-pressed="true"]::after{
+        content:"✓" !important;
+        position:absolute !important;
+        right:9px !important;
+        bottom:9px !important;
+        width:21px !important;
+        height:21px !important;
+        display:grid !important;
+        place-items:center !important;
+        border-radius:50% !important;
+        background:var(--lagoon) !important;
+        color:var(--bp-theme-contrast,#fff) !important;
+        font-size:13px !important;
+        font-weight:900 !important;
+        line-height:1 !important;
+        box-shadow:0 5px 12px -8px rgba(var(--bp-accent-rgb,21,172,227),.95) !important;
+      }
+
+      #accountSettingsModal .bp-theme-preview{
+        height:38px !important;
+        padding:7px !important;
+        gap:5px !important;
+        border-radius:10px !important;
+        border-color:rgba(127,147,161,.30) !important;
+        align-items:center !important;
+      }
+
+      #accountSettingsModal .bp-theme-preview::before{
+        width:54% !important;
+        height:7px !important;
+      }
+
+      #accountSettingsModal .bp-theme-preview::after{
+        width:30% !important;
+        height:7px !important;
+      }
+
+      #accountSettingsModal .bp-theme-choice strong{
+        padding-right:25px !important;
+        color:var(--ink) !important;
+        font-size:12px !important;
+        line-height:1.1 !important;
+        font-weight:800 !important;
+      }
+
+      #accountSettingsModal .bp-accent-label{
+        margin-top:3px !important;
+        color:var(--ink-soft) !important;
+        font-size:10px !important;
+        font-weight:850 !important;
+        letter-spacing:.11em !important;
+      }
+
+      #accountSettingsModal .bp-accent-grid{
+        display:grid !important;
+        grid-template-columns:minmax(0,1fr) auto !important;
+        gap:12px 14px !important;
+        align-items:center !important;
+        padding-top:2px !important;
+      }
+
+      #accountSettingsModal .bp-accent-row{
+        grid-column:1 / -1 !important;
+        grid-row:1 !important;
+        grid-template-columns:repeat(8,minmax(30px,1fr)) !important;
+        gap:8px !important;
+        padding:6px 1px 12px !important;
+        border-bottom:1px solid var(--line) !important;
+      }
+
+      #accountSettingsModal .bp-accent-swatch{
+        width:34px !important;
+        height:34px !important;
+        border-radius:50% !important;
+        border:2px solid rgba(255,255,255,.72) !important;
+        box-shadow:
+          0 0 0 1px rgba(78,104,123,.22),
+          inset 0 0 0 1px rgba(255,255,255,.34) !important;
+      }
+
+      #accountSettingsModal .bp-accent-swatch:hover{
+        transform:translateY(-1px) scale(1.06) !important;
+      }
+
+      #accountSettingsModal .bp-accent-swatch[aria-pressed="true"]{
+        border-color:var(--panel) !important;
+        box-shadow:
+          0 0 0 2px var(--panel),
+          0 0 0 4px var(--lagoon) !important;
+      }
+
+      #accountSettingsModal .bp-accent-grid::before{
+        content:"Reset will restore the default Better Practice color." !important;
+        grid-column:1 !important;
+        grid-row:2 !important;
+        max-width:210px !important;
+        color:var(--muted) !important;
+        font-size:10.5px !important;
+        line-height:1.4 !important;
+      }
+
+      #accountSettingsModal .bp-accent-reset{
+        grid-column:2 !important;
+        grid-row:2 !important;
+        align-self:center !important;
+        justify-self:end !important;
+        min-height:40px !important;
+        padding:9px 15px !important;
+        border:1.5px solid var(--lagoon) !important;
+        border-radius:12px !important;
+        background:rgba(var(--bp-accent-rgb,21,172,227),.08) !important;
+        color:var(--lagoon-deep) !important;
+        font-size:11px !important;
+        font-weight:850 !important;
+        opacity:1 !important;
+        box-shadow:none !important;
+      }
+
+      #accountSettingsModal .bp-accent-reset::before{
+        content:"↻" !important;
+        margin-right:6px !important;
+        color:currentColor !important;
+        font-size:15px !important;
+        font-weight:900 !important;
+        line-height:1 !important;
+      }
+
+      #accountSettingsModal .bp-accent-reset:hover:not(:disabled){
+        background:rgba(var(--bp-accent-rgb,21,172,227),.15) !important;
+        border-color:var(--lagoon-deep) !important;
+        color:var(--lagoon-deep) !important;
+        transform:translateY(-1px) !important;
+      }
+
+      #accountSettingsModal .bp-accent-reset:disabled{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+        color:var(--ink-soft) !important;
+        opacity:.68 !important;
+        cursor:not-allowed !important;
+      }
+
+      html[data-bp-theme="dark"] #accountSettingsModal .bp-appearance-section,
+      html[data-bp-theme="amoled"] #accountSettingsModal .bp-appearance-section{
+        background:var(--panel) !important;
+        border-color:var(--bp-card-border,var(--line)) !important;
+      }
+
+      html[data-bp-theme="dark"] #accountSettingsModal .bp-theme-choice,
+      html[data-bp-theme="amoled"] #accountSettingsModal .bp-theme-choice{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+      }
+
+      html[data-bp-theme="dark"] #accountSettingsModal .bp-theme-choice[aria-pressed="true"],
+      html[data-bp-theme="amoled"] #accountSettingsModal .bp-theme-choice[aria-pressed="true"]{
+        background:rgba(var(--bp-accent-rgb,21,172,227),.13) !important;
+        border-color:var(--lagoon) !important;
+      }
+
+      html[data-bp-theme="dark"] #accountSettingsModal .bp-accent-reset,
+      html[data-bp-theme="amoled"] #accountSettingsModal .bp-accent-reset{
+        background:rgba(var(--bp-accent-rgb,21,172,227),.14) !important;
+        border-color:rgba(var(--bp-accent-rgb,21,172,227),.58) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] #accountSettingsModal .bp-accent-reset:disabled,
+      html[data-bp-theme="amoled"] #accountSettingsModal .bp-accent-reset:disabled{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+        color:var(--ink-soft) !important;
+        opacity:.74 !important;
+      }
+
+      @media(max-width:600px){
+        #accountSettingsModal .bp-appearance-section{
+          padding:15px !important;
+          border-radius:16px !important;
+        }
+
+        #accountSettingsModal .bp-theme-choice{
+          min-height:84px !important;
+          padding:9px !important;
+        }
+
+        #accountSettingsModal .bp-theme-preview{
+          height:34px !important;
+        }
+
+        #accountSettingsModal .bp-accent-row{
+          grid-template-columns:repeat(8,minmax(26px,1fr)) !important;
+          gap:5px !important;
+        }
+
+        #accountSettingsModal .bp-accent-swatch{
+          width:30px !important;
+          height:30px !important;
+        }
+
+        #accountSettingsModal .bp-accent-grid{
+          grid-template-columns:1fr !important;
+          gap:9px !important;
+        }
+
+        #accountSettingsModal .bp-accent-grid::before,
+        #accountSettingsModal .bp-accent-reset{
+          grid-column:1 !important;
+        }
+
+        #accountSettingsModal .bp-accent-grid::before{
+          grid-row:2 !important;
+          max-width:none !important;
+        }
+
+        #accountSettingsModal .bp-accent-reset{
+          grid-row:3 !important;
+          justify-self:stretch !important;
+          width:100% !important;
+        }
+      }
+
     `;
 
     document.head.appendChild(style);
