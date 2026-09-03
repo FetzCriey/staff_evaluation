@@ -1,0 +1,531 @@
+(() => {
+  const STYLE_ID = "bpAppearanceOverhaul";
+  const VERSION = "20260903-1448";
+
+  function installStyles(){
+    const old = document.getElementById(STYLE_ID);
+    if(old) old.remove();
+
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.dataset.version = VERSION;
+    style.textContent = `
+      /* =========================================================
+         BETTER PRACTICE — SITE APPEARANCE CONSISTENCY PASS
+         Visual-only. Existing behavior/data flows are preserved.
+         ========================================================= */
+
+      :root{
+        --bp-radius-sm:10px;
+        --bp-radius-md:12px;
+        --bp-radius-lg:16px;
+        --bp-radius-xl:20px;
+        --bp-space-1:6px;
+        --bp-space-2:10px;
+        --bp-space-3:14px;
+        --bp-space-4:18px;
+        --bp-shadow-card:0 12px 28px -24px rgba(8,52,76,.50);
+        --bp-shadow-float:0 24px 60px -30px rgba(8,52,76,.58);
+        --bp-focus:0 0 0 3px rgba(var(--bp-accent-rgb,21,172,227),.22);
+      }
+
+      html[data-bp-theme="dark"],
+      html[data-bp-theme="amoled"]{
+        --bp-shadow-card:0 12px 30px -22px rgba(0,0,0,.72);
+        --bp-shadow-float:0 28px 70px -30px rgba(0,0,0,.9);
+      }
+
+      /* ---------- TYPOGRAPHY HIERARCHY ---------- */
+      body{
+        text-rendering:optimizeLegibility;
+        -webkit-font-smoothing:antialiased;
+      }
+
+      :where(
+        .dash-section-kicker,.settings-section-title,.lay-lbl,.mgr h3,
+        .bp-accent-label,.review-remarks-title,.evlbl,.round-exemption-label,
+        .team-average-section-title,.performer-records-section-title
+      ){
+        letter-spacing:.10em !important;
+      }
+
+      :where(
+        .dash-metric-label,.dash-panel-head h3,.settings-section-title,
+        .mgr-sum,.dash-drawer-link,.acct-settings-btn,.signout
+      ){
+        font-weight:750 !important;
+      }
+
+      /* ---------- SURFACE + RADIUS CONSISTENCY ---------- */
+      :where(
+        .dash-metric,.dash-panel-card,.panel,.card,.tcard,.stepper,
+        .account-settings-dialog,.settings-section,.staff-add-dialog,
+        .performer-records-dialog,.team-average-dialog,.round-progress-dialog,
+        .round-exemption-dialog,.staff-profile-card,.dlg,.rm-box
+      ){
+        border-radius:var(--bp-radius-lg) !important;
+      }
+
+      :where(
+        .dash-date-chip,.dash-tag,.dash-back-btn,.mgr-sum,.mgr-add-launch,
+        .round-exemption-sidebar-launch,.lay-tr,.lay-menu,.bp-select-btn,
+        .bp-select-menu,.acct-settings-btn,.signout,.settings-btn,
+        .btn,.his-row,.res-row,.round-progress-person,.team-average-evaluator-card
+      ){
+        border-radius:var(--bp-radius-md) !important;
+      }
+
+      :where(
+        .dash-metric,.dash-panel-card,.panel,.card,.tcard,.settings-section,
+        .mgr-sum,.mgr-add-launch,.round-exemption-sidebar-launch,.acct-settings-btn,
+        .signout,.his-row,.res-row,.round-progress-person,.team-average-evaluator-card
+      ){
+        box-shadow:var(--bp-shadow-card) !important;
+      }
+
+      :where(
+        .account-settings-dialog,.staff-add-dialog,.performer-records-dialog,
+        .team-average-dialog,.round-progress-dialog,.round-exemption-dialog,
+        .staff-profile-card,.dlg,.rm-box,.bp-select-menu,.lay-menu
+      ){
+        box-shadow:var(--bp-shadow-float) !important;
+      }
+
+      /* ---------- SPACING CONSISTENCY ---------- */
+      :where(.dash-panel-card,.panel,.settings-section){
+        scroll-margin-top:18px;
+      }
+
+      .dash-metrics{gap:14px !important}
+      .dash-grid{gap:14px !important}
+      .dash-ranking{gap:7px !important}
+      .dash-live-eval-list{gap:8px !important}
+
+      #drawer .dash-drawer-nav{gap:7px !important}
+      #drawer .mgr{gap:7px}
+      #drawer .acct{gap:7px}
+
+      /* ---------- BUTTON SYSTEM ---------- */
+      :where(
+        button,.btn,.settings-btn,.acct-settings-btn,.signout,.mgr-sum,
+        .mgr-add-launch,.round-exemption-sidebar-launch,.lay-tr,.bp-select-btn
+      ){
+        transition:
+          background-color .15s ease,
+          border-color .15s ease,
+          color .15s ease,
+          box-shadow .15s ease,
+          transform .12s ease !important;
+      }
+
+      :where(
+        button,.btn,.settings-btn,.acct-settings-btn,.signout,.mgr-sum,
+        .mgr-add-launch,.round-exemption-sidebar-launch,.lay-tr,.bp-select-btn
+      ):focus-visible{
+        outline:none !important;
+        box-shadow:var(--bp-focus) !important;
+      }
+
+      :where(
+        .btn,.settings-btn-primary,.dlg-foot .ok,.round-exemption-stacked-primary
+      ):not(:disabled){
+        color:var(--bp-theme-contrast,#fff) !important;
+      }
+
+      :where(
+        button,.btn,.settings-btn,.acct-settings-btn,.signout,.mgr-sum,
+        .mgr-add-launch,.round-exemption-sidebar-launch,.lay-tr,.bp-select-btn
+      ):disabled{
+        opacity:1 !important;
+        cursor:not-allowed !important;
+        filter:none !important;
+        transform:none !important;
+        box-shadow:none !important;
+        color:var(--muted) !important;
+        border-color:var(--line) !important;
+        background:var(--bp-theme-surface-2,#f4fafd) !important;
+      }
+
+      html[data-bp-theme="dark"] :where(
+        button,.btn,.settings-btn,.acct-settings-btn,.signout,.mgr-sum,
+        .mgr-add-launch,.round-exemption-sidebar-launch,.lay-tr,.bp-select-btn
+      ):disabled,
+      html[data-bp-theme="amoled"] :where(
+        button,.btn,.settings-btn,.acct-settings-btn,.signout,.mgr-sum,
+        .mgr-add-launch,.round-exemption-sidebar-launch,.lay-tr,.bp-select-btn
+      ):disabled{
+        color:var(--ink-soft) !important;
+        background:var(--bp-theme-surface-2) !important;
+      }
+
+      /* ---------- SIDEBAR ICON + ACTIVE STATE ---------- */
+      #drawer .dash-drawer-ico svg{
+        width:17px !important;
+        height:17px !important;
+        display:block !important;
+      }
+
+      #drawer .dash-drawer-link.on{
+        border-color:rgba(var(--bp-accent-rgb),.34) !important;
+        background:rgba(var(--bp-accent-rgb),.12) !important;
+        box-shadow:inset 3px 0 0 var(--lagoon) !important;
+      }
+
+      #drawer .dash-drawer-link.on .dash-drawer-ico{
+        background:var(--lagoon) !important;
+        color:var(--bp-theme-contrast,#fff) !important;
+        border-color:transparent !important;
+      }
+
+      /* ---------- STATUS COLOR SYSTEM ---------- */
+      :where(
+        .round-progress-state.not-started,.status-pill.not-started,
+        .round-exemption-row-state.ready
+      ){
+        background:var(--bp-theme-surface-2,#f4fafd) !important;
+        border-color:var(--line) !important;
+        color:var(--muted) !important;
+      }
+
+      :where(
+        .round-progress-state.in-progress,.round-progress-state.evaluating,
+        .status-pill.in-progress,.review-remark-state.progress,.dash-live-status.draft
+      ){
+        background:rgba(var(--bp-accent-rgb),.11) !important;
+        border-color:rgba(var(--bp-accent-rgb),.38) !important;
+        color:var(--lagoon-deep) !important;
+      }
+
+      :where(
+        .round-progress-state.submitted,.round-progress-state.completed,
+        .status-pill.submitted,.review-remark-state.submitted,.dash-live-status.submitted
+      ){
+        background:rgba(39,128,79,.13) !important;
+        border-color:rgba(54,151,94,.32) !important;
+        color:#27804f !important;
+      }
+
+      html[data-bp-theme="dark"] :where(
+        .round-progress-state.submitted,.round-progress-state.completed,
+        .status-pill.submitted,.review-remark-state.submitted,.dash-live-status.submitted
+      ),
+      html[data-bp-theme="amoled"] :where(
+        .round-progress-state.submitted,.round-progress-state.completed,
+        .status-pill.submitted,.review-remark-state.submitted,.dash-live-status.submitted
+      ){
+        color:#73d99e !important;
+        background:rgba(39,128,79,.16) !important;
+        border-color:rgba(79,178,119,.38) !important;
+      }
+
+      :where(
+        .round-progress-state.exempted,.round-exempted-state,
+        .round-exemption-row-state.active
+      ){
+        background:rgba(190,137,38,.13) !important;
+        border-color:rgba(190,137,38,.34) !important;
+        color:#8d641a !important;
+      }
+
+      html[data-bp-theme="dark"] :where(
+        .round-progress-state.exempted,.round-exempted-state,
+        .round-exemption-row-state.active
+      ),
+      html[data-bp-theme="amoled"] :where(
+        .round-progress-state.exempted,.round-exempted-state,
+        .round-exemption-row-state.active
+      ){
+        color:#e9bd70 !important;
+        background:rgba(190,137,38,.16) !important;
+        border-color:rgba(222,176,82,.42) !important;
+      }
+
+      .archived-note{
+        border-radius:var(--bp-radius-md) !important;
+      }
+
+      /* ---------- DARK / AMOLED LEGACY SURFACES ---------- */
+      html[data-bp-theme="dark"] :where(
+        .whobar,.prog-wrap,.review-summary-card,.review-remark-card,
+        .res-row,.his-row,.his-date-sum,.his-date-body,
+        .round-progress-person,.round-drilldown-panel,.round-drilldown-assignment,
+        .team-average-evaluator-card,.team-average-stat,
+        .performer-record,.staff-profile-stat,.staff-profile-progress-card,
+        .bp-select-btn,.bp-select-menu,.bp-select-option,.lay-tr,.lay-menu,.lay-opt
+      ),
+      html[data-bp-theme="amoled"] :where(
+        .whobar,.prog-wrap,.review-summary-card,.review-remark-card,
+        .res-row,.his-row,.his-date-sum,.his-date-body,
+        .round-progress-person,.round-drilldown-panel,.round-drilldown-assignment,
+        .team-average-evaluator-card,.team-average-stat,
+        .performer-record,.staff-profile-stat,.staff-profile-progress-card,
+        .bp-select-btn,.bp-select-menu,.bp-select-option,.lay-tr,.lay-menu,.lay-opt
+      ){
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] :where(
+        .res-nm,.his-nm,.round-progress-name,.team-average-evaluator-name,
+        .performer-record-date,.staff-profile-progress-title
+      ),
+      html[data-bp-theme="amoled"] :where(
+        .res-nm,.his-nm,.round-progress-name,.team-average-evaluator-name,
+        .performer-record-date,.staff-profile-progress-title
+      ){
+        color:var(--ink) !important;
+        opacity:1 !important;
+      }
+
+      html[data-bp-theme="dark"] :where(
+        .his-meta,.round-progress-meta,.team-average-evaluator-sub,
+        .performer-record-meta,.staff-profile-progress-note
+      ),
+      html[data-bp-theme="amoled"] :where(
+        .his-meta,.round-progress-meta,.team-average-evaluator-sub,
+        .performer-record-meta,.staff-profile-progress-note
+      ){
+        color:var(--muted) !important;
+        opacity:1 !important;
+      }
+
+      /* ---------- DROPDOWN CONSISTENCY ---------- */
+      :where(.bp-select-btn,.lay-tr,.mgr-sel,select){
+        min-height:42px;
+      }
+
+      :where(.bp-select-menu,.lay-menu){
+        padding:6px !important;
+      }
+
+      :where(.bp-select-option,.lay-opt){
+        min-height:40px !important;
+        border-radius:var(--bp-radius-sm) !important;
+      }
+
+      :where(.bp-select-option,.lay-opt):hover{
+        background:rgba(var(--bp-accent-rgb),.08) !important;
+      }
+
+      :where(.bp-select-option[aria-selected="true"],.lay-opt[aria-selected="true"]){
+        background:rgba(var(--bp-accent-rgb),.13) !important;
+        color:var(--ink) !important;
+      }
+
+      /* ---------- LONG NAME SAFETY ---------- */
+      :where(
+        .dash-person,.dash-rank-name,.dash-live-names b,.mgr-nm,.res-nm,.his-nm,
+        .round-progress-name,.team-average-evaluator-name,.staff-profile-name,
+        .performer-records-person
+      ){
+        overflow-wrap:anywhere !important;
+        word-break:normal !important;
+      }
+
+      /* ---------- EMPTY STATES ---------- */
+      :where(
+        .mgr-empty,.res-empty,.his-empty,.round-drilldown-empty,
+        .team-average-empty,.staff-profile-empty,.performer-records-empty
+      ){
+        min-height:58px !important;
+        display:flex !important;
+        align-items:center !important;
+        gap:10px !important;
+        padding:12px !important;
+        border:1px dashed var(--line) !important;
+        border-radius:var(--bp-radius-md) !important;
+        background:var(--bp-theme-surface-2,#f4fafd) !important;
+        color:var(--muted) !important;
+      }
+
+      :where(
+        .mgr-empty,.res-empty,.his-empty,.round-drilldown-empty,
+        .team-average-empty,.staff-profile-empty,.performer-records-empty
+      )::before{
+        content:"—";
+        flex:0 0 28px;
+        width:28px;
+        height:28px;
+        display:grid;
+        place-items:center;
+        border-radius:9px;
+        background:rgba(var(--bp-accent-rgb),.09);
+        color:var(--lagoon-deep);
+        font-weight:900;
+      }
+
+      /* ---------- SETTINGS / SECTION SEPARATORS ---------- */
+      #accountSettingsModal .account-settings-body{
+        gap:16px !important;
+      }
+
+      #accountSettingsModal .settings-section{
+        border-color:var(--line) !important;
+      }
+
+      #accountSettingsModal .settings-divider{
+        border-color:var(--line) !important;
+        opacity:.75;
+      }
+
+      /* ---------- ACCENT CONTRAST SAFETY ---------- */
+      :where(
+        .dash-head-btn,.settings-btn-primary,.btn.primary,.btn.save,
+        .dash-drawer-link.on .dash-drawer-ico,
+        .dlg-foot .ok,.round-exemption-stacked-primary
+      ){
+        color:var(--bp-theme-contrast,#fff) !important;
+      }
+
+      /* ---------- REDUCE BOX-IN-BOX NESTING ---------- */
+      #drawer #acct,
+      #drawer #mgrPanel{
+        box-shadow:none !important;
+      }
+
+      #drawer #acct .acct-row{
+        background:transparent !important;
+        border:0 !important;
+        box-shadow:none !important;
+      }
+
+      .mgr-panel-body{
+        box-shadow:none !important;
+      }
+
+      /* ---------- MOBILE MODAL + VIEWPORT POLISH ---------- */
+      @media(max-width:760px){
+        :where(
+          .account-settings-dialog,.staff-add-dialog,.performer-records-dialog,
+          .team-average-dialog,.round-progress-dialog,.round-exemption-dialog,
+          .staff-profile-card,.dlg,.rm-box
+        ){
+          width:min(94vw,520px) !important;
+          max-height:calc(100dvh - 24px) !important;
+          margin:max(12px,env(safe-area-inset-top)) auto max(12px,env(safe-area-inset-bottom)) !important;
+        }
+
+        :where(
+          .account-settings-body,.staff-add-body,.performer-records-body,
+          .team-average-body,.round-progress-body,.round-exemption-body,.staff-profile-body
+        ){
+          overscroll-behavior:contain !important;
+          -webkit-overflow-scrolling:touch !important;
+        }
+
+        .dash-metrics,
+        .dash-grid{
+          gap:12px !important;
+        }
+
+        :where(.dash-metric,.dash-panel-card){
+          border-radius:14px !important;
+        }
+      }
+
+      /* ---------- TABLE / NARROW LAPTOP POLISH ---------- */
+      @media(min-width:761px) and (max-width:1180px){
+        .wrap{padding-left:18px !important;padding-right:18px !important}
+        .dash-metrics{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+        .dash-grid{grid-template-columns:1fr !important}
+      }
+
+      /* ---------- PRINT DASHBOARD POLISH ---------- */
+      @media print{
+        body.bp-print-dashboard{
+          background:#fff !important;
+          color:#111 !important;
+        }
+
+        body.bp-print-dashboard header.top{
+          background:#fff !important;
+          color:#111 !important;
+          border:1px solid #bbb !important;
+          box-shadow:none !important;
+        }
+
+        body.bp-print-dashboard :where(
+          .dash-metric,.dash-panel-card,.dash-date-chip,.dash-tag
+        ){
+          background:#fff !important;
+          color:#111 !important;
+          border-color:#ccc !important;
+          box-shadow:none !important;
+        }
+
+        body.bp-print-dashboard :where(
+          .dash-section-kicker,.dash-metric-label,.dash-metric-foot,
+          .dash-rank-meta,.dash-live-meta
+        ){
+          color:#555 !important;
+        }
+
+        body.bp-print-dashboard :where(.dash-metric,.dash-panel-card){
+          break-inside:avoid !important;
+          page-break-inside:avoid !important;
+        }
+
+        body.bp-print-dashboard .dash-grid{
+          grid-template-columns:1fr 1fr !important;
+          gap:10mm !important;
+        }
+      }
+
+      @media(prefers-reduced-motion:reduce){
+        *,*::before,*::after{
+          scroll-behavior:auto !important;
+          animation-duration:.001ms !important;
+          animation-iteration-count:1 !important;
+          transition-duration:.001ms !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function replaceSidebarIcons(){
+    const home = document.querySelector("#drawerDashboard .dash-drawer-ico");
+    const evalIcon = document.querySelector("#drawerEvaluation .dash-drawer-ico");
+
+    if(home && !home.querySelector("svg")){
+      home.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 11.5 12 4l9 7.5"/>
+          <path d="M5.5 10.5V20h13v-9.5"/>
+          <path d="M9.5 20v-5.5h5V20"/>
+        </svg>`;
+    }
+
+    if(evalIcon && !evalIcon.querySelector("svg")){
+      evalIcon.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="3" width="16" height="18" rx="2"/>
+          <path d="M8 8h8M8 12h8M8 16h5"/>
+        </svg>`;
+    }
+  }
+
+  function enhance(){
+    installStyles();
+    replaceSidebarIcons();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded",enhance,{once:true});
+  }else{
+    enhance();
+  }
+
+  // Appearance CSS is injected dynamically by account-appearance.js.
+  // Re-append our style when the selected theme changes so this remains the final layer.
+  const htmlObserver = new MutationObserver(mutations => {
+    if(mutations.some(m => m.type === "attributes" && m.attributeName === "data-bp-theme")){
+      queueMicrotask(installStyles);
+    }
+  });
+  htmlObserver.observe(document.documentElement,{attributes:true,attributeFilter:["data-bp-theme"]});
+})();
