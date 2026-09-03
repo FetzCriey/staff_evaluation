@@ -2018,10 +2018,121 @@
         }
       }
 
+
+      /* =====================================================
+         CONTEXT-AWARE CTRL+P PRINTING
+         Print whichever main view the user is actually viewing.
+         ===================================================== */
+      @media print{
+        body.bp-print-dashboard #formView,
+        body.bp-print-dashboard #backBar,
+        body.bp-print-dashboard #drawer,
+        body.bp-print-dashboard #scrim,
+        body.bp-print-dashboard .burger,
+        body.bp-print-dashboard #headerActionBtn{
+          display:none !important;
+        }
+
+        body.bp-print-dashboard #dashboardView{
+          display:block !important;
+          visibility:visible !important;
+          position:static !important;
+          width:100% !important;
+          max-width:none !important;
+          margin:0 !important;
+          padding:0 !important;
+          overflow:visible !important;
+        }
+
+        body.bp-print-dashboard #dashboardView *,
+        body.bp-print-dashboard header.top,
+        body.bp-print-dashboard header.top *{
+          visibility:visible !important;
+        }
+
+        body.bp-print-dashboard .wrap,
+        body.bp-print-dashboard .shell,
+        body.bp-print-dashboard .main{
+          display:block !important;
+          width:100% !important;
+          max-width:none !important;
+          margin:0 !important;
+          padding-left:0 !important;
+          padding-right:0 !important;
+          overflow:visible !important;
+        }
+
+        body.bp-print-dashboard header.top{
+          display:flex !important;
+          position:static !important;
+          margin:0 0 14px !important;
+          break-inside:avoid !important;
+          page-break-inside:avoid !important;
+        }
+
+        body.bp-print-dashboard .dash-metrics,
+        body.bp-print-dashboard .dash-grid,
+        body.bp-print-dashboard .dash-grid-bottom{
+          break-inside:auto !important;
+          page-break-inside:auto !important;
+        }
+
+        body.bp-print-dashboard .dash-metric,
+        body.bp-print-dashboard .dash-panel-card{
+          break-inside:avoid !important;
+          page-break-inside:avoid !important;
+        }
+
+        body.bp-print-evaluation #dashboardView{
+          display:none !important;
+        }
+      }
+
     `;
 
     document.head.appendChild(style);
   }
+
+
+  function syncPrintContext(){
+    const body = document.body;
+    if(!body) return;
+
+    const dashboard = document.getElementById("dashboardView");
+    const form = document.getElementById("formView");
+
+    const dashboardVisible = !!dashboard &&
+      !dashboard.classList.contains("hide") &&
+      getComputedStyle(dashboard).display !== "none";
+
+    const formVisible = !!form &&
+      !form.classList.contains("hide") &&
+      getComputedStyle(form).display !== "none";
+
+    body.classList.remove("bp-print-dashboard","bp-print-evaluation");
+
+    if(dashboardVisible && !formVisible){
+      body.classList.add("bp-print-dashboard");
+    }else{
+      body.classList.add("bp-print-evaluation");
+    }
+  }
+
+  function clearPrintContext(){
+    document.body?.classList.remove("bp-print-dashboard","bp-print-evaluation");
+  }
+
+  window.addEventListener("beforeprint",syncPrintContext);
+  window.addEventListener("afterprint",clearPrintContext);
+
+  try{
+    const printMedia = window.matchMedia("print");
+    const onPrintMediaChange = event => {
+      if(event.matches) syncPrintContext();
+      else clearPrintContext();
+    };
+    printMedia.addEventListener?.("change",onPrintMediaChange);
+  }catch(_){}
 
   function boot(){
     installPolish();
