@@ -2122,6 +2122,39 @@
     document.body?.classList.remove("bp-print-dashboard","bp-print-evaluation");
   }
 
+
+  function dashboardIsActiveForPrint(){
+    const dashboard = document.getElementById("dashboardView");
+    const form = document.getElementById("formView");
+    if(!dashboard) return false;
+
+    const dashboardVisible =
+      !dashboard.classList.contains("hide") &&
+      getComputedStyle(dashboard).display !== "none" &&
+      getComputedStyle(dashboard).visibility !== "hidden";
+
+    const formVisible = !!form &&
+      !form.classList.contains("hide") &&
+      getComputedStyle(form).display !== "none" &&
+      getComputedStyle(form).visibility !== "hidden";
+
+    return dashboardVisible && !formVisible;
+  }
+
+  document.addEventListener("keydown",event => {
+    const key = String(event.key || "").toLowerCase();
+    const printShortcut =
+      key === "p" &&
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      !event.shiftKey;
+
+    if(!printShortcut || !dashboardIsActiveForPrint()) return;
+
+    event.stopImmediatePropagation();
+    syncPrintContext();
+  }, true);
+
   window.addEventListener("beforeprint",syncPrintContext);
   window.addEventListener("afterprint",clearPrintContext);
 
