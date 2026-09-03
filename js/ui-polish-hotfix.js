@@ -1675,6 +1675,57 @@
         color:#ff9d9d !important;
       }
 
+
+      /* =====================================================
+         APPEARANCE — RESET COLOR BUTTON CONTRAST
+         Keep the control readable in every theme, including
+         the disabled/default-accent state.
+         ===================================================== */
+      .bp-accent-reset{
+        min-height:42px !important;
+        border:1.5px solid rgba(var(--bp-accent-rgb,21,172,227),.42) !important;
+        border-radius:12px !important;
+        background:rgba(var(--bp-accent-rgb,21,172,227),.10) !important;
+        color:var(--ink) !important;
+        font-weight:800 !important;
+        opacity:1 !important;
+        box-shadow:none !important;
+      }
+
+      .bp-accent-reset::before{
+        color:currentColor !important;
+        opacity:1 !important;
+      }
+
+      .bp-accent-reset:hover:not(:disabled){
+        background:rgba(var(--bp-accent-rgb,21,172,227),.17) !important;
+        border-color:rgba(var(--bp-accent-rgb,21,172,227),.68) !important;
+        color:var(--ink) !important;
+      }
+
+      .bp-accent-reset:disabled{
+        background:var(--bp-theme-surface-2,#f4fafd) !important;
+        border-color:var(--line) !important;
+        color:var(--muted) !important;
+        opacity:.72 !important;
+        cursor:not-allowed !important;
+      }
+
+      html[data-bp-theme="dark"] .bp-accent-reset,
+      html[data-bp-theme="amoled"] .bp-accent-reset{
+        background:rgba(var(--bp-accent-rgb,21,172,227),.14) !important;
+        border-color:rgba(var(--bp-accent-rgb,21,172,227),.46) !important;
+        color:var(--ink) !important;
+      }
+
+      html[data-bp-theme="dark"] .bp-accent-reset:disabled,
+      html[data-bp-theme="amoled"] .bp-accent-reset:disabled{
+        background:var(--bp-theme-surface-2) !important;
+        border-color:var(--line) !important;
+        color:var(--muted) !important;
+        opacity:.78 !important;
+      }
+
     `;
 
     document.head.appendChild(style);
