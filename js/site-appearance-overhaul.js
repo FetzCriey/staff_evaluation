@@ -1,6 +1,6 @@
 (() => {
   const STYLE_ID = "bpAppearanceOverhaul";
-  const VERSION = "20260903-1502";
+  const VERSION = "20260903-1518";
 
   function installStyles(){
     const old = document.getElementById(STYLE_ID);
@@ -606,6 +606,119 @@
         color:var(--bp-theme-contrast,#fff) !important;
       }
 
+
+
+      /* ---------- SIDEBAR VIEWPORT LAYOUT ---------- */
+      #drawer{
+        position:fixed !important;
+        top:0 !important;
+        bottom:0 !important;
+        height:100dvh !important;
+        max-height:100dvh !important;
+        display:flex !important;
+        flex-direction:column !important;
+        overflow:hidden !important;
+      }
+
+      #drawer .bp-drawer-scroll{
+        flex:1 1 auto !important;
+        min-height:0 !important;
+        overflow-y:auto !important;
+        overflow-x:visible !important;
+        overscroll-behavior:contain !important;
+        -webkit-overflow-scrolling:touch !important;
+        padding-bottom:14px !important;
+      }
+
+      #drawer #acct{
+        position:relative !important;
+        inset:auto !important;
+        flex:0 0 auto !important;
+        margin-top:0 !important;
+        padding-top:12px !important;
+        padding-bottom:max(10px,env(safe-area-inset-bottom)) !important;
+        background:var(--panel,#fff) !important;
+        border-top:1px solid var(--line) !important;
+        box-shadow:0 -18px 28px -26px rgba(8,52,76,.55) !important;
+        z-index:500 !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer #acct,
+      html[data-bp-theme="amoled"] #drawer #acct{
+        background:var(--bp-theme-surface-1,var(--panel)) !important;
+        box-shadow:0 -18px 34px -24px rgba(0,0,0,.92) !important;
+      }
+
+      #drawer :where(.bp-role-menu,.lay-menu){
+        z-index:700 !important;
+      }
+
+      @media(max-width:760px){
+        #drawer{
+          height:100dvh !important;
+          max-height:100dvh !important;
+        }
+
+        #drawer #acct{
+          padding-bottom:max(12px,env(safe-area-inset-bottom)) !important;
+        }
+      }
+
+
+      /* ---------- FIXED ACCOUNT BLOCK AT SIDEBAR BOTTOM ---------- */
+      #drawer{
+        display:flex !important;
+        flex-direction:column !important;
+        min-height:0 !important;
+        overflow-y:auto !important;
+        overflow-x:visible !important;
+      }
+
+      #drawer #acct{
+        position:sticky !important;
+        bottom:0 !important;
+        z-index:120 !important;
+        flex:0 0 auto !important;
+        margin-top:auto !important;
+        padding-top:12px !important;
+        padding-bottom:max(10px,env(safe-area-inset-bottom)) !important;
+        background:var(--panel,#fff) !important;
+        border-top:1px solid var(--line) !important;
+        box-shadow:
+          0 -18px 28px -26px rgba(8,52,76,.55) !important;
+      }
+
+      /* Keep expanded menus above the fixed account block. */
+      #drawer :where(.bp-role-select-wrap,.lay-wrap,.mgr-sec){
+        position:relative;
+      }
+
+      #drawer :where(.bp-role-menu,.lay-menu){
+        z-index:240 !important;
+      }
+
+      html[data-bp-theme="dark"] #drawer #acct,
+      html[data-bp-theme="amoled"] #drawer #acct{
+        background:var(--bp-theme-surface-1,var(--panel)) !important;
+        border-top-color:var(--line) !important;
+        box-shadow:
+          0 -18px 34px -24px rgba(0,0,0,.92) !important;
+      }
+
+      /* Give scrolling sidebar content enough room so its last item
+         is never hidden underneath the pinned account controls. */
+      #drawer #mgrPanel{
+        padding-bottom:10px !important;
+      }
+
+      @media(max-width:760px){
+        #drawer #acct{
+          bottom:0 !important;
+          padding-bottom:max(12px,env(safe-area-inset-bottom)) !important;
+        }
+      }
+
+
       /* ---------- REDUCE BOX-IN-BOX NESTING ---------- */
       #drawer #acct,
       #drawer #mgrPanel{
@@ -846,7 +959,25 @@
     if(event.key === "Escape") closeRoleDropdowns();
   });
 
+
+  function structureDrawerForFixedAccount(){
+    const drawer = document.getElementById("drawer");
+    const acct = drawer?.querySelector("#acct");
+    if(!drawer || !acct || drawer.querySelector(".bp-drawer-scroll")) return;
+
+    const scroll = document.createElement("div");
+    scroll.className = "bp-drawer-scroll";
+
+    const children = [...drawer.children];
+    children.forEach(child => {
+      if(child !== acct) scroll.appendChild(child);
+    });
+
+    drawer.insertBefore(scroll,acct);
+  }
+
   function enhance(){
+    structureDrawerForFixedAccount();
     installStyles();
     replaceSidebarIcons();
     enhanceRoleDropdowns();
