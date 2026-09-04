@@ -499,3 +499,55 @@ html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option.selected::after{
   color:var(--ink) !important;
   -webkit-text-fill-color:var(--ink) !important;
 }
+
+
+/* =========================================================
+   ADD STAFF DROPDOWN — CONTENT-SIZED MENU
+   Prevent inherited/flex rules from stretching a one-option menu.
+   ========================================================= */
+
+.staff-add-modal .bp-select{
+  display:block !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+.staff-add-modal .bp-select-menu,
+.staff-add-modal .bp-select.open .bp-select-menu{
+  display:none !important;
+  position:absolute !important;
+  top:calc(100% + 6px) !important;
+  left:0 !important;
+  right:0 !important;
+  width:auto !important;
+  height:max-content !important;
+  min-height:0 !important;
+  max-height:240px !important;
+  padding:5px !important;
+  margin:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  align-content:start !important;
+  align-items:stretch !important;
+  grid-auto-rows:max-content !important;
+  flex:none !important;
+}
+
+.staff-add-modal .bp-select.open .bp-select-menu{
+  display:block !important;
+}
+
+.staff-add-modal .bp-select-menu:has(.bp-select-option:only-child){
+  height:46px !important;
+  min-height:46px !important;
+  max-height:46px !important;
+  overflow:hidden !important;
+}
+
+.staff-add-modal .bp-select-menu .bp-select-option{
+  flex:0 0 auto !important;
+  height:36px !important;
+  min-height:36px !important;
+  max-height:36px !important;
+  margin:0 !important;
+}
