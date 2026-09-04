@@ -200,10 +200,8 @@
   .staff-add-body{padding:17px}
 }
 
-
 /* =========================================================
    THEMED SELECT DROPDOWNS
-   Match Better Practice lagoon / navy interface.
    ========================================================= */
 
 .staff-add-form select{
@@ -246,17 +244,13 @@
   color:var(--lagoon-deep);
 }
 
-/* Chromium/WebKit popup styling where supported. */
 .staff-add-form select:focus option:checked{
   background:linear-gradient(var(--accent-soft),var(--accent-soft));
   color:var(--lagoon-deep);
 }
 
-
 /* =========================================================
    FULLY CUSTOM ADD-STAFF DROPDOWNS
-   Replaces the OS/browser popup UI while keeping the native
-   <select> underneath for the existing Supabase logic.
    ========================================================= */
 
 .staff-add-form select.bp-native-select{
@@ -400,11 +394,8 @@
   }
 }
 
-
 /* =========================================================
    HIDE MODAL SCROLLBAR
-   Keep overflow working when needed, but remove the visible
-   scrollbar that appears when the lower dropdown opens.
    ========================================================= */
 
 .staff-add-dialog{
@@ -416,4 +407,62 @@
   width:0;
   height:0;
   display:none;
+}
+
+/* =========================================================
+   ADD STAFF DROPDOWN — COMPACT + READABLE
+   ========================================================= */
+
+.staff-add-modal .bp-select-label{
+  color:var(--ink) !important;
+  opacity:1 !important;
+}
+
+.staff-add-modal .bp-select-menu{
+  min-height:0 !important;
+  height:auto !important;
+  max-height:min(240px,42vh) !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding:5px !important;
+}
+
+.staff-add-modal .bp-select-option{
+  min-height:36px !important;
+  height:auto !important;
+  padding:8px 10px !important;
+  color:var(--ink-soft) !important;
+  opacity:1 !important;
+  background:transparent !important;
+}
+
+.staff-add-modal .bp-select-option:hover,
+.staff-add-modal .bp-select-option:focus-visible{
+  color:var(--ink) !important;
+  background:rgba(var(--bp-accent-rgb),.09) !important;
+}
+
+.staff-add-modal .bp-select-option.selected,
+.staff-add-modal .bp-select-option[aria-selected="true"]{
+  color:var(--lagoon-deep) !important;
+  background:rgba(var(--bp-accent-rgb),.15) !important;
+}
+
+.staff-add-modal .bp-select-option.selected::after{
+  color:var(--lagoon-deep) !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-label,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-label,
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option{
+  color:var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option.selected,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option.selected,
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option[aria-selected="true"],
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option[aria-selected="true"]{
+  background:rgba(var(--bp-accent-rgb),.20) !important;
+  color:var(--ink) !important;
 }
