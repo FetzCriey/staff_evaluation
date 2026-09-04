@@ -870,3 +870,118 @@ html[data-bp-theme="amoled"] :where(.recycle-bin-restore:disabled,.recycle-bin-r
     transition:none;
   }
 }
+
+
+/* =========================================================
+   RECYCLE BIN — FINAL READABILITY / THEME OVERRIDE
+   High-specificity rules intentionally beat the site's
+   global button/disabled appearance rules.
+   ========================================================= */
+
+/* Sidebar Recycle Bin label + subtitle */
+#openRecycleBin.recycle-bin-launch{
+  color:var(--bp-accent-contrast,#fff) !important;
+  -webkit-text-fill-color:var(--bp-accent-contrast,#fff) !important;
+}
+
+#openRecycleBin .recycle-bin-launch-copy > span{
+  color:var(--bp-accent-contrast,#fff) !important;
+  -webkit-text-fill-color:var(--bp-accent-contrast,#fff) !important;
+  opacity:1 !important;
+}
+
+#openRecycleBin .recycle-bin-launch-copy small{
+  color:var(--bp-accent-contrast,#fff) !important;
+  -webkit-text-fill-color:var(--bp-accent-contrast,#fff) !important;
+  opacity:.78 !important;
+  font-weight:750 !important;
+}
+
+/* Primary Recycle Bin actions */
+#recycleBinModal .recycle-bin-restore-all,
+#recycleBinModal .recycle-bin-restore,
+.recycle-action-modal .recycle-action-ok,
+.recycle-password-modal .recycle-password-submit{
+  color:var(--bp-accent-contrast,#fff) !important;
+  -webkit-text-fill-color:var(--bp-accent-contrast,#fff) !important;
+  opacity:1 !important;
+}
+
+/* Secondary actions: always use a high-contrast themed surface. */
+#recycleBinModal .recycle-bin-refresh,
+.recycle-action-modal .recycle-action-cancel,
+.recycle-password-modal .recycle-password-cancel{
+  border:1.5px solid var(--line,#c9dfee) !important;
+  background:var(--panel,#fff) !important;
+  color:var(--ink,#0a2233) !important;
+  -webkit-text-fill-color:var(--ink,#0a2233) !important;
+  opacity:1 !important;
+  box-shadow:none !important;
+}
+
+/* Disabled controls remain visibly disabled but their labels stay readable.
+   This specifically overrides site-appearance-overhaul's global button rule. */
+#recycleBinModal .recycle-bin-refresh:disabled,
+#recycleBinModal .recycle-bin-restore-all:disabled,
+#recycleBinModal .recycle-bin-restore:disabled,
+.recycle-action-modal .recycle-action-cancel:disabled,
+.recycle-action-modal .recycle-action-ok:disabled,
+.recycle-password-modal .recycle-password-cancel:disabled,
+.recycle-password-modal .recycle-password-submit:disabled{
+  border-color:var(--line,#c9dfee) !important;
+  background:var(--bp-theme-surface-2,#f4fafd) !important;
+  color:var(--ink-soft,#28455c) !important;
+  -webkit-text-fill-color:var(--ink-soft,#28455c) !important;
+  opacity:1 !important;
+  filter:none !important;
+  box-shadow:none !important;
+}
+
+/* Hover/focus keeps secondary controls clear in every theme. */
+#recycleBinModal .recycle-bin-refresh:not(:disabled):hover,
+.recycle-action-modal .recycle-action-cancel:not(:disabled):hover,
+.recycle-password-modal .recycle-password-cancel:not(:disabled):hover{
+  background:var(--bp-theme-surface-3,#eef7fc) !important;
+  border-color:var(--lagoon,#15ace3) !important;
+  color:var(--ink,#0a2233) !important;
+  -webkit-text-fill-color:var(--ink,#0a2233) !important;
+}
+
+/* Confirmation copy should never inherit a washed-out button/popup color. */
+.recycle-action-modal .recycle-action-dialog h3,
+.recycle-action-modal .recycle-action-dialog p{
+  color:var(--ink,#0a2233) !important;
+  -webkit-text-fill-color:var(--ink,#0a2233) !important;
+  opacity:1 !important;
+}
+
+.recycle-action-modal .recycle-action-dialog p{
+  color:var(--ink-soft,#28455c) !important;
+  -webkit-text-fill-color:var(--ink-soft,#28455c) !important;
+}
+
+/* Dark / AMOLED: use the same semantic variables, with explicit specificity. */
+html[data-bp-theme="dark"] #recycleBinModal .recycle-bin-refresh,
+html[data-bp-theme="amoled"] #recycleBinModal .recycle-bin-refresh,
+html[data-bp-theme="dark"] .recycle-action-modal .recycle-action-cancel,
+html[data-bp-theme="amoled"] .recycle-action-modal .recycle-action-cancel,
+html[data-bp-theme="dark"] .recycle-password-modal .recycle-password-cancel,
+html[data-bp-theme="amoled"] .recycle-password-modal .recycle-password-cancel{
+  background:var(--bp-theme-surface-3) !important;
+  border-color:var(--line) !important;
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] #recycleBinModal :is(.recycle-bin-refresh,.recycle-bin-restore-all,.recycle-bin-restore):disabled,
+html[data-bp-theme="amoled"] #recycleBinModal :is(.recycle-bin-refresh,.recycle-bin-restore-all,.recycle-bin-restore):disabled,
+html[data-bp-theme="dark"] .recycle-action-modal :is(.recycle-action-cancel,.recycle-action-ok):disabled,
+html[data-bp-theme="amoled"] .recycle-action-modal :is(.recycle-action-cancel,.recycle-action-ok):disabled,
+html[data-bp-theme="dark"] .recycle-password-modal :is(.recycle-password-cancel,.recycle-password-submit):disabled,
+html[data-bp-theme="amoled"] .recycle-password-modal :is(.recycle-password-cancel,.recycle-password-submit):disabled{
+  background:var(--bp-theme-surface-2) !important;
+  border-color:var(--line) !important;
+  color:var(--ink-soft) !important;
+  -webkit-text-fill-color:var(--ink-soft) !important;
+  opacity:1 !important;
+}
