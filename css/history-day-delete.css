@@ -1,0 +1,68 @@
+
+/* Delete all archived evaluations for one history date */
+.his-day-delete-head{
+  display:flex;
+  align-items:stretch;
+  gap:7px;
+  margin:0;
+}
+
+.his-day-delete-head > .his-date-sum{
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.his-day-delete-btn{
+  flex:0 0 38px;
+  width:38px;
+  min-height:38px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1.5px solid #e4c7c7;
+  border-radius:11px;
+  background:#fff7f7;
+  color:#9b3030;
+  cursor:pointer;
+  box-shadow:none;
+}
+
+.his-day-delete-btn:hover{
+  border-color:#dcaeae;
+  background:#ffeded;
+  color:#841f1f;
+}
+
+.his-day-delete-btn:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(180,58,58,.14);
+}
+
+.his-day-delete-btn:disabled{
+  opacity:.55;
+  cursor:wait;
+}
+
+html[data-bp-theme="dark"] .his-day-delete-btn,
+html[data-bp-theme="amoled"] .his-day-delete-btn{
+  border-color:rgba(239,126,126,.34);
+  background:rgba(173,54,54,.13);
+  color:#f0a0a0;
+}
+
+html[data-bp-theme="dark"] .his-day-delete-btn:hover,
+html[data-bp-theme="amoled"] .his-day-delete-btn:hover{
+  border-color:rgba(239,126,126,.55);
+  background:rgba(173,54,54,.22);
+  color:#ffc0c0;
+}
+
+@media(max-width:560px){
+  .his-day-delete-head{gap:6px}
+  .his-day-delete-btn{
+    flex-basis:36px;
+    width:36px;
+    min-height:36px;
+    border-radius:10px;
+  }
+}
