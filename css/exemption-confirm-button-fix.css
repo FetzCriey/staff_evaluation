@@ -1,0 +1,26 @@
+/* Staff exemption confirmation dialog: keep secondary action readable in every theme. */
+html:not([data-bp-theme="dark"]):not([data-bp-theme="amoled"]) .round-exemption-stacked-dialog .round-exemption-stacked-secondary,
+html[data-bp-theme="light"] .round-exemption-stacked-dialog .round-exemption-stacked-secondary {
+  color:#28455c !important;
+  -webkit-text-fill-color:#28455c !important;
+  background:#ffffff !important;
+  border-color:#c9dfee !important;
+  opacity:1 !important;
+}
+
+html:not([data-bp-theme="dark"]):not([data-bp-theme="amoled"]) .round-exemption-stacked-dialog .round-exemption-stacked-secondary:hover,
+html[data-bp-theme="light"] .round-exemption-stacked-dialog .round-exemption-stacked-secondary:hover {
+  color:#0b7fb0 !important;
+  -webkit-text-fill-color:#0b7fb0 !important;
+  background:#eef8fd !important;
+  border-color:#9fd5ea !important;
+}
+
+html[data-bp-theme="dark"] .round-exemption-stacked-dialog .round-exemption-stacked-secondary,
+html[data-bp-theme="amoled"] .round-exemption-stacked-dialog .round-exemption-stacked-secondary {
+  color:var(--ink,#eef6fb) !important;
+  -webkit-text-fill-color:var(--ink,#eef6fb) !important;
+  background:var(--bp-theme-surface-2,#172733) !important;
+  border-color:var(--line,#405867) !important;
+  opacity:1 !important;
+}
