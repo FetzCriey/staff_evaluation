@@ -6,9 +6,51 @@
     return prev && prev.matches('select.bp-native-select') ? prev : null;
   }
 
+  function getTheme(){
+    return document.documentElement.getAttribute('data-bp-theme') || 'light';
+  }
+
+  function themeColors(selected){
+    const theme = getTheme();
+
+    if(theme === 'dark' || theme === 'amoled'){
+      return {
+        text: 'var(--ink)',
+        selectedText: 'var(--ink)',
+        selectedBg: 'rgba(var(--bp-accent-rgb),.24)',
+        hoverBg: 'rgba(var(--bp-accent-rgb),.14)'
+      };
+    }
+
+    return {
+      text: '#233746',
+      selectedText: '#4f2a7f',
+      selectedBg: 'rgba(var(--bp-accent-rgb),.15)',
+      hoverBg: 'rgba(var(--bp-accent-rgb),.10)'
+    };
+  }
+
   function closeRoot(root){
     root.classList.remove('open');
     root.querySelector('.bp-select-btn')?.setAttribute('aria-expanded','false');
+  }
+
+  function applyRowTheme(item, selected){
+    const c = themeColors(selected);
+    const color = selected ? c.selectedText : c.text;
+
+    item.style.setProperty('color', color, 'important');
+    item.style.setProperty('-webkit-text-fill-color', color, 'important');
+    item.style.setProperty('opacity', '1', 'important');
+    item.style.setProperty('visibility', 'visible', 'important');
+    item.style.setProperty('display', 'flex', 'important');
+    item.style.setProperty('height', '36px', 'important');
+    item.style.setProperty('min-height', '36px', 'important');
+    item.style.setProperty(
+      'background',
+      selected ? c.selectedBg : 'transparent',
+      'important'
+    );
   }
 
   function rebuild(root){
@@ -20,12 +62,15 @@
     if(!select || !btn || !label || !menu) return;
 
     const options = Array.from(select.options);
-
-    // Always show the real currently selected option in the trigger.
     const selectedOption = select.options[select.selectedIndex];
     label.textContent = selectedOption?.textContent || '';
 
-    // Rebuild the visible custom menu directly from the real native select.
+    // Make the trigger follow the active theme too.
+    const theme = getTheme();
+    const dark = theme === 'dark' || theme === 'amoled';
+    btn.style.setProperty('color', dark ? 'var(--ink)' : '#233746', 'important');
+    btn.style.setProperty('-webkit-text-fill-color', dark ? 'var(--ink)' : '#233746', 'important');
+
     menu.replaceChildren();
 
     options.forEach((option, index) => {
@@ -40,13 +85,18 @@
       item.classList.toggle('selected', selected);
       item.setAttribute('aria-selected', String(selected));
 
-      item.style.setProperty('color', selected ? '#4f2a7f' : '#233746', 'important');
-      item.style.setProperty('-webkit-text-fill-color', selected ? '#4f2a7f' : '#233746', 'important');
-      item.style.setProperty('opacity', '1', 'important');
-      item.style.setProperty('visibility', 'visible', 'important');
-      item.style.setProperty('display', 'flex', 'important');
-      item.style.setProperty('height', '36px', 'important');
-      item.style.setProperty('min-height', '36px', 'important');
+      applyRowTheme(item, selected);
+
+      item.addEventListener('mouseenter', () => {
+        if(index !== select.selectedIndex){
+          const c = themeColors(false);
+          item.style.setProperty('background', c.hoverBg, 'important');
+        }
+      });
+
+      item.addEventListener('mouseleave', () => {
+        applyRowTheme(item, index === select.selectedIndex);
+      });
 
       item.addEventListener('click', event => {
         event.preventDefault();
@@ -65,7 +115,6 @@
       menu.appendChild(item);
     });
 
-    // Explicit content-sized height based on the actual number of options.
     const rowHeight = 36;
     const paddingAndBorder = 12;
     const desired = Math.min(options.length * rowHeight + paddingAndBorder, 240);
@@ -73,7 +122,11 @@
     menu.style.setProperty('height', `${desired}px`, 'important');
     menu.style.setProperty('min-height', `${desired}px`, 'important');
     menu.style.setProperty('max-height', '240px', 'important');
-    menu.style.setProperty('overflow-y', options.length * rowHeight + paddingAndBorder > 240 ? 'auto' : 'hidden', 'important');
+    menu.style.setProperty(
+      'overflow-y',
+      options.length * rowHeight + paddingAndBorder > 240 ? 'auto' : 'hidden',
+      'important'
+    );
   }
 
   function enhanceRoot(root){
@@ -84,11 +137,9 @@
     const btn = root.querySelector('.bp-select-btn');
     if(!select || !btn) return;
 
-    // Rebuild before the original click handler opens the menu.
     btn.addEventListener('click', () => rebuild(root), true);
     select.addEventListener('change', () => rebuild(root));
 
-    // If another script adds/removes native options later, mirror them.
     new MutationObserver(() => rebuild(root)).observe(select, {
       childList:true,
       subtree:true,
@@ -113,4 +164,12 @@
   if(modal){
     new MutationObserver(scan).observe(modal, { childList:true, subtree:true });
   }
+
+  // Automatically re-theme dropdowns whenever Light/Dark/AMOLED changes.
+  new MutationObserver(() => {
+    document.querySelectorAll(`${MODAL_SELECTOR} .bp-select`).forEach(rebuild);
+  }).observe(document.documentElement, {
+    attributes:true,
+    attributeFilter:['data-bp-theme']
+  });
 })();
