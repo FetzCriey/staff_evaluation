@@ -1,0 +1,617 @@
+/* =========================================================
+   ADD STAFF — BUTTON + CENTERED MODAL
+   The sidebar keeps only one Add Staff button.
+   The existing Supabase form IDs remain unchanged inside the modal.
+   ========================================================= */
+
+.mgr-add-button-sec{
+  border:0;
+  background:transparent;
+  overflow:visible;
+  margin-top:4px;
+}
+
+.mgr-add-launch{
+  width:100%;
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:11px 13px;
+  border:1.5px solid var(--lagoon);
+  border-radius:12px;
+  background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));
+  color:#fff;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 8px 20px -10px rgba(21,172,227,.7);
+  transition:transform .12s ease,box-shadow .12s ease,filter .12s ease;
+}
+
+.mgr-add-launch:hover{
+  filter:brightness(1.04);
+  transform:translateY(-1px);
+  box-shadow:0 12px 24px -10px rgba(21,172,227,.72);
+}
+
+.mgr-add-launch:active{transform:translateY(0)}
+
+.mgr-add-launch:focus-visible{
+  outline:3px solid rgba(21,172,227,.24);
+  outline-offset:2px;
+}
+
+.mgr-add-launch-icon{
+  width:23px;
+  height:23px;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:rgba(255,255,255,.16);
+}
+
+/* Modal shell */
+.staff-add-modal[hidden]{display:none !important}
+
+.staff-add-modal{
+  position:fixed;
+  inset:0;
+  z-index:140;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+
+.staff-add-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(5,30,45,.56);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+
+.staff-add-dialog{
+  position:relative;
+  z-index:1;
+  width:min(460px,100%);
+  max-height:min(720px,calc(100vh - 40px));
+  overflow:auto;
+  border:1.5px solid rgba(201,223,238,.95);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 30px 90px -28px rgba(5,30,45,.72);
+  animation:staffAddIn .18s ease-out;
+}
+
+@keyframes staffAddIn{
+  from{opacity:0;transform:translateY(10px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.staff-add-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:20px 20px 17px;
+  color:#f2fafe;
+  background:
+    radial-gradient(120% 100% at 90% -20%,rgba(21,172,227,.52),transparent 56%),
+    linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 58%,#051e2d 100%);
+}
+
+.staff-add-kicker{
+  margin-bottom:4px;
+  color:rgba(180,224,245,.86);
+  font-size:9.5px;
+  font-weight:700;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+
+.staff-add-head h2{
+  margin:0;
+  color:#fff;
+  font-family:"Bricolage Grotesque","Inter",sans-serif;
+  font-size:22px;
+  line-height:1.1;
+}
+
+.staff-add-close{
+  width:37px;
+  height:37px;
+  flex:0 0 37px;
+  display:grid;
+  place-items:center;
+  border:1.5px solid rgba(255,255,255,.22);
+  border-radius:11px;
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  cursor:pointer;
+}
+
+.staff-add-close:hover{background:rgba(255,255,255,.18)}
+
+.staff-add-body{padding:20px}
+
+.staff-add-form{
+  padding:0;
+  background:none;
+  border:0;
+  gap:10px;
+}
+
+.staff-add-form input,
+.staff-add-form select{
+  width:100%;
+  min-height:43px;
+  padding:10px 12px;
+  border:1.5px solid #bcd8ea;
+  border-radius:10px;
+  background:#f8fcfe;
+  color:var(--ink);
+  font:inherit;
+  font-size:13px;
+  outline:none;
+}
+
+.staff-add-form input:focus,
+.staff-add-form select:focus{
+  background:#fff;
+  border-color:var(--lagoon);
+  box-shadow:0 0 0 4px rgba(21,172,227,.13);
+}
+
+.staff-add-form .mgr-lbl{
+  margin:7px 0 -3px 1px;
+}
+
+.staff-add-submit{
+  min-height:44px;
+  margin-top:8px;
+  font-size:13px !important;
+}
+
+.staff-add-status{
+  min-height:0;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:12px;
+  text-align:center;
+}
+
+.staff-add-status.err{color:var(--error-ink)}
+.staff-add-status.ok{color:#187648}
+
+@media(max-width:560px){
+  .staff-add-modal{padding:14px}
+  .staff-add-dialog{
+    width:100%;
+    max-height:calc(100vh - 28px);
+    border-radius:18px;
+  }
+  .staff-add-head{padding:18px 17px 15px}
+  .staff-add-head h2{font-size:21px}
+  .staff-add-body{padding:17px}
+}
+
+/* =========================================================
+   THEMED SELECT DROPDOWNS
+   ========================================================= */
+
+.staff-add-form select{
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  cursor:pointer;
+  padding-right:42px;
+  background-color:#f8fcfe;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--lagoon-deep) 50%),
+    linear-gradient(135deg, var(--lagoon-deep) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 13px) calc(50% - 2px);
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
+}
+
+.staff-add-form select:hover{
+  border-color:#8ccbe8;
+  background-color:#f2f9fc;
+}
+
+.staff-add-form select:focus{
+  background-color:#fff;
+  border-color:var(--lagoon);
+  box-shadow:0 0 0 4px rgba(21,172,227,.13);
+}
+
+.staff-add-form select option{
+  background:#ffffff;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:600;
+}
+
+.staff-add-form select option:checked{
+  background:var(--accent-soft);
+  color:var(--lagoon-deep);
+}
+
+.staff-add-form select:focus option:checked{
+  background:linear-gradient(var(--accent-soft),var(--accent-soft));
+  color:var(--lagoon-deep);
+}
+
+/* =========================================================
+   FULLY CUSTOM ADD-STAFF DROPDOWNS
+   ========================================================= */
+
+.staff-add-form select.bp-native-select{
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  padding:0 !important;
+  margin:0 !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  clip:rect(0 0 0 0) !important;
+  clip-path:inset(50%) !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+}
+
+.bp-select{
+  position:relative;
+  width:100%;
+}
+
+.bp-select-btn{
+  width:100%;
+  min-height:43px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:10px 12px;
+  border:1.5px solid #bcd8ea;
+  border-radius:10px;
+  background:#f8fcfe;
+  color:var(--ink);
+  font:inherit;
+  font-size:13px;
+  text-align:left;
+  cursor:pointer;
+  transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+}
+
+.bp-select-btn:hover{
+  border-color:#8ccbe8;
+  background:#f2f9fc;
+}
+
+.bp-select.open .bp-select-btn,
+.bp-select-btn:focus-visible{
+  outline:none;
+  background:#fff;
+  border-color:var(--lagoon);
+  box-shadow:0 0 0 4px rgba(21,172,227,.13);
+}
+
+.bp-select-label{
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:600;
+}
+
+.bp-select-arrow{
+  width:9px;
+  height:9px;
+  flex:0 0 9px;
+  border-right:2px solid var(--lagoon-deep);
+  border-bottom:2px solid var(--lagoon-deep);
+  transform:rotate(45deg) translateY(-2px);
+  transition:transform .15s ease;
+}
+
+.bp-select.open .bp-select-arrow{
+  transform:rotate(225deg) translate(-1px,-1px);
+}
+
+.bp-select-menu{
+  position:absolute;
+  z-index:30;
+  left:0;
+  right:0;
+  top:calc(100% + 6px);
+  display:none;
+  padding:6px;
+  border:1.5px solid #bcd8ea;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 16px 36px -18px rgba(8,52,76,.48);
+}
+
+.bp-select.open .bp-select-menu{
+  display:block;
+  animation:bpSelectOpen .12s ease-out;
+}
+
+@keyframes bpSelectOpen{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.bp-select-option{
+  width:100%;
+  display:flex;
+  align-items:center;
+  min-height:38px;
+  padding:9px 10px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--ink-soft);
+  font:inherit;
+  font-size:13px;
+  font-weight:650;
+  text-align:left;
+  cursor:pointer;
+}
+
+.bp-select-option:hover,
+.bp-select-option.focused{
+  background:var(--accent-soft);
+  color:var(--lagoon-deep);
+}
+
+.bp-select-option.selected{
+  background:linear-gradient(90deg,rgba(21,172,227,.18),rgba(11,127,176,.10));
+  color:var(--lagoon-deep);
+  font-weight:800;
+}
+
+.bp-select-option.selected::after{
+  content:"✓";
+  margin-left:auto;
+  color:var(--lagoon-deep);
+  font-weight:900;
+}
+
+@media(max-width:560px){
+  .bp-select-menu{
+    max-height:210px;
+    overflow:auto;
+  }
+}
+
+/* =========================================================
+   HIDE MODAL SCROLLBAR
+   ========================================================= */
+
+.staff-add-dialog{
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+
+.staff-add-dialog::-webkit-scrollbar{
+  width:0;
+  height:0;
+  display:none;
+}
+
+/* =========================================================
+   ADD STAFF DROPDOWN — COMPACT + READABLE
+   ========================================================= */
+
+.staff-add-modal .bp-select-label{
+  color:var(--ink) !important;
+  opacity:1 !important;
+}
+
+.staff-add-modal .bp-select-menu{
+  min-height:0 !important;
+  height:auto !important;
+  max-height:min(240px,42vh) !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding:5px !important;
+}
+
+.staff-add-modal .bp-select-option{
+  min-height:36px !important;
+  height:auto !important;
+  padding:8px 10px !important;
+  color:var(--ink-soft) !important;
+  opacity:1 !important;
+  background:transparent !important;
+}
+
+.staff-add-modal .bp-select-option:hover,
+.staff-add-modal .bp-select-option:focus-visible{
+  color:var(--ink) !important;
+  background:rgba(var(--bp-accent-rgb),.09) !important;
+}
+
+.staff-add-modal .bp-select-option.selected,
+.staff-add-modal .bp-select-option[aria-selected="true"]{
+  color:var(--lagoon-deep) !important;
+  background:rgba(var(--bp-accent-rgb),.15) !important;
+}
+
+.staff-add-modal .bp-select-option.selected::after{
+  color:var(--lagoon-deep) !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-label,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-label,
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option{
+  color:var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option.selected,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option.selected,
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option[aria-selected="true"],
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option[aria-selected="true"]{
+  background:rgba(var(--bp-accent-rgb),.20) !important;
+  color:var(--ink) !important;
+}
+
+
+/* =========================================================
+   ADD STAFF DROPDOWN — SELECTED OPTION READABILITY
+   ========================================================= */
+
+.staff-add-modal .bp-select-option.selected,
+.staff-add-modal .bp-select-option[aria-selected="true"]{
+  color:#4f2a7f !important;
+  -webkit-text-fill-color:#4f2a7f !important;
+  font-weight:800 !important;
+  opacity:1 !important;
+}
+
+.staff-add-modal .bp-select-option.selected::after{
+  color:#6f3bb7 !important;
+  -webkit-text-fill-color:#6f3bb7 !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option.selected,
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option[aria-selected="true"],
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option.selected,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option[aria-selected="true"]{
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+  background:rgba(var(--bp-accent-rgb),.24) !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option.selected::after,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option.selected::after{
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+}
+
+
+/* =========================================================
+   ADD STAFF DROPDOWN — CONTENT-SIZED MENU
+   Prevent inherited/flex rules from stretching a one-option menu.
+   ========================================================= */
+
+.staff-add-modal .bp-select{
+  display:block !important;
+  height:auto !important;
+  min-height:0 !important;
+}
+
+.staff-add-modal .bp-select-menu,
+.staff-add-modal .bp-select.open .bp-select-menu{
+  display:none !important;
+  position:absolute !important;
+  top:calc(100% + 6px) !important;
+  left:0 !important;
+  right:0 !important;
+  width:auto !important;
+  height:max-content !important;
+  min-height:0 !important;
+  max-height:240px !important;
+  padding:5px !important;
+  margin:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  align-content:start !important;
+  align-items:stretch !important;
+  grid-auto-rows:max-content !important;
+  flex:none !important;
+}
+
+.staff-add-modal .bp-select.open .bp-select-menu{
+  display:block !important;
+}
+
+.staff-add-modal .bp-select-menu:has(.bp-select-option:only-child){
+  height:46px !important;
+  min-height:46px !important;
+  max-height:46px !important;
+  overflow:hidden !important;
+}
+
+.staff-add-modal .bp-select-menu .bp-select-option{
+  flex:0 0 auto !important;
+  height:36px !important;
+  min-height:36px !important;
+  max-height:36px !important;
+  margin:0 !important;
+}
+
+
+/* =========================================================
+   ADD STAFF DROPDOWN — ALL OPTIONS READABLE
+   ========================================================= */
+
+/* Light theme: every option must use dark readable text. */
+.staff-add-modal .bp-select-menu .bp-select-option{
+  color:#233746 !important;
+  -webkit-text-fill-color:#233746 !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  font-weight:700 !important;
+  background:transparent !important;
+}
+
+/* Hover/focus keeps enough contrast. */
+.staff-add-modal .bp-select-menu .bp-select-option:hover,
+.staff-add-modal .bp-select-menu .bp-select-option:focus-visible,
+.staff-add-modal .bp-select-menu .bp-select-option.focused{
+  color:#172632 !important;
+  -webkit-text-fill-color:#172632 !important;
+  background:rgba(var(--bp-accent-rgb),.10) !important;
+}
+
+/* Selected option uses stronger accent contrast. */
+.staff-add-modal .bp-select-menu .bp-select-option.selected,
+.staff-add-modal .bp-select-menu .bp-select-option[aria-selected="true"]{
+  color:#4f2a7f !important;
+  -webkit-text-fill-color:#4f2a7f !important;
+  background:rgba(var(--bp-accent-rgb),.15) !important;
+  font-weight:800 !important;
+}
+
+.staff-add-modal .bp-select-menu .bp-select-option.selected::after{
+  color:#6f3bb7 !important;
+  -webkit-text-fill-color:#6f3bb7 !important;
+}
+
+/* Dark / AMOLED: all rows use the current theme's readable foreground. */
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-menu .bp-select-option,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-menu .bp-select-option{
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+  opacity:1 !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-menu .bp-select-option:hover,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-menu .bp-select-option:hover,
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-menu .bp-select-option:focus-visible,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-menu .bp-select-option:focus-visible{
+  background:rgba(var(--bp-accent-rgb),.14) !important;
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-menu .bp-select-option.selected,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-menu .bp-select-option.selected,
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-menu .bp-select-option[aria-selected="true"],
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-menu .bp-select-option[aria-selected="true"]{
+  background:rgba(var(--bp-accent-rgb),.24) !important;
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+}
