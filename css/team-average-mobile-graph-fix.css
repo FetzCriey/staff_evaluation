@@ -1,0 +1,32 @@
+/* Mobile: keep the complete Team Average chart visible without horizontal cropping. */
+@media (max-width: 600px) {
+  .team-average-chart-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    padding: 8px 4px 4px !important;
+  }
+
+  .team-average-chart {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+  }
+
+  .team-average-section-head {
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  .team-average-section-title {
+    min-width: 0 !important;
+    flex: 1 1 180px !important;
+  }
+
+  .team-average-period-count {
+    flex: 0 0 auto !important;
+  }
+}
