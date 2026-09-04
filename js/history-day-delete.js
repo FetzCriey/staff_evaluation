@@ -19,9 +19,8 @@ async function initHistoryDayDelete(){
   let canDeleteWholeDay = false;
 
   // Recycle Bin is intentionally loaded from this already-existing module so
-  // index.html does not need another script tag. The global guard above also
-  // makes the two current cache-busted history-day-delete loads harmless.
-  import("./recycle-bin.js?v=20260904-1523").catch(error => {
+  // index.html does not need another separate Recycle Bin script tag.
+  import("./recycle-bin.js?v=20260904-1549").catch(error => {
     console.error("Recycle Bin module could not load.", error);
   });
 

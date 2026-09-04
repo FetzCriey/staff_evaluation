@@ -40,7 +40,8 @@ async function initRecycleBin(){
     items: [],
     profiles: [],
     groups: [],
-    loading: false
+    loading: false,
+    restoringAll: false
   };
 
   async function admin(payload){
@@ -67,7 +68,7 @@ async function initRecycleBin(){
     const link = document.createElement("link");
     link.id = "recycle-bin-styles";
     link.rel = "stylesheet";
-    link.href = "css/recycle-bin.css?v=20260904-1523";
+    link.href = "css/recycle-bin.css?v=20260904-1549";
     document.head.appendChild(link);
   }
 
@@ -81,6 +82,8 @@ async function initRecycleBin(){
         content: document.getElementById("recycleBinContent"),
         status: document.getElementById("recycleBinStatus"),
         closeButton: document.getElementById("closeRecycleBin"),
+        refreshButton: document.getElementById("refreshRecycleBin"),
+        restoreAllButton: document.getElementById("restoreAllRecycleBin"),
         backdrop: document.querySelector("#recycleBinModal .recycle-bin-backdrop")
       };
     }
@@ -122,13 +125,10 @@ async function initRecycleBin(){
     modal.className = "recycle-bin-modal";
     modal.id = "recycleBinModal";
     modal.hidden = true;
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", "recycleBinTitle");
 
     modal.innerHTML = `
       <div class="recycle-bin-backdrop" data-recycle-close></div>
-      <section class="recycle-bin-dialog">
+      <section class="recycle-bin-dialog" role="dialog" aria-modal="true" aria-labelledby="recycleBinTitle">
         <header class="recycle-bin-head">
           <div>
             <div class="recycle-bin-kicker">Staff administration</div>
@@ -140,9 +140,14 @@ async function initRecycleBin(){
         </header>
         <div class="recycle-bin-toolbar">
           <div class="recycle-bin-status" id="recycleBinStatus"></div>
-          <button class="recycle-bin-refresh" id="refreshRecycleBin" type="button">
-            Refresh
-          </button>
+          <div class="recycle-bin-toolbar-actions">
+            <button class="recycle-bin-restore-all" id="restoreAllRecycleBin" type="button">
+              Restore all
+            </button>
+            <button class="recycle-bin-refresh" id="refreshRecycleBin" type="button">
+              Refresh
+            </button>
+          </div>
         </div>
         <div class="recycle-bin-content" id="recycleBinContent"></div>
       </section>
@@ -159,6 +164,7 @@ async function initRecycleBin(){
       status: modal.querySelector("#recycleBinStatus"),
       closeButton: modal.querySelector("#closeRecycleBin"),
       refreshButton: modal.querySelector("#refreshRecycleBin"),
+      restoreAllButton: modal.querySelector("#restoreAllRecycleBin"),
       backdrop: modal.querySelector("[data-recycle-close]")
     };
   }
@@ -186,11 +192,12 @@ async function initRecycleBin(){
   ui.closeButton.addEventListener("click", closeModal);
   ui.backdrop.addEventListener("click", closeModal);
   ui.refreshButton?.addEventListener("click", () => loadItems(true));
+  ui.restoreAllButton?.addEventListener("click", restoreAll);
 
   document.addEventListener("keydown", event => {
-    if(event.key === "Escape" && !ui.modal.hidden){
-      closeModal();
-    }
+    if(event.key !== "Escape" || ui.modal.hidden) return;
+    if(document.querySelector(".recycle-action-modal, .recycle-password-modal")) return;
+    closeModal();
   });
 
   window.addEventListener("staff-finalized-data-changed", () => {
@@ -219,6 +226,7 @@ async function initRecycleBin(){
   async function loadItems(force=false){
     if(state.loading && !force) return;
     state.loading = true;
+    syncRestoreAllButton();
 
     ui.content.innerHTML = `
       <div class="recycle-bin-loading">
@@ -328,6 +336,7 @@ async function initRecycleBin(){
         result.push({
           kind:"profile",
           id:String(item.id),
+          originalId:String(item.original_id || ""),
           item,
           name:String(payload.full_name || "Deleted employee"),
           email:String(payload.__auth_email || ""),
@@ -416,6 +425,70 @@ async function initRecycleBin(){
     return result;
   }
 
+  function getRestoreAllPlan(){
+    const profileGroups = state.groups.filter(group => group.kind === "profile");
+    const evaluationGroups = state.groups.filter(group => group.kind === "evaluation");
+
+    const restorableProfiles = profileGroups.filter(group =>
+      Boolean(group.email) &&
+      (!group.managerAccount || state.tier === "manager")
+    );
+    const restorableProfileIds = new Set(
+      restorableProfiles.map(group => group.originalId).filter(Boolean)
+    );
+
+    const blockedProfiles = profileGroups.filter(group =>
+      !restorableProfiles.includes(group)
+    );
+
+    const restorableEvaluations = evaluationGroups.filter(group =>
+      [...group.missingProfileIds].every(id => restorableProfileIds.has(id))
+    );
+    const blockedEvaluations = evaluationGroups.filter(group =>
+      !restorableEvaluations.includes(group)
+    );
+
+    return {
+      restorableProfiles,
+      blockedProfiles,
+      restorableEvaluations,
+      blockedEvaluations
+    };
+  }
+
+  function syncRestoreAllButton(){
+    if(!ui.restoreAllButton) return;
+    const plan = getRestoreAllPlan();
+    const available = plan.restorableProfiles.length + plan.restorableEvaluations.length;
+    ui.restoreAllButton.disabled = state.loading || state.restoringAll || available === 0;
+    ui.restoreAllButton.title = available
+      ? `Restore ${available} available deleted item${available === 1 ? "" : "s"}`
+      : "No deleted items can currently be restored.";
+  }
+
+  function setBulkBusy(busy){
+    state.restoringAll = busy;
+    ui.modal.classList.toggle("recycle-bin-is-busy", busy);
+    ui.modal.querySelector(".recycle-bin-dialog")?.setAttribute("aria-busy", String(busy));
+    if(ui.refreshButton) ui.refreshButton.disabled = busy;
+    ui.content.querySelectorAll(".recycle-bin-restore").forEach(button => {
+      button.disabled = busy || button.disabled;
+    });
+    syncRestoreAllButton();
+  }
+
+  function refreshSharedViews(source="recycle-restore"){
+    try{
+      if(typeof window.__refreshResults === "function"){
+        window.__refreshResults();
+      }
+    }catch(_){}
+
+    window.dispatchEvent(new CustomEvent("staff-finalized-data-changed", {
+      detail: { source }
+    }));
+  }
+
   function render(){
     ui.content.innerHTML = "";
 
@@ -429,6 +502,7 @@ async function initRecycleBin(){
       `;
       ui.content.appendChild(empty);
       setStatus("0 deleted items");
+      syncRestoreAllButton();
       return;
     }
 
@@ -474,6 +548,7 @@ async function initRecycleBin(){
     setStatus(
       `${state.groups.length} deleted item${state.groups.length === 1 ? "" : "s"}`
     );
+    syncRestoreAllButton();
   }
 
   function addMeta(container, label, value){
@@ -615,19 +690,182 @@ async function initRecycleBin(){
     return card;
   }
 
+  function showActionDialog({ title, message, okText="OK", cancelText="Cancel", showCancel=true }){
+    return new Promise(resolve => {
+      const overlay = document.createElement("div");
+      overlay.className = "recycle-action-modal";
+
+      const backdrop = document.createElement("div");
+      backdrop.className = "recycle-action-backdrop";
+
+      const dialog = document.createElement("section");
+      dialog.className = "recycle-action-dialog";
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.setAttribute("aria-label", title);
+
+      const kicker = document.createElement("div");
+      kicker.className = "recycle-action-kicker";
+      kicker.textContent = "Recycle Bin";
+
+      const heading = document.createElement("h3");
+      heading.textContent = title;
+
+      const copy = document.createElement("p");
+      copy.textContent = message;
+
+      const actions = document.createElement("div");
+      actions.className = "recycle-action-actions";
+
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.className = "recycle-action-cancel";
+      cancel.textContent = cancelText;
+
+      const ok = document.createElement("button");
+      ok.type = "button";
+      ok.className = "recycle-action-ok";
+      ok.textContent = okText;
+
+      if(showCancel) actions.appendChild(cancel);
+      actions.appendChild(ok);
+      dialog.append(kicker, heading, copy, actions);
+      overlay.append(backdrop, dialog);
+
+      function finish(value){
+        overlay.remove();
+        resolve(value);
+      }
+
+      ok.addEventListener("click", () => finish(true));
+      cancel.addEventListener("click", () => finish(false));
+      backdrop.addEventListener("click", () => finish(showCancel ? false : true));
+      overlay.addEventListener("keydown", event => {
+        if(event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        finish(showCancel ? false : true);
+      });
+
+      document.body.appendChild(overlay);
+      setTimeout(() => ok.focus(), 0);
+    });
+  }
+
   async function confirmAction(title, message, okText="Restore"){
-    if(typeof window.uiConfirm === "function"){
-      return window.uiConfirm(title, message, { ok:okText });
-    }
-    return window.confirm(message);
+    return showActionDialog({ title, message, okText, showCancel:true });
   }
 
   async function alertUser(title, message){
-    if(typeof window.uiAlert === "function"){
-      await window.uiAlert(title, message);
+    await showActionDialog({ title, message, okText:"OK", showCancel:false });
+  }
+
+  async function restoreAll(){
+    if(state.loading || state.restoringAll) return;
+
+    const plan = getRestoreAllPlan();
+    const availableCount = plan.restorableProfiles.length + plan.restorableEvaluations.length;
+    if(!availableCount){
+      await alertUser(
+        "Nothing can be restored yet",
+        "The remaining items depend on deleted staff accounts that cannot currently be restored, or require Manager access."
+      );
       return;
     }
-    window.alert(`${title}\n\n${message}`);
+
+    const evaluationRows = plan.restorableEvaluations.reduce(
+      (sum, group) => sum + group.rows.length,
+      0
+    );
+    const blockedCount = plan.blockedProfiles.length + plan.blockedEvaluations.length;
+    const details = [
+      `${plan.restorableProfiles.length} deleted employee account${plan.restorableProfiles.length === 1 ? "" : "s"}`,
+      `${plan.restorableEvaluations.length} evaluation group${plan.restorableEvaluations.length === 1 ? "" : "s"} (${evaluationRows} row${evaluationRows === 1 ? "" : "s"})`
+    ];
+    if(blockedCount){
+      details.push(`${blockedCount} unavailable item${blockedCount === 1 ? "" : "s"} will be skipped`);
+    }
+
+    const ok = await confirmAction(
+      "Restore all available items?",
+      `This will restore ${details.join(", ")}. Staff accounts are restored first so linked evaluations can reconnect to valid profiles.`,
+      "Restore all"
+    );
+    if(!ok) return;
+
+    let passwords = new Map();
+    if(plan.restorableProfiles.length){
+      const entered = await askBulkTemporaryPasswords(plan.restorableProfiles);
+      if(entered == null) return;
+      passwords = entered;
+    }
+
+    setBulkBusy(true);
+    setStatus("Restoring all available items…");
+
+    const restoredProfileIds = new Set();
+    let restoredProfiles = 0;
+    let restoredEvaluationRows = 0;
+    let skippedAfterFailure = 0;
+    const failures = [];
+
+    for(const group of plan.restorableProfiles){
+      try{
+        await admin({
+          action:"recycle_restore_profile",
+          recycle_id:group.id,
+          password:passwords.get(group.id) || ""
+        });
+        restoredProfiles += 1;
+        if(group.originalId) restoredProfileIds.add(group.originalId);
+      }catch(error){
+        failures.push(`${group.name}: ${error?.message || "Could not restore employee"}`);
+      }
+    }
+
+    for(const group of plan.restorableEvaluations){
+      const dependenciesReady = [...group.missingProfileIds].every(id =>
+        restoredProfileIds.has(id)
+      );
+
+      if(!dependenciesReady){
+        skippedAfterFailure += 1;
+        continue;
+      }
+
+      try{
+        const data = await admin({
+          action:"recycle_restore_evaluations",
+          ids:group.ids
+        });
+        restoredEvaluationRows += Number(data.restored || group.rows.length);
+      }catch(error){
+        failures.push(`${group.employeeName}: ${error?.message || "Could not restore evaluation"}`);
+      }
+    }
+
+    refreshSharedViews("recycle-restore-all");
+
+    const skipped = blockedCount + skippedAfterFailure;
+    const summary = [
+      `${restoredProfiles} employee account${restoredProfiles === 1 ? "" : "s"} restored.`,
+      `${restoredEvaluationRows} evaluation row${restoredEvaluationRows === 1 ? "" : "s"} restored.`
+    ];
+    if(skipped){
+      summary.push(`${skipped} item${skipped === 1 ? "" : "s"} skipped because a required account could not be restored or access is restricted.`);
+    }
+    if(failures.length){
+      const shown = failures.slice(0, 3).join("\n");
+      summary.push(`Some restores failed:\n${shown}${failures.length > 3 ? `\n+${failures.length - 3} more` : ""}`);
+    }
+
+    setBulkBusy(false);
+    await alertUser(
+      failures.length || skipped ? "Restore All finished" : "Restore All complete",
+      summary.join("\n\n")
+    );
+
+    window.location.reload();
   }
 
   async function restoreEvaluationGroup(group, button){
@@ -652,15 +890,7 @@ async function initRecycleBin(){
         ids:group.ids
       });
 
-      try{
-        if(typeof window.__refreshResults === "function"){
-          window.__refreshResults();
-        }
-      }catch(_){}
-
-      window.dispatchEvent(new CustomEvent("staff-finalized-data-changed", {
-        detail: { source:"recycle-restore" }
-      }));
+      refreshSharedViews("recycle-restore");
 
       await alertUser(
         "Restored",
@@ -735,15 +965,15 @@ async function initRecycleBin(){
     return new Promise(resolve => {
       const overlay = document.createElement("div");
       overlay.className = "recycle-password-modal";
-      overlay.setAttribute("role", "dialog");
-      overlay.setAttribute("aria-modal", "true");
-      overlay.setAttribute("aria-labelledby", "recyclePasswordTitle");
 
       const backdrop = document.createElement("div");
       backdrop.className = "recycle-password-backdrop";
 
       const dialog = document.createElement("form");
       dialog.className = "recycle-password-dialog";
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.setAttribute("aria-labelledby", "recyclePasswordTitle");
       dialog.innerHTML = `
         <div class="recycle-password-kicker">Restore sign-in account</div>
         <h3 id="recyclePasswordTitle">Set temporary password</h3>
@@ -773,7 +1003,10 @@ async function initRecycleBin(){
       cancel.addEventListener("click", () => finish(null));
       backdrop.addEventListener("click", () => finish(null));
       overlay.addEventListener("keydown", event => {
-        if(event.key === "Escape") finish(null);
+        if(event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        finish(null);
       });
 
       dialog.addEventListener("submit", event => {
@@ -784,6 +1017,107 @@ async function initRecycleBin(){
       overlay.append(backdrop, dialog);
       document.body.appendChild(overlay);
       setTimeout(() => input.focus(), 0);
+    });
+  }
+
+  function askBulkTemporaryPasswords(groups){
+    return new Promise(resolve => {
+      const overlay = document.createElement("div");
+      overlay.className = "recycle-password-modal";
+
+      const backdrop = document.createElement("div");
+      backdrop.className = "recycle-password-backdrop";
+
+      const dialog = document.createElement("form");
+      dialog.className = "recycle-password-dialog recycle-password-dialog-bulk";
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.setAttribute("aria-labelledby", "recycleBulkPasswordTitle");
+
+      const kicker = document.createElement("div");
+      kicker.className = "recycle-password-kicker";
+      kicker.textContent = "Restore all staff accounts";
+
+      const title = document.createElement("h3");
+      title.id = "recycleBulkPasswordTitle";
+      title.textContent = "Set temporary passwords";
+
+      const copy = document.createElement("p");
+      copy.textContent =
+        "Passwords cannot be recovered. Enter a temporary password of at least 8 characters for each deleted employee.";
+
+      const list = document.createElement("div");
+      list.className = "recycle-password-list";
+
+      for(const group of groups){
+        const row = document.createElement("label");
+        row.className = "recycle-password-row";
+
+        const person = document.createElement("span");
+        person.className = "recycle-password-person";
+        const strong = document.createElement("strong");
+        strong.textContent = group.name;
+        const small = document.createElement("small");
+        small.textContent = group.email;
+        person.append(strong, small);
+
+        const input = document.createElement("input");
+        input.type = "password";
+        input.autocomplete = "new-password";
+        input.minLength = 8;
+        input.required = true;
+        input.placeholder = "Temporary password";
+        input.dataset.recycleId = group.id;
+
+        row.append(person, input);
+        list.appendChild(row);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "recycle-password-actions";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.className = "recycle-password-cancel";
+      cancel.textContent = "Cancel";
+      const submit = document.createElement("button");
+      submit.type = "submit";
+      submit.className = "recycle-password-submit";
+      submit.textContent = "Continue";
+      actions.append(cancel, submit);
+
+      dialog.append(kicker, title, copy, list, actions);
+      overlay.append(backdrop, dialog);
+
+      function finish(value){
+        overlay.remove();
+        resolve(value);
+      }
+
+      cancel.addEventListener("click", () => finish(null));
+      backdrop.addEventListener("click", () => finish(null));
+      overlay.addEventListener("keydown", event => {
+        if(event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        finish(null);
+      });
+
+      dialog.addEventListener("submit", event => {
+        event.preventDefault();
+        const result = new Map();
+        for(const input of dialog.querySelectorAll("input[data-recycle-id]")){
+          if(input.value.length < 8){
+            input.focus();
+            input.reportValidity();
+            return;
+          }
+          result.set(input.dataset.recycleId, input.value);
+        }
+        finish(result);
+      });
+
+      document.body.appendChild(overlay);
+      setTimeout(() => dialog.querySelector("input")?.focus(), 0);
     });
   }
 
