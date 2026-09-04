@@ -4,7 +4,7 @@
   if (!header) return;
 
   const SHOW_AT_TOP = 14;
-  const HIDE_DELTA = 2;
+  const HIDE_DELTA = 6;
 
   let lastY = Math.max(0, window.scrollY || 0);
   let ticking = false;
