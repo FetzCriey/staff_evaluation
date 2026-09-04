@@ -466,3 +466,36 @@ html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option[aria-selected="t
   background:rgba(var(--bp-accent-rgb),.20) !important;
   color:var(--ink) !important;
 }
+
+
+/* =========================================================
+   ADD STAFF DROPDOWN — SELECTED OPTION READABILITY
+   ========================================================= */
+
+.staff-add-modal .bp-select-option.selected,
+.staff-add-modal .bp-select-option[aria-selected="true"]{
+  color:#4f2a7f !important;
+  -webkit-text-fill-color:#4f2a7f !important;
+  font-weight:800 !important;
+  opacity:1 !important;
+}
+
+.staff-add-modal .bp-select-option.selected::after{
+  color:#6f3bb7 !important;
+  -webkit-text-fill-color:#6f3bb7 !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option.selected,
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option[aria-selected="true"],
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option.selected,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option[aria-selected="true"]{
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+  background:rgba(var(--bp-accent-rgb),.24) !important;
+}
+
+html[data-bp-theme="dark"] .staff-add-modal .bp-select-option.selected::after,
+html[data-bp-theme="amoled"] .staff-add-modal .bp-select-option.selected::after{
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+}
