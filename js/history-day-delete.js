@@ -20,7 +20,7 @@ async function initHistoryDayDelete(){
 
   // Recycle Bin is intentionally loaded from this already-existing module so
   // index.html does not need another separate Recycle Bin script tag.
-  import("./recycle-bin.js?v=20260904-1549").catch(error => {
+  import("./recycle-bin.js?v=20260904-1728").catch(error => {
     console.error("Recycle Bin module could not load.", error);
   });
 
