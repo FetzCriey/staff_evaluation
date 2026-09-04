@@ -1,0 +1,26 @@
+/* Smart scroll header
+   - Scroll down: header moves out with the page.
+   - Scroll up: header immediately returns so the sidebar button stays accessible.
+*/
+header.top{
+  position:sticky !important;
+  top:max(8px, env(safe-area-inset-top)) !important;
+  z-index:55 !important;
+  transform:translateY(0) !important;
+  transition:transform .18s ease !important;
+  will-change:transform;
+}
+
+header.top.bp-scroll-header-hidden{
+  transform:translateY(calc(-100% - 24px)) !important;
+}
+
+header.top.bp-scroll-header-visible{
+  transform:translateY(0) !important;
+}
+
+@media (prefers-reduced-motion: reduce){
+  header.top{
+    transition:none !important;
+  }
+}
