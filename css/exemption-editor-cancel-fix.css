@@ -1,0 +1,39 @@
+/* Fix unreadable Cancel button in Staff Exemptions editor */
+
+.round-exemption-editor-actions .round-exemption-secondary{
+  border:1.5px solid #b9cfdd !important;
+  background:#f7fbfd !important;
+  color:#17384b !important;
+  -webkit-text-fill-color:#17384b !important;
+  opacity:1 !important;
+  font-weight:800 !important;
+}
+
+.round-exemption-editor-actions .round-exemption-secondary:hover{
+  border-color:#8fbfd4 !important;
+  background:#eaf6fb !important;
+  color:#0b5f85 !important;
+  -webkit-text-fill-color:#0b5f85 !important;
+}
+
+.round-exemption-editor-actions .round-exemption-secondary:focus-visible{
+  outline:none !important;
+  border-color:var(--lagoon,#15ace3) !important;
+  box-shadow:0 0 0 3px rgba(21,172,227,.16) !important;
+}
+
+html[data-bp-theme="dark"] .round-exemption-editor-actions .round-exemption-secondary,
+html[data-bp-theme="amoled"] .round-exemption-editor-actions .round-exemption-secondary{
+  border-color:var(--line) !important;
+  background:var(--bp-theme-surface-2,#172734) !important;
+  color:var(--ink,#eef6fb) !important;
+  -webkit-text-fill-color:var(--ink,#eef6fb) !important;
+}
+
+html[data-bp-theme="dark"] .round-exemption-editor-actions .round-exemption-secondary:hover,
+html[data-bp-theme="amoled"] .round-exemption-editor-actions .round-exemption-secondary:hover{
+  border-color:rgba(var(--bp-accent-rgb,21,172,227),.55) !important;
+  background:rgba(var(--bp-accent-rgb,21,172,227),.12) !important;
+  color:var(--ink,#eef6fb) !important;
+  -webkit-text-fill-color:var(--ink,#eef6fb) !important;
+}
