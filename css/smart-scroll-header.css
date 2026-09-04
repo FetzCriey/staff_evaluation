@@ -1,13 +1,14 @@
 /* Smart scroll header
-   - Scroll down: header moves out with the page.
-   - Scroll up: header immediately returns so the sidebar button stays accessible.
+   - Scroll down: header hides.
+   - Scroll up: header returns immediately.
+   - Sidebar open: header is fully hidden so it never overlaps the drawer.
 */
 header.top{
   position:sticky !important;
   top:max(8px, env(safe-area-inset-top)) !important;
-  z-index:55 !important;
+  z-index:40 !important;
   transform:translateY(0) !important;
-  transition:transform .18s ease !important;
+  transition:transform .18s ease, opacity .14s ease !important;
   will-change:transform;
 }
 
@@ -17,6 +18,20 @@ header.top.bp-scroll-header-hidden{
 
 header.top.bp-scroll-header-visible{
   transform:translateY(0) !important;
+}
+
+body.bp-drawer-open header.top{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+#scrim{
+  z-index:60 !important;
+}
+
+#drawer{
+  z-index:61 !important;
 }
 
 @media (prefers-reduced-motion: reduce){
