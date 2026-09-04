@@ -1,6 +1,6 @@
 (() => {
   const STYLE_ID = "bpAppearanceOverhaul";
-  const VERSION = "20260903-1526";
+  const VERSION = "20260904-0811";
 
   function installStyles(){
     const old = document.getElementById(STYLE_ID);
@@ -608,6 +608,17 @@
 
 
 
+
+      /* ---------- HIDE SIDEBAR SCROLLBAR, KEEP SCROLLING ---------- */
+      #drawer .bp-drawer-middle{
+        scrollbar-width:none !important;
+        -ms-overflow-style:none !important;
+      }
+      #drawer .bp-drawer-middle::-webkit-scrollbar{
+        width:0 !important;
+        height:0 !important;
+        display:none !important;
+      }
 
       /* ---------- SIDEBAR FIXED TOP + SCROLLABLE MIDDLE + FIXED BOTTOM ---------- */
       #drawer{
