@@ -4,10 +4,20 @@
   if (!header) return;
 
   const SHOW_AT_TOP = 14;
-  const HIDE_DELTA = 20;
+  const HIDE_DELTA = 2;
+  const TOUCH_TRIGGER = 3;
 
-  let lastY = Math.max(0, window.scrollY || 0);
+  const scrollTop = () => Math.max(
+    0,
+    window.scrollY ||
+    document.documentElement.scrollTop ||
+    document.body.scrollTop ||
+    0
+  );
+
+  let lastY = scrollTop();
   let ticking = false;
+  let lastTouchY = null;
 
   function drawerIsOpen(){
     return !!drawer && (
@@ -19,10 +29,7 @@
   function syncDrawerState(){
     const open = drawerIsOpen();
     document.body.classList.toggle("bp-drawer-open", open);
-
-    if (!open){
-      showHeader();
-    }
+    if (!open) showHeader();
   }
 
   function showHeader(){
@@ -37,15 +44,15 @@
     header.classList.add("bp-scroll-header-hidden");
   }
 
-  function update(){
+  function updateFromScroll(){
     ticking = false;
 
     if (drawerIsOpen()){
-      lastY = Math.max(0, window.scrollY || 0);
+      lastY = scrollTop();
       return;
     }
 
-    const currentY = Math.max(0, window.scrollY || 0);
+    const currentY = scrollTop();
     const delta = currentY - lastY;
 
     if (currentY <= SHOW_AT_TOP){
@@ -62,10 +69,53 @@
   function onScroll(){
     if (ticking) return;
     ticking = true;
-    requestAnimationFrame(update);
+    requestAnimationFrame(updateFromScroll);
   }
 
   window.addEventListener("scroll", onScroll, { passive:true });
+  document.addEventListener("scroll", onScroll, { passive:true });
+
+  /* Mobile fallback: detect finger direction directly. */
+  document.addEventListener("touchstart", event => {
+    const y = event.touches?.[0]?.clientY;
+    if (Number.isFinite(y)) lastTouchY = y;
+  }, { passive:true });
+
+  document.addEventListener("touchmove", event => {
+    if (drawerIsOpen()) return;
+
+    const y = event.touches?.[0]?.clientY;
+    if (!Number.isFinite(y) || !Number.isFinite(lastTouchY)) return;
+
+    const fingerDelta = y - lastTouchY;
+
+    if (Math.abs(fingerDelta) >= TOUCH_TRIGGER){
+      /* Finger down = page moving up, so reveal header. */
+      if (fingerDelta > 0){
+        showHeader();
+      } else if (scrollTop() > SHOW_AT_TOP){
+        hideHeader();
+      }
+      lastTouchY = y;
+    }
+  }, { passive:true });
+
+  const resetTouch = () => {
+    lastTouchY = null;
+    lastY = scrollTop();
+  };
+
+  document.addEventListener("touchend", resetTouch, { passive:true });
+  document.addEventListener("touchcancel", resetTouch, { passive:true });
+
+  window.addEventListener("wheel", event => {
+    if (drawerIsOpen()) return;
+    if (event.deltaY < 0){
+      showHeader();
+    } else if (event.deltaY > HIDE_DELTA && scrollTop() > SHOW_AT_TOP){
+      hideHeader();
+    }
+  }, { passive:true });
 
   if (drawer){
     new MutationObserver(syncDrawerState).observe(drawer, {
@@ -76,6 +126,11 @@
 
   document.getElementById("burger")?.addEventListener("click", () => {
     requestAnimationFrame(syncDrawerState);
+  });
+
+  window.addEventListener("pageshow", () => {
+    lastY = scrollTop();
+    showHeader();
   });
 
   syncDrawerState();
