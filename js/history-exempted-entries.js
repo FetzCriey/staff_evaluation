@@ -1,19 +1,15 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 /*
-  HISTORY: EXEMPTED STAFF
+  HISTORY — EXEMPTED STAFF FOR THE CORRECT ROUND
 
-  Archived History normally contains only staff who have evaluation rows.
-  A staff member exempted from that evaluation round has no evaluation rows,
-  so this module adds a read-only History entry for them.
-
-  The entry:
-  - is NOT clickable;
-  - shows "Exempted";
-  - shows the recorded exemption reason;
-  - appears only on an archived date whose archive timestamp happened while
-    that exemption was active;
-  - never changes scores/averages or old evaluation records.
+  Important:
+  - Current Evaluation Results keeps its existing exemption behavior.
+  - This file ONLY augments #hisList (History).
+  - An exempted person is added to a History date only when their exemption
+    overlaps that archived evaluation round.
+  - They are shown as read-only / non-clickable with the saved reason.
+  - Older History rounds outside that exemption window are untouched.
 */
 
 const db = createClient(
@@ -24,9 +20,10 @@ const db = createClient(
 const list = document.getElementById("hisList");
 if(!list) throw new Error("History list not found");
 
-let archiveTimesByDate = new Map();
+let roundByDate = new Map();
 let exemptionRows = [];
 let nameById = new Map();
+
 let refreshTimer = null;
 let running = false;
 let runAgain = false;
@@ -41,6 +38,11 @@ function localDateKey(value){
   return `${y}-${m}-${day}`;
 }
 
+function timeOf(value){
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+
 function injectStyles(){
   if(document.getElementById("history-exempted-entry-style")) return;
 
@@ -51,12 +53,20 @@ function injectStyles(){
       cursor:default !important;
       border-color:#ecd9a6 !important;
       background:linear-gradient(180deg,#fffdf7 0%,#fff8e8 100%) !important;
+      pointer-events:auto !important;
+    }
+
+    .his-row.his-exempted-row:hover{
+      transform:none !important;
+      box-shadow:none !important;
     }
 
     .his-exempted-main{
       flex:1 1 auto;
       min-width:0;
       padding:10px 12px;
+      cursor:default;
+      user-select:text;
     }
 
     .his-exempted-row .his-nm{
@@ -85,7 +95,7 @@ function injectStyles(){
 
     .his-exempted-reason{
       display:block;
-      margin-top:4px;
+      margin-top:5px;
       color:#806a3e;
       font-size:9.5px;
       line-height:1.4;
@@ -106,6 +116,7 @@ function injectStyles(){
       letter-spacing:.05em;
       text-transform:uppercase;
       white-space:nowrap;
+      cursor:default;
     }
 
     html[data-bp-theme="dark"] .his-row.his-exempted-row,
@@ -146,6 +157,7 @@ function injectStyles(){
       }
     }
   `;
+
   document.head.appendChild(style);
 }
 
@@ -154,25 +166,29 @@ async function loadNames(){
 
   try{
     const { data, error } = await db.rpc("get_evaluation_roster");
+
     if(!error && Array.isArray(data)){
       data.forEach(row => {
-        if(row?.id && row?.full_name) map.set(row.id, row.full_name);
+        if(row?.id && row?.full_name){
+          map.set(row.id, row.full_name);
+        }
       });
     }
   }catch(_){}
 
-  if(!map.size){
-    try{
-      const { data, error } = await db
-        .from("profiles")
-        .select("id,full_name");
-      if(!error && Array.isArray(data)){
-        data.forEach(row => {
-          if(row?.id && row?.full_name) map.set(row.id, row.full_name);
-        });
-      }
-    }catch(_){}
-  }
+  try{
+    const { data, error } = await db
+      .from("profiles")
+      .select("id,full_name");
+
+    if(!error && Array.isArray(data)){
+      data.forEach(row => {
+        if(row?.id && row?.full_name){
+          map.set(row.id, row.full_name);
+        }
+      });
+    }
+  }catch(_){}
 
   return map;
 }
@@ -181,48 +197,93 @@ async function loadData(){
   const [archiveResult, exemptionResult, names] = await Promise.all([
     db
       .from("evaluations")
-      .select("archived_at")
+      .select("employee_id,created_at,archived_at,round")
       .eq("archived", true)
       .not("archived_at", "is", null),
+
     db
       .from("evaluation_round_exemptions")
       .select("id,staff_id,reason,exempted_at,restored_at")
       .order("exempted_at"),
+
     loadNames()
   ]);
 
   if(archiveResult.error) throw archiveResult.error;
   if(exemptionResult.error) throw exemptionResult.error;
 
-  const times = new Map();
+  /*
+    History is grouped by archived calendar date in supabase.js.
+    Build the actual round window behind each History date:
+
+      windowStart = earliest evaluation row created for that archived day
+      windowEnd   = latest archive timestamp for that archived day
+
+    An exemption is attached only if its active interval overlaps this window.
+    This prevents a current exemption from leaking backward into old History.
+  */
+  const map = new Map();
 
   (archiveResult.data || []).forEach(row => {
-    const stamp = row?.archived_at;
-    const key = localDateKey(stamp);
-    if(!key || !stamp) return;
+    const key = localDateKey(row.archived_at);
+    const created = timeOf(row.created_at);
+    const archived = timeOf(row.archived_at);
 
-    if(!times.has(key)) times.set(key, []);
-    times.get(key).push(new Date(stamp).getTime());
+    if(!key || archived === null) return;
+
+    if(!map.has(key)){
+      map.set(key, {
+        start: created ?? archived,
+        end: archived,
+        employeeIds: new Set(),
+        rounds: new Set()
+      });
+    }
+
+    const group = map.get(key);
+
+    if(created !== null){
+      group.start = Math.min(group.start, created);
+    }
+
+    group.end = Math.max(group.end, archived);
+
+    if(row.employee_id){
+      group.employeeIds.add(row.employee_id);
+    }
+
+    if(row.round !== null && row.round !== undefined){
+      group.rounds.add(String(row.round));
+    }
   });
 
-  archiveTimesByDate = times;
+  roundByDate = map;
   exemptionRows = exemptionResult.data || [];
   nameById = names;
 }
 
-function exemptionActiveAt(exemption, archiveMs){
-  const start = new Date(exemption?.exempted_at).getTime();
-  if(!Number.isFinite(start) || archiveMs < start) return false;
+function overlapsRound(exemption, round){
+  const start = timeOf(exemption?.exempted_at);
+  if(start === null) return false;
 
-  if(!exemption?.restored_at) return true;
+  const end = exemption?.restored_at
+    ? timeOf(exemption.restored_at)
+    : Number.POSITIVE_INFINITY;
 
-  const end = new Date(exemption.restored_at).getTime();
-  return !Number.isFinite(end) || archiveMs < end;
+  const exemptionEnd =
+    end === null ? Number.POSITIVE_INFINITY : end;
+
+  /*
+    Intervals overlap when:
+      exemption started before round ended
+      AND exemption ended after round started.
+  */
+  return start <= round.end && exemptionEnd >= round.start;
 }
 
 function exemptionsForDate(dateKey){
-  const archiveTimes = archiveTimesByDate.get(dateKey) || [];
-  if(!archiveTimes.length) return [];
+  const round = roundByDate.get(dateKey);
+  if(!round) return [];
 
   const byStaff = new Map();
 
@@ -230,49 +291,62 @@ function exemptionsForDate(dateKey){
     const staffId = exemption?.staff_id;
     if(!staffId) return;
 
-    const activeDuringArchive =
-      archiveTimes.some(archiveMs => exemptionActiveAt(exemption, archiveMs));
-
-    if(!activeDuringArchive) return;
-
     /*
-      One staff member can have multiple old exemption records. For a single
-      archived date show only the latest record that was active at archive time.
+      If the person already has an archived evaluation for this History date,
+      do not add a second "Exempted" row. History should show them as evaluated.
     */
+    if(round.employeeIds.has(staffId)) return;
+
+    if(!overlapsRound(exemption, round)) return;
+
     const current = byStaff.get(staffId);
+
     if(
       !current ||
-      new Date(exemption.exempted_at).getTime() >
-        new Date(current.exempted_at).getTime()
+      (timeOf(exemption.exempted_at) ?? 0) >
+        (timeOf(current.exempted_at) ?? 0)
     ){
       byStaff.set(staffId, exemption);
     }
   });
 
-  return [...byStaff.values()];
+  return [...byStaff.values()]
+    .sort((a,b) => {
+      const an = nameById.get(a.staff_id) || "";
+      const bn = nameById.get(b.staff_id) || "";
+      return an.localeCompare(bn);
+    });
 }
 
 function makeExemptedRow(exemption){
-  const name = nameById.get(exemption.staff_id) || "Staff member";
-  const reason = String(exemption.reason || "").trim() ||
+  const name =
+    nameById.get(exemption.staff_id) ||
+    "Staff member";
+
+  const reason =
+    String(exemption.reason || "").trim() ||
     "Exempted from this evaluation round.";
 
   const row = document.createElement("div");
   row.className = "his-row his-exempted-row";
   row.dataset.historyExemptedStaffId = exemption.staff_id;
-  row.setAttribute("aria-label", `${name} — exempted. Reason: ${reason}`);
 
+  /*
+    Deliberately NOT a button and there is no click handler.
+    It cannot open the score sheet because no evaluation exists.
+  */
   const main = document.createElement("div");
   main.className = "his-exempted-main";
 
   const nameEl = document.createElement("div");
   nameEl.className = "his-nm";
-  nameEl.append(document.createTextNode(name + " "));
+  nameEl.append(document.createTextNode(name));
 
-  const badge = document.createElement("span");
-  badge.className = "his-exempted-badge";
-  badge.textContent = "No evaluation";
-  nameEl.appendChild(badge);
+  const noEvaluation = document.createElement("span");
+  noEvaluation.className = "his-exempted-badge";
+  noEvaluation.textContent = "No evaluation";
+
+  nameEl.appendChild(noEvaluation);
 
   const reasonEl = document.createElement("div");
   reasonEl.className = "his-exempted-reason";
@@ -285,17 +359,30 @@ function makeExemptedRow(exemption){
   state.textContent = "Exempted";
 
   row.append(main, state);
+  row.setAttribute(
+    "aria-label",
+    `${name}. Exempted from this evaluation round. Reason: ${reason}`
+  );
+
   return row;
 }
 
 function patchHistory(){
+  /*
+    This selector is intentionally scoped to #hisList only.
+    Evaluation Results (#resList) is not changed here and therefore keeps
+    the exemption display already provided by round-exemptions.js.
+  */
   list.querySelectorAll(".his-date-group").forEach(group => {
     const dateKey = group.dataset.historyDateKey || "";
     const body = group.querySelector(".his-date-body");
     const count = group.querySelector(".his-date-count");
+
     if(!body || !dateKey) return;
 
-    body.querySelectorAll(".his-exempted-row").forEach(row => row.remove());
+    body
+      .querySelectorAll(".his-exempted-row")
+      .forEach(row => row.remove());
 
     const exemptions = exemptionsForDate(dateKey);
 
@@ -303,11 +390,6 @@ function patchHistory(){
       body.appendChild(makeExemptedRow(exemption));
     });
 
-    /*
-      Keep the original evaluation count accurate, then clearly add the
-      exemption count instead of pretending an exempted staff member has an
-      evaluation record.
-    */
     if(count){
       const evaluated =
         body.querySelectorAll(".his-row:not(.his-exempted-row)").length;
@@ -333,7 +415,10 @@ async function refresh(){
     await loadData();
     patchHistory();
   }catch(error){
-    console.warn("Could not add exempted staff to History:", error);
+    console.warn(
+      "Could not add round-specific exemptions to History:",
+      error
+    );
   }finally{
     running = false;
 
@@ -346,35 +431,41 @@ async function refresh(){
 
 function queueRefresh(){
   clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(refresh, 80);
+  refreshTimer = setTimeout(refresh, 90);
 }
 
 injectStyles();
 
 /*
-  History is rendered asynchronously by supabase.js. Observe only structural
-  changes and patch after rendering has settled.
+  supabase.js rebuilds History whenever archived records change.
+  Re-patch only after a History structure change.
 */
 new MutationObserver(mutations => {
-  if(
-    mutations.some(m =>
-      [...m.addedNodes, ...m.removedNodes].some(node =>
-        node?.nodeType === 1 &&
-        (
-          node.matches?.(".his-date-group,.his-row") ||
-          node.querySelector?.(".his-date-group,.his-row")
-        )
+  const historyChanged = mutations.some(mutation =>
+    [...mutation.addedNodes, ...mutation.removedNodes].some(node =>
+      node?.nodeType === 1 &&
+      (
+        node.matches?.(".his-date-group,.his-row") ||
+        node.querySelector?.(".his-date-group,.his-row")
       )
     )
-  ){
+  );
+
+  if(historyChanged){
     queueRefresh();
   }
-}).observe(list, { childList:true, subtree:true });
+}).observe(list, {
+  childList:true,
+  subtree:true
+});
 
-window.addEventListener("round-exemptions-updated", queueRefresh);
+window.addEventListener(
+  "round-exemptions-updated",
+  queueRefresh
+);
 
 try{
-  db.channel("history-exempted-entries")
+  db.channel("history-round-specific-exemptions")
     .on(
       "postgres_changes",
       {
