@@ -1,0 +1,527 @@
+.recycle-bin-launch{
+  position:relative;
+  align-items:center;
+  gap:10px;
+}
+
+.recycle-bin-launch-copy{
+  min-width:0;
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  align-items:flex-start;
+  line-height:1.2;
+}
+
+.recycle-bin-launch-copy small{
+  margin-top:2px;
+  color:var(--muted,#5b7080);
+  font-size:8px;
+  font-weight:600;
+}
+
+.recycle-bin-launch-count{
+  min-width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  padding:0 7px;
+  border:1px solid var(--line,#c9dfee);
+  border-radius:999px;
+  background:var(--panel,#fff);
+  color:var(--lagoon-deep,#0b7fb0);
+  font-size:9px;
+  font-weight:800;
+}
+
+.recycle-bin-modal[hidden]{
+  display:none !important;
+}
+
+.recycle-bin-modal{
+  position:fixed;
+  inset:0;
+  z-index:100220;
+  display:grid;
+  place-items:center;
+  padding:16px;
+}
+
+.recycle-bin-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(3,25,39,.68);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+}
+
+.recycle-bin-dialog{
+  position:relative;
+  z-index:1;
+  width:min(860px,100%);
+  max-height:min(90vh,900px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1.5px solid var(--line,#c9dfee);
+  border-radius:22px;
+  background:var(--panel,#fff);
+  color:var(--ink,#0a2233);
+  box-shadow:0 34px 100px -28px rgba(2,28,44,.72);
+}
+
+.recycle-bin-head{
+  position:relative;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  padding:20px 58px 18px 20px;
+  color:#fff;
+  background:
+    radial-gradient(110% 160% at 100% 0%,rgba(21,172,227,.52),transparent 60%),
+    linear-gradient(145deg,#0b536f 0%,#08344c 58%,#051f30 100%);
+}
+
+.recycle-bin-kicker{
+  color:rgba(215,241,252,.76);
+  font-size:8.5px;
+  font-weight:800;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+}
+
+.recycle-bin-head h2{
+  margin:4px 0 0;
+  color:#fff;
+  font-family:"Bricolage Grotesque","Inter",sans-serif;
+  font-size:25px;
+  line-height:1.1;
+}
+
+.recycle-bin-head p{
+  max-width:60ch;
+  margin:6px 0 0;
+  color:rgba(230,246,253,.82);
+  font-size:10.5px;
+  line-height:1.45;
+}
+
+.recycle-bin-close{
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.26);
+  border-radius:11px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  font:700 21px/1 "Inter",sans-serif;
+  cursor:pointer;
+}
+
+.recycle-bin-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:11px 15px;
+  border-bottom:1px solid var(--line,#c9dfee);
+  background:color-mix(in srgb,var(--panel,#fff) 92%,var(--lagoon,#15ace3) 8%);
+}
+
+.recycle-bin-status{
+  min-height:18px;
+  color:var(--muted,#5b7080);
+  font-size:10px;
+  font-weight:700;
+}
+
+.recycle-bin-status.error{
+  color:var(--error-ink,#a62a2a);
+}
+
+.recycle-bin-refresh,
+.recycle-bin-restore,
+.recycle-password-cancel,
+.recycle-password-submit{
+  border:0;
+  border-radius:10px;
+  font:700 10px/1 "Inter",sans-serif;
+  cursor:pointer;
+  transition:transform .14s ease,opacity .14s ease,box-shadow .14s ease;
+}
+
+.recycle-bin-refresh{
+  padding:9px 12px;
+  background:var(--accent-soft,#e2f4fc);
+  color:var(--lagoon-deep,#0b7fb0);
+}
+
+.recycle-bin-content{
+  min-height:180px;
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:15px;
+}
+
+.recycle-bin-loading,
+.recycle-bin-empty,
+.recycle-bin-error{
+  min-height:180px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:9px;
+  padding:24px;
+  text-align:center;
+}
+
+.recycle-bin-loading{
+  color:var(--muted,#5b7080);
+  font-size:11px;
+  font-weight:700;
+}
+
+.recycle-bin-spinner{
+  width:26px;
+  height:26px;
+  border:3px solid var(--line,#c9dfee);
+  border-top-color:var(--lagoon,#15ace3);
+  border-radius:50%;
+  animation:recycle-spin .8s linear infinite;
+}
+
+@keyframes recycle-spin{
+  to{transform:rotate(360deg)}
+}
+
+.recycle-bin-empty-icon{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:var(--accent-soft,#e2f4fc);
+  color:var(--lagoon-deep,#0b7fb0);
+  font-size:19px;
+  font-weight:900;
+}
+
+.recycle-bin-empty strong{
+  color:var(--ink,#0a2233);
+  font-size:14px;
+}
+
+.recycle-bin-empty span{
+  color:var(--muted,#5b7080);
+  font-size:10px;
+}
+
+.recycle-bin-error{
+  min-height:120px;
+  border:1px solid var(--error-line,#f1caca);
+  border-radius:13px;
+  background:var(--error-bg,#fff0f0);
+  color:var(--error-ink,#a62a2a);
+  font-size:11px;
+  font-weight:700;
+}
+
+.recycle-bin-group + .recycle-bin-group{
+  margin-top:18px;
+}
+
+.recycle-bin-group-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 2px 8px;
+}
+
+.recycle-bin-group-head h3{
+  margin:0;
+  color:var(--ink,#0a2233);
+  font-family:"Bricolage Grotesque","Inter",sans-serif;
+  font-size:14px;
+}
+
+.recycle-bin-group-head span{
+  min-width:23px;
+  height:23px;
+  display:grid;
+  place-items:center;
+  padding:0 6px;
+  border-radius:999px;
+  background:var(--accent-soft,#e2f4fc);
+  color:var(--lagoon-deep,#0b7fb0);
+  font-size:8.5px;
+  font-weight:800;
+}
+
+.recycle-bin-card{
+  padding:13px;
+  border:1.5px solid var(--line,#c9dfee);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--panel,#fff) 97%,var(--lagoon,#15ace3) 3%);
+}
+
+.recycle-bin-card + .recycle-bin-card{
+  margin-top:8px;
+}
+
+.recycle-bin-card-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.recycle-bin-type{
+  margin-bottom:3px;
+  color:var(--muted,#5b7080);
+  font-size:7.5px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.recycle-bin-card h4{
+  margin:0;
+  color:var(--ink,#0a2233);
+  font-size:12.5px;
+  line-height:1.3;
+}
+
+.recycle-bin-restore{
+  flex:0 0 auto;
+  padding:9px 12px;
+  background:var(--lagoon-deep,#0b7fb0);
+  color:#fff;
+  box-shadow:0 6px 16px -10px rgba(11,127,176,.7);
+}
+
+.recycle-bin-restore:disabled{
+  cursor:not-allowed;
+  opacity:.45;
+  box-shadow:none;
+}
+
+.recycle-bin-meta{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:7px;
+  margin-top:11px;
+}
+
+.recycle-bin-meta-item{
+  min-width:0;
+  padding:8px 9px;
+  border:1px solid var(--line,#c9dfee);
+  border-radius:10px;
+  background:var(--panel,#fff);
+}
+
+.recycle-bin-meta-item span,
+.recycle-bin-meta-item strong{
+  display:block;
+}
+
+.recycle-bin-meta-item span{
+  color:var(--muted,#5b7080);
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+
+.recycle-bin-meta-item strong{
+  margin-top:3px;
+  overflow-wrap:anywhere;
+  color:var(--ink,#0a2233);
+  font-size:9px;
+  line-height:1.35;
+}
+
+.recycle-bin-note{
+  margin-top:9px;
+  padding:8px 9px;
+  border-radius:9px;
+  font-size:9px;
+  line-height:1.4;
+}
+
+.recycle-bin-note.warning{
+  border:1px solid #efd9a8;
+  background:#fff8e8;
+  color:#7a5a14;
+}
+
+.recycle-password-modal{
+  position:fixed;
+  inset:0;
+  z-index:100260;
+  display:grid;
+  place-items:center;
+  padding:16px;
+}
+
+.recycle-password-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(3,25,39,.56);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+}
+
+.recycle-password-dialog{
+  position:relative;
+  z-index:1;
+  width:min(430px,100%);
+  padding:18px;
+  border:1.5px solid var(--line,#c9dfee);
+  border-radius:17px;
+  background:var(--panel,#fff);
+  color:var(--ink,#0a2233);
+  box-shadow:0 28px 80px -28px rgba(2,28,44,.72);
+}
+
+.recycle-password-kicker{
+  color:var(--lagoon-deep,#0b7fb0);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+
+.recycle-password-dialog h3{
+  margin:4px 0 0;
+  font-family:"Bricolage Grotesque","Inter",sans-serif;
+  font-size:18px;
+}
+
+.recycle-password-dialog p{
+  margin:7px 0 13px;
+  color:var(--muted,#5b7080);
+  font-size:10px;
+  line-height:1.45;
+}
+
+.recycle-password-dialog label{
+  display:block;
+  color:var(--ink-soft,#28455c);
+  font-size:9px;
+  font-weight:800;
+}
+
+.recycle-password-dialog input{
+  width:100%;
+  margin-top:6px;
+  padding:11px 12px;
+  border:1.5px solid var(--line,#c9dfee);
+  border-radius:10px;
+  outline:none;
+  background:var(--panel,#fff);
+  color:var(--ink,#0a2233);
+  font:500 12px "Inter",sans-serif;
+}
+
+.recycle-password-dialog input:focus{
+  border-color:var(--lagoon,#15ace3);
+  box-shadow:0 0 0 4px rgba(21,172,227,.14);
+}
+
+.recycle-password-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:14px;
+}
+
+.recycle-password-cancel{
+  padding:10px 13px;
+  background:var(--accent-soft,#e2f4fc);
+  color:var(--lagoon-deep,#0b7fb0);
+}
+
+.recycle-password-submit{
+  padding:10px 13px;
+  background:var(--lagoon-deep,#0b7fb0);
+  color:#fff;
+}
+
+@media (hover:hover){
+  .recycle-bin-refresh:hover,
+  .recycle-bin-restore:not(:disabled):hover,
+  .recycle-password-cancel:hover,
+  .recycle-password-submit:hover{
+    transform:translateY(-1px);
+  }
+}
+
+@media (max-width:760px){
+  .recycle-bin-modal{
+    align-items:end;
+    padding:0;
+  }
+
+  .recycle-bin-dialog{
+    width:100%;
+    max-height:92dvh;
+    border-radius:20px 20px 0 0;
+  }
+
+  .recycle-bin-head{
+    padding:18px 54px 16px 16px;
+  }
+
+  .recycle-bin-head h2{
+    font-size:22px;
+  }
+
+  .recycle-bin-toolbar,
+  .recycle-bin-content{
+    padding-left:12px;
+    padding-right:12px;
+  }
+
+  .recycle-bin-meta{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .recycle-bin-card-top{
+    align-items:center;
+  }
+}
+
+@media (max-width:430px){
+  .recycle-bin-meta{
+    grid-template-columns:1fr;
+  }
+
+  .recycle-bin-card-top{
+    align-items:flex-start;
+  }
+
+  .recycle-bin-restore{
+    padding:8px 10px;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .recycle-bin-spinner{
+    animation-duration:1.6s;
+  }
+
+  .recycle-bin-refresh,
+  .recycle-bin-restore,
+  .recycle-password-cancel,
+  .recycle-password-submit{
+    transition:none;
+  }
+}
