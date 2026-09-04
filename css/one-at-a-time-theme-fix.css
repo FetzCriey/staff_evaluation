@@ -1,0 +1,68 @@
+/* One-at-a-time criteria theme fixes */
+
+/* Prevent the one-at-a-time criterion row from turning white on hover in dark themes. */
+html[data-bp-theme="dark"] #singleWrap .crow:hover,
+html[data-bp-theme="amoled"] #singleWrap .crow:hover {
+  background: rgba(var(--bp-accent-rgb, 21, 172, 227), .07) !important;
+  color: var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] #singleWrap .crow,
+html[data-bp-theme="amoled"] #singleWrap .crow {
+  border-color: var(--line) !important;
+}
+
+/* Keep selection readable without washing out the full row while dragging the mouse. */
+html[data-bp-theme="dark"] #singleWrap ::selection,
+html[data-bp-theme="amoled"] #singleWrap ::selection {
+  background: rgba(var(--bp-accent-rgb, 21, 172, 227), .35);
+  color: var(--ink);
+}
+
+/* Previous button: secondary action with clear contrast in every theme. */
+#singleWrap .evnav #evPrev.btn.ghost {
+  background: var(--panel, #fff) !important;
+  border: 1.5px solid var(--line) !important;
+  color: var(--lagoon-deep, #0b7fb0) !important;
+  -webkit-text-fill-color: var(--lagoon-deep, #0b7fb0) !important;
+  box-shadow: none !important;
+}
+
+#singleWrap .evnav #evPrev.btn.ghost:hover {
+  background: rgba(var(--bp-accent-rgb, 21, 172, 227), .10) !important;
+  border-color: var(--lagoon, #15ace3) !important;
+}
+
+/* Next evaluator is the primary navigation action. */
+#singleWrap .evnav #evNext.btn.ghost {
+  background: linear-gradient(180deg, var(--lagoon, #15ace3) 0%, var(--lagoon-deep, #0b7fb0) 100%) !important;
+  border: 1.5px solid var(--lagoon-deep, #0b7fb0) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 10px 24px -12px rgba(var(--bp-accent-rgb, 21, 172, 227), .72) !important;
+}
+
+#singleWrap .evnav #evNext.btn.ghost:hover {
+  filter: brightness(1.05) !important;
+}
+
+/* Dark/AMOLED navigation surfaces. */
+html[data-bp-theme="dark"] #singleWrap .evnav,
+html[data-bp-theme="amoled"] #singleWrap .evnav {
+  background: var(--bp-theme-surface-2) !important;
+  border-color: var(--line) !important;
+}
+
+html[data-bp-theme="dark"] #singleWrap .evnav #evPrev.btn.ghost,
+html[data-bp-theme="amoled"] #singleWrap .evnav #evPrev.btn.ghost {
+  background: var(--bp-theme-surface-2) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+  -webkit-text-fill-color: var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] #singleWrap .evnav #evPrev.btn.ghost:hover,
+html[data-bp-theme="amoled"] #singleWrap .evnav #evPrev.btn.ghost:hover {
+  background: rgba(var(--bp-accent-rgb, 21, 172, 227), .12) !important;
+  border-color: rgba(var(--bp-accent-rgb, 21, 172, 227), .55) !important;
+}
