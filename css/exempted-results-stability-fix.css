@@ -1,0 +1,70 @@
+/* =========================================================
+   EXEMPTED EVALUATION RESULTS — DARK/AMOLED READABILITY
+   Keeps current-round exempted result cards readable and steady.
+   ========================================================= */
+
+html[data-bp-theme="dark"] #resList .res-row.round-exempted-result,
+html[data-bp-theme="amoled"] #resList .res-row.round-exempted-result{
+  border-color:rgba(215,183,95,.58) !important;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(215,183,95,.12) 0%,
+      var(--bp-theme-surface-2,var(--panel)) 100%
+    ) !important;
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+  box-shadow:0 8px 22px -18px rgba(0,0,0,.78) !important;
+  cursor:default !important;
+  transition:none !important;
+}
+
+html[data-bp-theme="dark"] #resList .res-row.round-exempted-result .res-nm,
+html[data-bp-theme="amoled"] #resList .res-row.round-exempted-result .res-nm{
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
+  opacity:1 !important;
+}
+
+html[data-bp-theme="dark"] #resList .res-row.round-exempted-result .res-ct,
+html[data-bp-theme="amoled"] #resList .res-row.round-exempted-result .res-ct{
+  color:#e7c66e !important;
+  -webkit-text-fill-color:#e7c66e !important;
+  opacity:1 !important;
+}
+
+html[data-bp-theme="dark"] #resList .res-row.round-exempted-result .round-exemption-result-reason,
+html[data-bp-theme="amoled"] #resList .res-row.round-exempted-result .round-exemption-result-reason{
+  color:#d8c58f !important;
+  -webkit-text-fill-color:#d8c58f !important;
+  opacity:1 !important;
+}
+
+html[data-bp-theme="dark"] #resList .res-row.round-exempted-result .res-bar,
+html[data-bp-theme="amoled"] #resList .res-row.round-exempted-result .res-bar{
+  background:rgba(215,183,95,.16) !important;
+}
+
+html[data-bp-theme="dark"] #resList .res-row.round-exempted-result .res-bar > span,
+html[data-bp-theme="amoled"] #resList .res-row.round-exempted-result .res-bar > span{
+  width:100% !important;
+  background:#d7b75f !important;
+}
+
+/* Exempted rows are status rows, not changing score rows. Prevent global
+   entry/value animations from making them flash when a results refresh occurs. */
+#resList .res-row.round-exempted-result.motion-enter,
+#resList .res-row.round-exempted-result .motion-value-change,
+#resList .res-row.round-exempted-result .res-ct.motion-value-change{
+  animation:none !important;
+  opacity:1 !important;
+  transform:none !important;
+  scale:1 !important;
+  translate:0 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce){
+  #resList .res-row.round-exempted-result{
+    transition:none !important;
+  }
+}
