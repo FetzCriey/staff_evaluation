@@ -24,7 +24,6 @@ label{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;le
 button{width:100%;border:0;border-radius:11px;background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));color:#fff;font-weight:700;font-size:15px;font-family:inherit;padding:14px;cursor:pointer;margin-top:4px;box-shadow:0 10px 24px -8px rgba(21,172,227,.55);transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}button:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 14px 28px -8px rgba(21,172,227,.6)}button:active{transform:translateY(0)}button:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}button:disabled{opacity:.65;cursor:not-allowed;transform:none}
 .notice{display:none;margin-bottom:16px;padding:11px 13px;border-radius:9px;font-size:13px;line-height:1.45}.notice.error{display:block;background:var(--error-bg);color:var(--error-ink);border:1px solid var(--error-line)}.notice.ok{display:block;background:var(--ok-bg);color:var(--ok-ink);border:1px solid var(--ok-line)}#status{display:none;text-align:center;margin-top:16px;color:var(--muted);font-size:13px}
 
-.forgot-confirm-modal{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px}.forgot-confirm-modal[hidden]{display:none}.forgot-confirm-backdrop{position:absolute;inset:0;background:rgba(3,25,39,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}.forgot-confirm-card{position:relative;z-index:1;width:min(420px,100%);padding:22px;border:1.5px solid var(--line);border-radius:18px;background:var(--panel);color:var(--ink);box-shadow:0 28px 90px -28px rgba(2,28,44,.72)}.forgot-confirm-kicker{color:var(--lagoon-deep);font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.forgot-confirm-card h2{margin:5px 0 8px;font-family:"Bricolage Grotesque","Inter",sans-serif;font-size:21px}.forgot-confirm-card p{margin:0;color:var(--ink-soft);font-size:12.5px;line-height:1.55}.forgot-confirm-email{display:block;margin-top:10px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--mist);color:var(--ink);font-size:12px;font-weight:700;overflow-wrap:anywhere}.forgot-confirm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.forgot-confirm-actions button{width:auto;min-height:39px;margin:0;padding:9px 13px;font-size:11.5px}.forgot-confirm-cancel{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);box-shadow:none}.forgot-confirm-cancel:hover{background:var(--mist);color:var(--ink);box-shadow:none}.forgot-confirm-send{background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));color:#fff}.forgot-confirm-status{min-height:17px;margin-top:9px;color:var(--muted);font-size:10.5px;font-weight:700}.forgot-confirm-status.error{color:var(--error-ink)}
 @media(max-width:760px){body{padding:16px}.shell{grid-template-columns:1fr;min-height:0}.brand{padding:26px 26px 22px;gap:18px}.brand-middle p{display:none}.brand-middle h2{font-size:22px;margin-bottom:0}.meter,.meter-caption{display:none}.card{padding:30px 26px 36px}}
 @media(prefers-reduced-motion:reduce){.meter span{animation:none}}
 </style>
@@ -60,20 +59,6 @@ button{width:100%;border:0;border-radius:11px;background:linear-gradient(180deg,
   </main>
 </div>
 
-<div class="forgot-confirm-modal" id="forgotConfirmModal" hidden aria-hidden="true">
-  <div class="forgot-confirm-backdrop" data-forgot-close></div>
-  <section class="forgot-confirm-card" role="dialog" aria-modal="true" aria-labelledby="forgotConfirmTitle">
-    <div class="forgot-confirm-kicker">Email verified</div>
-    <h2 id="forgotConfirmTitle">Send password reset email?</h2>
-    <p>This email belongs to an active staff account. Confirm that you want Supabase to send a secure password-change link to:</p>
-    <span class="forgot-confirm-email" id="forgotConfirmEmail"></span>
-    <div class="forgot-confirm-status" id="forgotConfirmStatus" aria-live="polite"></div>
-    <div class="forgot-confirm-actions">
-      <button class="forgot-confirm-cancel" id="forgotConfirmCancel" type="button">Cancel</button>
-      <button class="forgot-confirm-send" id="forgotConfirmSend" type="button">Send reset email</button>
-    </div>
-  </section>
-</div>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 const supabase = createClient("https://giosjwjhalhmwcuyzfos.supabase.co","sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_");
@@ -85,12 +70,6 @@ const loginBtn=document.getElementById("loginBtn");
 const forgotBtn=document.getElementById("forgotPasswordBtn");
 const notice=document.getElementById("notice");
 const status=document.getElementById("status");
-const forgotModal=document.getElementById("forgotConfirmModal");
-const forgotModalEmail=document.getElementById("forgotConfirmEmail");
-const forgotModalStatus=document.getElementById("forgotConfirmStatus");
-const forgotModalCancel=document.getElementById("forgotConfirmCancel");
-const forgotModalSend=document.getElementById("forgotConfirmSend");
-let verifiedResetEmail="";
 
 function showNotice(message,kind="error"){
   notice.textContent=message;
@@ -98,7 +77,6 @@ function showNotice(message,kind="error"){
   status.style.display="none";
 }
 function clearNotice(){ notice.textContent=""; notice.className="notice"; }
-function validEmail(value){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value); }
 
 passwordEye.addEventListener("click",()=>{
   const showing=password.type==="text";
@@ -109,89 +87,8 @@ passwordEye.addEventListener("click",()=>{
   password.focus();
 });
 
-forgotBtn.addEventListener("click",async()=>{
-  clearNotice();
-  const address=email.value.trim().toLowerCase();
-  if(!validEmail(address)){
-    showNotice("Enter the email address for your staff account first.");
-    email.focus();
-    return;
-  }
-
-  forgotBtn.disabled=true;
-  loginBtn.disabled=true;
-  status.textContent="Verifying staff email...";
-  status.style.display="block";
-
-  try{
-    const { data,error }=await supabase.functions.invoke("verify-password-reset-email",{
-      body:{email:address}
-    });
-    if(error){
-      let detail=error.message||"Could not verify the email.";
-      try{ detail=(await error.context?.json())?.error||detail; }catch(_){}
-      throw new Error(detail);
-    }
-    if(data?.error) throw new Error(data.error);
-    if(!data?.verified){
-      showNotice("That email is not linked to an active staff sign-in account.");
-      return;
-    }
-
-    verifiedResetEmail=address;
-    forgotModalEmail.textContent=address;
-    forgotModalStatus.textContent="";
-    forgotModalStatus.className="forgot-confirm-status";
-    forgotModal.hidden=false;
-    forgotModal.setAttribute("aria-hidden","false");
-    status.style.display="none";
-    forgotModalSend.focus();
-  }catch(err){
-    showNotice(err?.message||"Could not verify that email. Please try again.");
-  }finally{
-    forgotBtn.disabled=false;
-    loginBtn.disabled=false;
-  }
-});
-
-function closeForgotModal(){
-  if(forgotModalSend.disabled) return;
-  forgotModal.hidden=true;
-  forgotModal.setAttribute("aria-hidden","true");
-  verifiedResetEmail="";
-  forgotBtn.focus();
-}
-
-forgotModalCancel.addEventListener("click",closeForgotModal);
-forgotModal.querySelector("[data-forgot-close]").addEventListener("click",closeForgotModal);
-forgotModal.addEventListener("keydown",event=>{
-  if(event.key==="Escape") closeForgotModal();
-});
-
-forgotModalSend.addEventListener("click",async()=>{
-  if(!verifiedResetEmail) return;
-  forgotModalSend.disabled=true;
-  forgotModalCancel.disabled=true;
-  forgotModalStatus.textContent="Sending reset email...";
-  forgotModalStatus.className="forgot-confirm-status";
-
-  try{
-    const redirectTo=new URL("reset-password.html",window.location.href).href;
-    const {error}=await supabase.auth.resetPasswordForEmail(verifiedResetEmail,{redirectTo});
-    if(error) throw error;
-
-    const sentTo=verifiedResetEmail;
-    forgotModal.hidden=true;
-    forgotModal.setAttribute("aria-hidden","true");
-    verifiedResetEmail="";
-    showNotice(`Password reset email sent to ${sentTo}. Check the inbox and spam folder.`,"ok");
-  }catch(err){
-    forgotModalStatus.textContent=err?.message||"Could not send the reset email. Please try again.";
-    forgotModalStatus.className="forgot-confirm-status error";
-  }finally{
-    forgotModalSend.disabled=false;
-    forgotModalCancel.disabled=false;
-  }
+forgotBtn.addEventListener("click",()=>{
+  window.location.href="forgot-password.html";
 });
 
 form.addEventListener("submit",async event=>{
