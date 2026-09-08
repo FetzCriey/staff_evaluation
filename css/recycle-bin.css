@@ -985,3 +985,60 @@ html[data-bp-theme="amoled"] .recycle-password-modal :is(.recycle-password-cance
   -webkit-text-fill-color:var(--ink-soft) !important;
   opacity:1 !important;
 }
+
+
+#openRecycleBin.recycle-bin-launch{
+  border-color:rgba(var(--bp-accent-rgb,21,172,227),.38) !important;
+  background:linear-gradient(180deg,var(--lagoon,#15ace3),var(--lagoon-deep,#0b7fb0)) !important;
+}
+
+#openRecycleBin .recycle-bin-launch-copy{
+  gap:2px;
+}
+
+#openRecycleBin .recycle-bin-launch-copy > span{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.12);
+  font-weight:800 !important;
+}
+
+#openRecycleBin .recycle-bin-launch-copy small{
+  color:rgba(255,255,255,.92) !important;
+  -webkit-text-fill-color:rgba(255,255,255,.92) !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.10);
+  letter-spacing:.06em;
+}
+
+#openRecycleBin .recycle-bin-launch-count{
+  min-width:26px;
+  height:26px;
+  padding:0 8px;
+  border:1px solid rgba(var(--bp-accent-rgb,21,172,227),.24) !important;
+  background:#eef7fc !important;
+  color:var(--lagoon-deep,#0b7fb0) !important;
+  -webkit-text-fill-color:var(--lagoon-deep,#0b7fb0) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+  font-size:10px;
+  font-weight:800;
+}
+
+html[data-bp-theme="dark"] #openRecycleBin .recycle-bin-launch-copy > span,
+html[data-bp-theme="amoled"] #openRecycleBin .recycle-bin-launch-copy > span{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+}
+
+html[data-bp-theme="dark"] #openRecycleBin .recycle-bin-launch-copy small,
+html[data-bp-theme="amoled"] #openRecycleBin .recycle-bin-launch-copy small{
+  color:rgba(255,255,255,.90) !important;
+  -webkit-text-fill-color:rgba(255,255,255,.90) !important;
+}
+
+html[data-bp-theme="dark"] #openRecycleBin .recycle-bin-launch-count,
+html[data-bp-theme="amoled"] #openRecycleBin .recycle-bin-launch-count{
+  background:#eef7fc !important;
+  color:var(--lagoon-deep,#0b7fb0) !important;
+  -webkit-text-fill-color:var(--lagoon-deep,#0b7fb0) !important;
+  border-color:rgba(var(--bp-accent-rgb,21,172,227),.26) !important;
+}
