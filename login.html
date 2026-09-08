@@ -4,761 +4,144 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Staff Evaluation — Login</title>
-
+<link rel="icon" type="image/png" sizes="32x32" href="better-practice-favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
 <style>
-:root{
-  --ink:#0a2233;
-  --ink-soft:#28455c;
-  --muted:#5b7080;
-  --lagoon:#15ACE3;
-  --lagoon-deep:#0b7fb0;
-  --lagoon-dark:#08344c;
-  --mist:#eaf4fa;
-  --panel:#ffffff;
-  --line:#d3e5f0;
-  --error-bg:#fff0f0;
-  --error-ink:#a62a2a;
-  --error-line:#f1caca;
-  --shadow:0 24px 70px -20px rgba(8,52,76,.35);
-}
-
-*{ box-sizing:border-box; }
-
-html,body{ margin:0; min-height:100%; }
-
-body{
-  font-family:"Inter","Segoe UI",system-ui,sans-serif;
-  background:var(--mist);
-  color:var(--ink);
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* =========================================================
-   SHELL — brand panel + form panel
-   ========================================================= */
-
-.shell{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  width:100%;
-  max-width:900px;
-  min-height:560px;
-  background:var(--panel);
-  border-radius:24px;
-  overflow:hidden;
-  box-shadow:var(--shadow);
-}
-
-/* =========================================================
-   BRAND PANEL
-   ========================================================= */
-
-.brand{
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  padding:40px 38px;
-  color:#f2fafe;
-  background:
-    radial-gradient(120% 90% at 85% -10%, rgba(21,172,227,.55), transparent 55%),
-    radial-gradient(100% 80% at -10% 110%, rgba(21,172,227,.30), transparent 50%),
-    linear-gradient(160deg, #0c3a54 0%, var(--lagoon-dark) 55%, #051e2d 100%);
-}
-
-.brand-top{
-  display:flex;
-  align-items:center;
-  gap:14px;
-}
-
-.logo{
-  width:52px;
-  height:52px;
-  object-fit:cover;
-  border-radius:14px;
-  box-shadow:0 6px 18px rgba(0,0,0,.35);
-}
-
-.brand-name{
-  font-family:"Bricolage Grotesque","Inter",sans-serif;
-  font-weight:700;
-  font-size:17px;
-  letter-spacing:.01em;
-}
-
-.brand-name small{
-  display:block;
-  font-family:"Inter",sans-serif;
-  font-weight:600;
-  font-size:10.5px;
-  letter-spacing:.22em;
-  text-transform:uppercase;
-  color:rgba(180,224,245,.85);
-  margin-top:3px;
-}
-
-.brand-middle h2{
-  font-family:"Bricolage Grotesque","Inter",sans-serif;
-  font-weight:800;
-  font-size:clamp(26px,3.2vw,34px);
-  line-height:1.12;
-  margin:0 0 12px;
-  letter-spacing:-.01em;
-}
-
-.brand-middle p{
-  margin:0;
-  font-size:14px;
-  line-height:1.65;
-  color:rgba(210,236,248,.82);
-  max-width:30ch;
-}
-
-/* ---- Signature: the 1–5 score meter, rating scale of the app ---- */
-
-.meter{
-  display:flex;
-  align-items:flex-end;
-  gap:10px;
-  height:86px;
-  margin-top:34px;
-}
-
-.meter span{
-  flex:0 0 30px;
-  border-radius:8px 8px 4px 4px;
-  background:linear-gradient(180deg, var(--lagoon) 0%, var(--lagoon-deep) 100%);
-  box-shadow:0 4px 14px rgba(21,172,227,.35);
-  animation:rise 3.6s ease-in-out infinite;
-  transform-origin:bottom;
-}
-
-.meter span:nth-child(1){ height:26%; animation-delay:0s;   }
-.meter span:nth-child(2){ height:42%; animation-delay:.25s; }
-.meter span:nth-child(3){ height:58%; animation-delay:.5s;  }
-.meter span:nth-child(4){ height:76%; animation-delay:.75s; }
-.meter span:nth-child(5){ height:100%; animation-delay:1s;  }
-
-@keyframes rise{
-  0%,100%{ transform:scaleY(.92); opacity:.85; }
-  50%    { transform:scaleY(1);   opacity:1;   }
-}
-
-.meter-caption{
-  margin-top:12px;
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  color:rgba(160,214,240,.7);
-}
-
-@media (prefers-reduced-motion: reduce){
-  .meter span{ animation:none; }
-}
-
-/* =========================================================
-   FORM PANEL
-   ========================================================= */
-
-.card{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  padding:48px 46px;
-}
-
-.eyebrow{
-  font-size:11px;
-  letter-spacing:.2em;
-  text-transform:uppercase;
-  color:var(--lagoon-deep);
-  font-weight:700;
-  margin-bottom:10px;
-}
-
-h1{
-  font-family:"Bricolage Grotesque","Inter",sans-serif;
-  font-weight:800;
-  font-size:30px;
-  line-height:1.1;
-  letter-spacing:-.01em;
-  margin:0;
-}
-
-.sub{
-  color:var(--muted);
-  font-size:14px;
-  margin:12px 0 30px;
-}
-
-label{
-  display:block;
-  font-size:11.5px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-  color:var(--ink-soft);
-  margin:0 0 7px;
-}
-
-input{
-  width:100%;
-  padding:13px 14px;
-  border:1.5px solid var(--line);
-  border-radius:11px;
-  font-size:15px;
-  font-family:inherit;
-  background:#fbfdff;
-  color:var(--ink);
-  margin-bottom:18px;
-  outline:none;
-  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
-}
-
-input:focus{
-  background:#ffffff;
-  border-color:var(--lagoon);
-  box-shadow:0 0 0 4px rgba(21,172,227,.14);
-}
-
-.password-wrap{
-  position:relative;
-  margin-bottom:18px;
-}
-
-.password-wrap input{
-  margin-bottom:0;
-  padding-right:50px;
-}
-
-.password-eye{
-  position:absolute;
-  top:50%;
-  right:8px;
-  transform:translateY(-50%);
-  width:36px;
-  height:36px;
-  display:grid;
-  place-items:center;
-  margin:0;
-  padding:0;
-  border:0;
-  border-radius:9px;
-  background:transparent;
-  color:var(--muted);
-  box-shadow:none;
-  cursor:pointer;
-}
-
-.password-eye:hover{
-  transform:translateY(-50%);
-  background:var(--mist);
-  color:var(--lagoon-deep);
-  box-shadow:none;
-  filter:none;
-}
-
-.password-eye:active{
-  transform:translateY(-50%);
-}
-
-.password-eye:focus-visible{
-  outline:3px solid rgba(21,172,227,.18);
-  outline-offset:1px;
-}
-
-.password-eye svg{
-  width:20px;
-  height:20px;
-}
-
-.password-eye .eye-off{
-  display:none;
-}
-
-.password-eye.showing .eye-on{
-  display:none;
-}
-
-.password-eye.showing .eye-off{
-  display:block;
-}
-
-button{
-  width:100%;
-  border:0;
-  border-radius:11px;
-  background:linear-gradient(180deg, var(--lagoon) 0%, var(--lagoon-deep) 100%);
-  color:#ffffff;
-  font-weight:700;
-  font-size:15px;
-  font-family:inherit;
-  padding:14px;
-  cursor:pointer;
-  margin-top:4px;
-  box-shadow:0 10px 24px -8px rgba(21,172,227,.55);
-  transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
-}
-
-button:hover{
-  filter:brightness(1.05);
-  transform:translateY(-1px);
-  box-shadow:0 14px 28px -8px rgba(21,172,227,.6);
-}
-
-button:active{ transform:translateY(0); }
-
-button:focus-visible{
-  outline:3px solid var(--lagoon-dark);
-  outline-offset:2px;
-}
-
-button:disabled{
-  opacity:.65;
-  cursor:not-allowed;
-  transform:none;
-}
-
-#error{
-  display:none;
-  margin-bottom:16px;
-  padding:11px 13px;
-  border-radius:9px;
-  background:var(--error-bg);
-  color:var(--error-ink);
-  border:1px solid var(--error-line);
-  font-size:13px;
-}
-
-#status{
-  display:none;
-  text-align:center;
-  margin-top:16px;
-  color:var(--muted);
-  font-size:13px;
-}
-
-.footnote{
-  margin-top:26px;
-  font-size:12px;
-  color:var(--muted);
-}
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
-@media (max-width:760px){
-  body{ padding:16px; }
-  .shell{
-    grid-template-columns:1fr;
-    min-height:0;
-  }
-  .brand{
-    padding:26px 26px 22px;
-    gap:18px;
-  }
-  .brand-middle p{ display:none; }
-  .brand-middle h2{ font-size:22px; margin-bottom:0; }
-  .meter{ display:none; }
-  .meter-caption{ display:none; }
-  .card{ padding:30px 26px 36px; }
-}
+:root{--ink:#0a2233;--ink-soft:#28455c;--muted:#5b7080;--lagoon:#15ACE3;--lagoon-deep:#0b7fb0;--lagoon-dark:#08344c;--mist:#eaf4fa;--panel:#fff;--line:#d3e5f0;--error-bg:#fff0f0;--error-ink:#a62a2a;--error-line:#f1caca;--ok-bg:#edf9f3;--ok-ink:#187648;--ok-line:#bfe5cf;--shadow:0 24px 70px -20px rgba(8,52,76,.35)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}body{font-family:"Inter","Segoe UI",system-ui,sans-serif;background:var(--mist);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;-webkit-font-smoothing:antialiased}
+.shell{display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:900px;min-height:560px;background:var(--panel);border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
+.brand{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:40px 38px;color:#f2fafe;background:radial-gradient(120% 90% at 85% -10%,rgba(21,172,227,.55),transparent 55%),radial-gradient(100% 80% at -10% 110%,rgba(21,172,227,.30),transparent 50%),linear-gradient(160deg,#0c3a54 0%,var(--lagoon-dark) 55%,#051e2d 100%)}
+.brand-top{display:flex;align-items:center;gap:14px}.logo{width:52px;height:52px;object-fit:cover;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.brand-name{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:700;font-size:17px;letter-spacing:.01em}.brand-name small{display:block;font-family:"Inter",sans-serif;font-weight:600;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(180,224,245,.85);margin-top:3px}
+.brand-middle h2{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:clamp(26px,3.2vw,34px);line-height:1.12;margin:0 0 12px;letter-spacing:-.01em}.brand-middle p{margin:0;font-size:14px;line-height:1.65;color:rgba(210,236,248,.82);max-width:30ch}
+.meter{display:flex;align-items:flex-end;gap:10px;height:86px;margin-top:34px}.meter span{flex:0 0 30px;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));box-shadow:0 4px 14px rgba(21,172,227,.35);animation:rise 3.6s ease-in-out infinite;transform-origin:bottom}.meter span:nth-child(1){height:26%}.meter span:nth-child(2){height:42%;animation-delay:.25s}.meter span:nth-child(3){height:58%;animation-delay:.5s}.meter span:nth-child(4){height:76%;animation-delay:.75s}.meter span:nth-child(5){height:100%;animation-delay:1s}@keyframes rise{0%,100%{transform:scaleY(.92);opacity:.85}50%{transform:scaleY(1);opacity:1}}.meter-caption{margin-top:12px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(160,214,240,.7)}
+.card{display:flex;flex-direction:column;justify-content:center;padding:48px 46px}.eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--lagoon-deep);font-weight:700;margin-bottom:10px}h1{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;font-size:30px;line-height:1.1;letter-spacing:-.01em;margin:0}.sub{color:var(--muted);font-size:14px;margin:12px 0 30px}
+label{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin:0 0 7px}input{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;font-family:inherit;background:#fbfdff;color:var(--ink);margin-bottom:18px;outline:none;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}input:focus{background:#fff;border-color:var(--lagoon);box-shadow:0 0 0 4px rgba(21,172,227,.14)}
+.password-wrap{position:relative;margin-bottom:0}.password-wrap input{margin-bottom:0;padding-right:50px}.password-eye{position:absolute;top:50%;right:8px;transform:translateY(-50%);width:36px;height:36px;display:grid;place-items:center;margin:0;padding:0;border:0;border-radius:9px;background:transparent;color:var(--muted);box-shadow:none;cursor:pointer}.password-eye:hover{transform:translateY(-50%);background:var(--mist);color:var(--lagoon-deep);box-shadow:none;filter:none}.password-eye:active{transform:translateY(-50%)}.password-eye:focus-visible{outline:3px solid rgba(21,172,227,.18);outline-offset:1px}.password-eye svg{width:20px;height:20px}.password-eye .eye-off{display:none}.password-eye.showing .eye-on{display:none}.password-eye.showing .eye-off{display:block}
+.forgot-row{display:flex;justify-content:flex-end;margin:9px 0 17px}.forgot-password{width:auto;margin:0;padding:3px 0;border:0;background:transparent;color:var(--lagoon-deep);box-shadow:none;border-radius:6px;font-size:12px;font-weight:700}.forgot-password:hover{transform:none;filter:none;box-shadow:none;text-decoration:underline}.forgot-password:disabled{opacity:.55}
+button{width:100%;border:0;border-radius:11px;background:linear-gradient(180deg,var(--lagoon),var(--lagoon-deep));color:#fff;font-weight:700;font-size:15px;font-family:inherit;padding:14px;cursor:pointer;margin-top:4px;box-shadow:0 10px 24px -8px rgba(21,172,227,.55);transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}button:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 14px 28px -8px rgba(21,172,227,.6)}button:active{transform:translateY(0)}button:focus-visible{outline:3px solid var(--lagoon-dark);outline-offset:2px}button:disabled{opacity:.65;cursor:not-allowed;transform:none}
+.notice{display:none;margin-bottom:16px;padding:11px 13px;border-radius:9px;font-size:13px;line-height:1.45}.notice.error{display:block;background:var(--error-bg);color:var(--error-ink);border:1px solid var(--error-line)}.notice.ok{display:block;background:var(--ok-bg);color:var(--ok-ink);border:1px solid var(--ok-line)}#status{display:none;text-align:center;margin-top:16px;color:var(--muted);font-size:13px}.footnote{margin-top:26px;font-size:12px;color:var(--muted)}
+@media(max-width:760px){body{padding:16px}.shell{grid-template-columns:1fr;min-height:0}.brand{padding:26px 26px 22px;gap:18px}.brand-middle p{display:none}.brand-middle h2{font-size:22px;margin-bottom:0}.meter,.meter-caption{display:none}.card{padding:30px 26px 36px}}
+@media(prefers-reduced-motion:reduce){.meter span{animation:none}}
 </style>
 <link rel="stylesheet" href="css/global-motion.css?v=20260820-2248">
 </head>
-
 <body>
-
 <div class="shell">
-
-  <!-- ================= BRAND PANEL ================= -->
   <aside class="brand">
-
-    <div class="brand-top">
-      <img class="logo" src="Better Practice Consulting Inc.png" alt="Better Practice Consulting Inc. logo">
-      <div class="brand-name">
-        Better Practice
-        <small>Staff Portal</small>
-      </div>
-    </div>
-
-    <div class="brand-middle">
-      <h2>Grow with every review.</h2>
-      <p>Score, share, and track team performance — one evaluation at a time.</p>
-
-      <div class="meter" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span>
-      </div>
-      <div class="meter-caption">Rating scale 1–5</div>
-    </div>
-
+    <div class="brand-top"><img class="logo" src="Better Practice Consulting Inc.png" alt="Better Practice Consulting Inc. logo"><div class="brand-name">Better Practice<small>Staff Portal</small></div></div>
+    <div class="brand-middle"><h2>Grow with every review.</h2><p>Score, share, and track team performance — one evaluation at a time.</p><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><div class="meter-caption">Rating scale 1–5</div></div>
     <div></div>
-
   </aside>
-
-  <!-- ================= LOGIN CARD ================= -->
   <main class="card">
-
     <div class="eyebrow">Employee Assessment</div>
-
     <h1>Performance Evaluation</h1>
-
     <div class="sub">Sign in with your staff account to continue.</div>
-
-    <div id="error"></div>
-
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
     <form id="loginForm">
-
       <label for="email">Email</label>
-      <input
-        id="email"
-        type="email"
-        autocomplete="username"
-        placeholder="name@example.com"
-        required
-      >
-
+      <input id="email" type="email" autocomplete="username" placeholder="name@example.com" required>
       <label for="password">Password</label>
       <div class="password-wrap">
-        <input
-          id="password"
-          type="password"
-          autocomplete="current-password"
-          placeholder="Password"
-          required
-        >
-        <button
-          class="password-eye"
-          id="passwordEye"
-          type="button"
-          aria-label="Show password"
-          aria-pressed="false"
-        >
-          <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 3l18 18"/>
-            <path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a17.4 17.4 0 0 1-2.2 2.9"/>
-            <path d="M6.6 6.6C3.6 8.4 2 12 2 12s3.5 6 10 6a10.5 10.5 0 0 0 4.1-.8"/>
-            <path d="M9.9 9.9A3 3 0 0 0 14.1 14.1"/>
-          </svg>
+        <input id="password" type="password" autocomplete="current-password" placeholder="Password" required>
+        <button class="password-eye" id="passwordEye" type="button" aria-label="Show password" aria-pressed="false">
+          <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a17.4 17.4 0 0 1-2.2 2.9"/><path d="M6.6 6.6C3.6 8.4 2 12 2 12s3.5 6 10 6a10.5 10.5 0 0 0 4.1-.8"/><path d="M9.9 9.9A3 3 0 0 0 14.1 14.1"/></svg>
         </button>
       </div>
-
+      <div class="forgot-row"><button id="forgotPasswordBtn" class="forgot-password" type="button">Forgot password?</button></div>
       <button id="loginBtn" type="submit">Log in</button>
-
     </form>
-
     <div id="status">Signing in...</div>
-
-    <div class="footnote">Trouble signing in? Contact your manager.</div>
-
+    <div class="footnote">Trouble signing in? Reset your password above or contact your manager.</div>
   </main>
-
 </div>
-
-
 <script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const supabase = createClient("https://giosjwjhalhmwcuyzfos.supabase.co","sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_");
+const form=document.getElementById("loginForm");
+const email=document.getElementById("email");
+const password=document.getElementById("password");
+const passwordEye=document.getElementById("passwordEye");
+const loginBtn=document.getElementById("loginBtn");
+const forgotBtn=document.getElementById("forgotPasswordBtn");
+const notice=document.getElementById("notice");
+const status=document.getElementById("status");
 
-/* =========================================================
-   SUPABASE
-   ========================================================= */
-
-import {
-  createClient
-} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-
-const SUPABASE_URL =
-  "https://giosjwjhalhmwcuyzfos.supabase.co";
-
-const SUPABASE_PUBLISHABLE_KEY =
-  "sb_publishable_9guZ2oKWHmKyFx3WyvHYww_cTYlQsX_";
-
-
-const supabase =
-  createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
-  );
-
-
-/* =========================================================
-   ELEMENTS
-   ========================================================= */
-
-const form =
-  document.getElementById("loginForm");
-
-const email =
-  document.getElementById("email");
-
-const password =
-  document.getElementById("password");
-
-const passwordEye =
-  document.getElementById("passwordEye");
-
-const button =
-  document.getElementById("loginBtn");
-
-const error =
-  document.getElementById("error");
-
-const status =
-  document.getElementById("status");
-
-
-/* =========================================================
-   PASSWORD VISIBILITY
-   ========================================================= */
-
-passwordEye.addEventListener(
-  "click",
-  () => {
-
-    const showing =
-      password.type === "text";
-
-    password.type =
-      showing ? "password" : "text";
-
-    passwordEye.classList.toggle(
-      "showing",
-      !showing
-    );
-
-    passwordEye.setAttribute(
-      "aria-label",
-      showing ? "Show password" : "Hide password"
-    );
-
-    passwordEye.setAttribute(
-      "aria-pressed",
-      String(!showing)
-    );
-
-    password.focus();
-
-  }
-);
-
-
-/* =========================================================
-   SHOW ERROR
-   ========================================================= */
-
-function showError(message){
-
-  error.textContent =
-    message;
-
-  error.style.display =
-    "block";
-
-  status.style.display =
-    "none";
-
+function showNotice(message,kind="error"){
+  notice.textContent=message;
+  notice.className="notice "+kind;
+  status.style.display="none";
 }
+function clearNotice(){ notice.textContent=""; notice.className="notice"; }
+function validEmail(value){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value); }
 
+passwordEye.addEventListener("click",()=>{
+  const showing=password.type==="text";
+  password.type=showing?"password":"text";
+  passwordEye.classList.toggle("showing",!showing);
+  passwordEye.setAttribute("aria-label",showing?"Show password":"Hide password");
+  passwordEye.setAttribute("aria-pressed",String(!showing));
+  password.focus();
+});
 
-/* =========================================================
-   LOGIN
-   ========================================================= */
-
-form.addEventListener(
-  "submit",
-  async (event) => {
-
-    event.preventDefault();
-
-    error.style.display =
-      "none";
-
-    button.disabled =
-      true;
-
-    status.style.display =
-      "block";
-
-
-    try{
-
-      /* -----------------------------------------
-         SIGN IN
-         ----------------------------------------- */
-
-      const {
-        data,
-        error: loginError
-      } =
-        await supabase.auth.signInWithPassword({
-
-          email:
-            email.value.trim(),
-
-          password:
-            password.value
-
-        });
-
-
-      /* -----------------------------------------
-         LOGIN FAILED
-         ----------------------------------------- */
-
-      if(loginError){
-
-        button.disabled =
-          false;
-
-        showError(
-          loginError.message ||
-          "Unable to log in. Please check your email and password."
-        );
-
-        return;
-
-      }
-
-
-      /* -----------------------------------------
-         GET STAFF PROFILE
-         ----------------------------------------- */
-
-      const {
-        data: profile,
-        error: profileError
-      } =
-        await supabase
-
-          .from("profiles")
-
-          .select(
-            "full_name, position, role"
-          )
-
-          .eq(
-            "id",
-            data.user.id
-          )
-
-          .single();
-
-
-      /* -----------------------------------------
-         PROFILE NOT FOUND
-         ----------------------------------------- */
-
-      if(
-        profileError ||
-        !profile
-      ){
-
-        await supabase.auth.signOut();
-
-        button.disabled =
-          false;
-
-        showError(
-          "Your account is valid, but no staff profile was found. Please contact the manager."
-        );
-
-        return;
-
-      }
-
-
-      /* -----------------------------------------
-         SAVE STAFF INFORMATION
-         ----------------------------------------- */
-
-      sessionStorage.setItem(
-        "staff_role",
-        profile.role || ""
-      );
-
-      sessionStorage.setItem(
-        "staff_name",
-        profile.full_name || ""
-      );
-
-      sessionStorage.setItem(
-        "staff_position",
-        profile.position || ""
-      );
-
-      sessionStorage.setItem(
-        "staff_email",
-        data.user.email || ""
-      );
-
-
-      /* -----------------------------------------
-         GO TO INDEX
-         ----------------------------------------- */
-
-      window.location.replace(
-        "index.html"
-      );
-
-    }
-    catch(err){
-
-      console.error(
-        "Login error:",
-        err
-      );
-
-      button.disabled =
-        false;
-
-      showError(
-        "Something went wrong while signing in. Please try again."
-      );
-
-    }
-
+forgotBtn.addEventListener("click",async()=>{
+  clearNotice();
+  const address=email.value.trim().toLowerCase();
+  if(!validEmail(address)){
+    showNotice("Enter the email address for your staff account first.");
+    email.focus();
+    return;
   }
-);
-
-
-/* =========================================================
-   CHECK EXISTING SESSION
-   ========================================================= */
-
-const {
-  data: {
-    session
+  forgotBtn.disabled=true;
+  loginBtn.disabled=true;
+  status.textContent="Sending password reset email...";
+  status.style.display="block";
+  try{
+    const redirectTo=new URL("reset-password.html",window.location.href).href;
+    const { error }=await supabase.auth.resetPasswordForEmail(address,{redirectTo});
+    if(error) throw error;
+    showNotice("If that email belongs to a staff account, a password reset link has been sent. Check your inbox and spam folder.","ok");
+  }catch(err){
+    showNotice(err?.message||"Could not send the password reset email. Please try again.");
+  }finally{
+    forgotBtn.disabled=false;
+    loginBtn.disabled=false;
   }
-} =
-  await supabase.auth.getSession();
+});
 
+form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  clearNotice();
+  loginBtn.disabled=true;
+  forgotBtn.disabled=true;
+  status.textContent="Signing in...";
+  status.style.display="block";
+  try{
+    const { data,error:loginError }=await supabase.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+    if(loginError) throw loginError;
+    const { data:profile,error:profileError }=await supabase.from("profiles").select("full_name, position, role").eq("id",data.user.id).single();
+    if(profileError||!profile){
+      await supabase.auth.signOut({scope:"local"});
+      showNotice("Your account is valid, but no staff profile was found. Please contact the manager.");
+      loginBtn.disabled=false;forgotBtn.disabled=false;return;
+    }
+    sessionStorage.setItem("staff_role",profile.role||"");
+    sessionStorage.setItem("staff_name",profile.full_name||"");
+    sessionStorage.setItem("staff_position",profile.position||"");
+    sessionStorage.setItem("staff_email",data.user.email||"");
+    window.location.replace("index.html");
+  }catch(err){
+    console.error("Login error:",err);
+    showNotice(err?.message||"Unable to log in. Please check your email and password.");
+    loginBtn.disabled=false;forgotBtn.disabled=false;
+  }
+});
 
-if(session){
-
-  window.location.replace(
-    "index.html"
-  );
-
-}
-
+const {data:{session}}=await supabase.auth.getSession();
+if(session) window.location.replace("index.html");
 </script>
-
-<script src="js/global-motion.js?v=20260822-1250"></script>
 </body>
 </html>
