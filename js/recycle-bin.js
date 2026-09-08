@@ -68,7 +68,7 @@ async function initRecycleBin(){
     const link = document.createElement("link");
     link.id = "recycle-bin-styles";
     link.rel = "stylesheet";
-    link.href = "css/recycle-bin.css?v=20260904-1627";
+    link.href = "css/recycle-bin.css?v=20260908-1015";
     document.head.appendChild(link);
   }
 
