@@ -1,8 +1,14 @@
 /* Smart scroll header
    - Scroll down: header hides.
-   - Scroll up: header returns immediately.
+   - Scroll up: header returns.
+   - Tiny bottom-edge/viewport jitter is ignored by smart-scroll-header.js.
    - Sidebar open: header is fully hidden so it never overlaps the drawer.
 */
+html,
+body{
+  overscroll-behavior-y:none;
+}
+
 header.top{
   position:sticky !important;
   top:max(8px, env(safe-area-inset-top)) !important;
