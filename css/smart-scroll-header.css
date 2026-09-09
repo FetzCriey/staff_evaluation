@@ -2,7 +2,8 @@
    - Scroll down: header hides.
    - Scroll up: header returns.
    - Tiny bottom-edge/viewport jitter is ignored by smart-scroll-header.js.
-   - Sidebar open: header remains visible and the drawer starts below it.
+   - Sidebar open: header remains in place, but sits under the scrim so it
+     dims/blurs exactly like the rest of the page.
    - Header notification center uses the same Light / Dark / AMOLED theme tokens.
 */
 html,
@@ -27,12 +28,14 @@ header.top.bp-scroll-header-visible{
   transform:translateY(0) !important;
 }
 
-/* Keep the header usable while the sidebar is open. */
+/* Keep the header in place while the sidebar is open, but deliberately keep
+   it BELOW #scrim (60) and #drawer (61). The scrim's backdrop-filter then
+   dims/blurs the header exactly like the rest of the page. */
 body.bp-drawer-open header.top{
-  z-index:63 !important;
+  z-index:40 !important;
   opacity:1 !important;
   visibility:visible !important;
-  pointer-events:auto !important;
+  pointer-events:none !important;
   transform:translateY(0) !important;
 }
 
