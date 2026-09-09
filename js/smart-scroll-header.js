@@ -78,9 +78,18 @@
 
     if(open){
       showHeader(true);
+
+      /* Keep the header below the sidebar scrim so it receives the same
+         dimming + backdrop blur as the rest of the page. Inline !important
+         also defeats the older cached CSS rule that raised it above the scrim. */
+      header.style.setProperty("z-index", "40", "important");
+      header.style.setProperty("pointer-events", "none", "important");
+
       requestAnimationFrame(updateDrawerOffset);
     }else{
       document.documentElement.style.removeProperty("--bp-drawer-top");
+      header.style.removeProperty("z-index");
+      header.style.removeProperty("pointer-events");
       showHeader();
     }
   }
