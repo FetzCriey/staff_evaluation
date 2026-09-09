@@ -252,7 +252,7 @@
       </svg>
       <span class="bp-notification-badge" id="bpNotificationBadge" hidden>0</span>
     `;
-    header.insertBefore(button, headerAction);
+    headerAction.insertAdjacentElement("afterend", button);
 
     const panel = document.createElement("section");
     panel.id = "bpNotificationPanel";
@@ -267,10 +267,17 @@
           <div class="bp-notification-kicker">My account</div>
           <h2 id="bpNotificationTitle">Notifications</h2>
         </div>
-        <button class="bp-notification-close" id="bpNotificationClose" type="button" aria-label="Close notifications">×</button>
+        <button class="bp-notification-close" id="bpNotificationClose" type="button" aria-label="Close notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+            stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
       </div>
       <div class="bp-notification-summary" id="bpNotificationSummary">
-        <span>Loading…</span>
+        <span class="bp-notification-unread" id="bpNotificationUnread">Loading…</span>
+        <div class="bp-notification-summary-actions">
+          <span class="bp-notification-total" id="bpNotificationTotal"></span>
+          <button class="bp-notification-mark-all" id="bpNotificationMarkAll" type="button">Mark all as read</button>
+        </div>
       </div>
       <div class="bp-notification-list" id="bpNotificationList"></div>
     `;
@@ -278,6 +285,9 @@
 
     const badge = button.querySelector("#bpNotificationBadge");
     const summary = panel.querySelector("#bpNotificationSummary");
+    const unreadLabel = panel.querySelector("#bpNotificationUnread");
+    const totalLabel = panel.querySelector("#bpNotificationTotal");
+    const markAllButton = panel.querySelector("#bpNotificationMarkAll");
     const list = panel.querySelector("#bpNotificationList");
     const closeButton = panel.querySelector("#bpNotificationClose");
 
@@ -347,7 +357,9 @@
     function render(){
       const unread = unreadItems().length;
       syncBadge();
-      summary.innerHTML = `<span><strong>${unread}</strong> unread</span><span>${items.length} total</span>`;
+      unreadLabel.innerHTML = `<strong>${unread}</strong> unread`;
+      totalLabel.textContent = `${items.length} total`;
+      markAllButton.disabled = unread === 0;
 
       if(!items.length){
         list.innerHTML = `
@@ -410,14 +422,16 @@
               <strong>Could not load notifications</strong>
               <span>${escapeHtml(error?.message || "Please try again.")}</span>
             </div>`;
-          summary.innerHTML = `<span>Unavailable</span>`;
+          unreadLabel.textContent = "Unavailable";
+          totalLabel.textContent = "";
+          markAllButton.disabled = true;
         }
       }finally{
         loading = false;
       }
     }
 
-    async function markVisibleUnreadRead(){
+    async function markAllUnreadRead(){
       const ids = unreadItems().map(item => item.id).filter(Boolean);
       if(!ids.length) return;
 
@@ -432,27 +446,51 @@
       const now = new Date().toISOString();
       const idSet = new Set(ids);
       items = items.map(item => idSet.has(item.id) ? { ...item, read_at:now } : item);
-      syncBadge();
-      summary.innerHTML = `<span><strong>0</strong> unread</span><span>${items.length} total</span>`;
+      render();
     }
 
     function positionPanel(){
       if(panel.hidden) return;
-      const rect = button.getBoundingClientRect();
-      const margin = 10;
-      const width = Math.min(380, Math.max(280, window.innerWidth - 24));
-      const left = Math.min(
-        window.innerWidth - width - margin,
-        Math.max(margin, rect.right - width)
+
+      const viewport = window.visualViewport;
+      const viewportLeft = viewport?.offsetLeft || 0;
+      const viewportTop = viewport?.offsetTop || 0;
+      const viewportWidth = viewport?.width || window.innerWidth;
+      const viewportHeight = viewport?.height || window.innerHeight;
+      const mobile = window.matchMedia("(max-width:620px)").matches;
+      const margin = mobile ? 12 : 10;
+
+      const bellRect = button.getBoundingClientRect();
+      const headerRect = header.getBoundingClientRect();
+
+      const width = mobile
+        ? Math.max(280, viewportWidth - (margin * 2))
+        : Math.min(380, Math.max(300, viewportWidth - (margin * 2)));
+
+      const minLeft = viewportLeft + margin;
+      const maxLeft = viewportLeft + viewportWidth - width - margin;
+      const desiredLeft = mobile
+        ? minLeft
+        : bellRect.right - width;
+
+      const left = Math.min(maxLeft, Math.max(minLeft, desiredLeft));
+
+      /* Always open below the COMPLETE header. On mobile this prevents the
+         notification card from covering the title row. */
+      const top = Math.max(
+        viewportTop + margin,
+        Math.ceil(headerRect.bottom + (mobile ? 10 : 8))
       );
-      const top = Math.min(
-        window.innerHeight - 80,
-        Math.max(margin, rect.bottom + 8)
+
+      const availableHeight = Math.max(
+        180,
+        (viewportTop + viewportHeight) - top - margin
       );
 
       panel.style.width = `${width}px`;
-      panel.style.left = `${Math.max(margin, left)}px`;
+      panel.style.left = `${left}px`;
       panel.style.top = `${top}px`;
+      panel.style.maxHeight = `${availableHeight}px`;
     }
 
     async function openPanel(){
@@ -461,7 +499,7 @@
       button.setAttribute("aria-expanded", "true");
       positionPanel();
       await loadNotifications({ showSpinner:true });
-      setTimeout(() => { void markVisibleUnreadRead(); }, 450);
+      positionPanel();
     }
 
     function closePanel({ restoreFocus = false } = {}){
@@ -481,6 +519,11 @@
     });
 
     closeButton.addEventListener("click", () => closePanel({ restoreFocus:true }));
+    markAllButton.addEventListener("click", () => {
+      if(markAllButton.disabled) return;
+      markAllButton.disabled = true;
+      void markAllUnreadRead();
+    });
     panel.addEventListener("click", event => event.stopPropagation());
 
     document.addEventListener("click", event => {
