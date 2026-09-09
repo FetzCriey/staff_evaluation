@@ -170,6 +170,13 @@ body.bp-drawer-open #drawer{
   cursor:pointer;
 }
 
+
+.bp-notification-close svg{
+  width:17px;
+  height:17px;
+  display:block;
+}
+
 .bp-notification-summary{
   display:flex;
   align-items:center;
@@ -186,6 +193,50 @@ body.bp-drawer-open #drawer{
 .bp-notification-summary strong{
   color:var(--ink-soft,#28455c);
   font-weight:800;
+}
+
+
+.bp-notification-summary-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  min-width:0;
+}
+
+.bp-notification-total{
+  white-space:nowrap;
+}
+
+.bp-notification-mark-all{
+  appearance:none;
+  border:0;
+  padding:3px 0;
+  background:transparent;
+  color:var(--lagoon-deep,#0b7fb0);
+  -webkit-text-fill-color:var(--lagoon-deep,#0b7fb0);
+  font:800 10px/1.2 "Inter",sans-serif;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.bp-notification-mark-all:hover:not(:disabled){
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+
+.bp-notification-mark-all:focus-visible{
+  outline:2px solid var(--lagoon,#15ace3);
+  outline-offset:3px;
+  border-radius:4px;
+}
+
+.bp-notification-mark-all:disabled{
+  color:var(--muted,#5b7080) !important;
+  -webkit-text-fill-color:var(--muted,#5b7080) !important;
+  opacity:.55 !important;
+  cursor:default;
+  text-decoration:none;
 }
 
 .bp-notification-list{
@@ -345,21 +396,155 @@ html[data-bp-theme="amoled"] :where(.bp-notification-summary,.bp-notification-it
   color:var(--muted) !important;
 }
 
+
+html[data-bp-theme="dark"] .bp-notification-mark-all,
+html[data-bp-theme="amoled"] .bp-notification-mark-all{
+  color:var(--lagoon) !important;
+  -webkit-text-fill-color:var(--lagoon) !important;
+}
+
+html[data-bp-theme="dark"] .bp-notification-mark-all:disabled,
+html[data-bp-theme="amoled"] .bp-notification-mark-all:disabled{
+  color:var(--muted) !important;
+  -webkit-text-fill-color:var(--muted) !important;
+}
+
 @media(max-width:620px){
-  .bp-notification-btn{
+  /* Remove the artificial top gap on phones. The sticky header remains in
+     normal document flow, so Team Overview starts after it instead of under it. */
+  .wrap{
+    padding-top:0 !important;
+  }
+
+  header.top{
+    top:0 !important;
+    margin-top:0 !important;
+    margin-bottom:22px !important;
+    padding:18px 16px 20px !important;
+    display:grid !important;
+    grid-template-columns:auto auto minmax(0,1fr) auto auto !important;
+    grid-template-rows:auto auto !important;
+    align-items:center !important;
+    column-gap:10px !important;
+    row-gap:14px !important;
+  }
+
+  header.top .burger{
+    grid-column:1 !important;
+    grid-row:1 !important;
+    width:40px;
+    height:40px;
+  }
+
+  header.top .logo{
+    grid-column:2 !important;
+    grid-row:1 !important;
+    width:48px;
+    height:48px;
+  }
+
+  /* Requested order on mobile: Start Evaluation, then notification bell. */
+  header.top .dash-head-btn{
+    grid-column:4 !important;
+    grid-row:1 !important;
+    justify-self:end !important;
+    align-self:center !important;
+    margin:0 !important;
+    padding:10px 12px !important;
+    font-size:11.5px !important;
+    white-space:nowrap;
+  }
+
+  header.top .bp-notification-btn{
+    grid-column:5 !important;
+    grid-row:1 !important;
+    justify-self:end;
     width:40px;
     height:40px;
     flex-basis:40px;
   }
 
+  header.top .htext{
+    grid-column:1 / -1 !important;
+    grid-row:2 !important;
+    width:100% !important;
+    min-width:0;
+  }
+
+  header.top .eyebrow{
+    margin-bottom:5px;
+  }
+
+  header.top h1{
+    font-size:26px;
+    line-height:1.08;
+  }
+
   .bp-notification-panel{
-    width:calc(100vw - 20px);
-    max-height:min(72vh,560px);
+    width:calc(100vw - 24px);
     border-radius:16px;
+  }
+
+  .bp-notification-summary{
+    min-height:44px;
+    padding:8px 12px;
+    gap:8px;
+  }
+
+  .bp-notification-summary-actions{
+    gap:8px;
+  }
+
+  .bp-notification-total{
+    font-size:9.5px;
+  }
+
+  .bp-notification-mark-all{
+    font-size:9.5px;
   }
 
   body.bp-drawer-open #drawer{
     border-top-right-radius:15px;
+  }
+}
+
+@media(max-width:410px){
+  /* Extra protection for narrow phones: keep every header control on one row
+     without forcing the title/content underneath the sticky header. */
+  header.top{
+    padding-left:13px !important;
+    padding-right:13px !important;
+    column-gap:8px !important;
+  }
+
+  header.top .logo{
+    width:44px;
+    height:44px;
+  }
+
+  header.top .burger,
+  header.top .bp-notification-btn{
+    width:38px;
+    height:38px;
+  }
+
+  header.top .dash-head-btn{
+    padding:9px 10px !important;
+    font-size:10.5px !important;
+  }
+
+  header.top h1{
+    font-size:24px;
+  }
+
+  .bp-notification-summary{
+    align-items:flex-start;
+  }
+
+  .bp-notification-summary-actions{
+    flex-direction:column;
+    align-items:flex-end;
+    gap:3px;
   }
 }
 
@@ -372,4 +557,19 @@ html[data-bp-theme="amoled"] :where(.bp-notification-summary,.bp-notification-it
   .bp-notification-spinner{
     animation-duration:1.4s;
   }
+}
+
+
+/* Notification controls must remain readable even when global theme/button
+   overrides use !important. */
+#bpNotificationPanel .bp-notification-close{
+  color:var(--ink-soft,#28455c) !important;
+  -webkit-text-fill-color:var(--ink-soft,#28455c) !important;
+  opacity:1 !important;
+}
+
+html[data-bp-theme="dark"] #bpNotificationPanel .bp-notification-close,
+html[data-bp-theme="amoled"] #bpNotificationPanel .bp-notification-close{
+  color:var(--ink) !important;
+  -webkit-text-fill-color:var(--ink) !important;
 }
