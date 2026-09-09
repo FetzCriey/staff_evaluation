@@ -2,7 +2,8 @@
    - Scroll down: header hides.
    - Scroll up: header returns.
    - Tiny bottom-edge/viewport jitter is ignored by smart-scroll-header.js.
-   - Sidebar open: header is fully hidden so it never overlaps the drawer.
+   - Sidebar open: header remains visible and the drawer starts below it.
+   - Header notification center uses the same Light / Dark / AMOLED theme tokens.
 */
 html,
 body{
@@ -26,10 +27,13 @@ header.top.bp-scroll-header-visible{
   transform:translateY(0) !important;
 }
 
+/* Keep the header usable while the sidebar is open. */
 body.bp-drawer-open header.top{
-  opacity:0 !important;
-  visibility:hidden !important;
-  pointer-events:none !important;
+  z-index:63 !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+  transform:translateY(0) !important;
 }
 
 #scrim{
@@ -40,8 +44,329 @@ body.bp-drawer-open header.top{
   z-index:61 !important;
 }
 
+body.bp-drawer-open #drawer{
+  top:var(--bp-drawer-top, 118px) !important;
+  border-top-right-radius:18px;
+}
+
+/* ================= HEADER NOTIFICATIONS ================= */
+.bp-notification-btn{
+  position:relative;
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1.5px solid rgba(255,255,255,.24);
+  border-radius:12px;
+  background:rgba(255,255,255,.10);
+  color:#f2fafe;
+  cursor:pointer;
+  transition:background .15s ease,border-color .15s ease,transform .12s ease;
+}
+
+.bp-notification-btn:hover,
+.bp-notification-btn[aria-expanded="true"]{
+  background:rgba(255,255,255,.18);
+  border-color:rgba(255,255,255,.40);
+  transform:translateY(-1px);
+}
+
+.bp-notification-btn:focus-visible{
+  outline:3px solid #fff;
+  outline-offset:2px;
+}
+
+.bp-notification-btn svg{
+  display:block;
+  width:19px;
+  height:19px;
+}
+
+.bp-notification-badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  min-width:19px;
+  height:19px;
+  display:grid;
+  place-items:center;
+  padding:0 5px;
+  border:2px solid #08344c;
+  border-radius:999px;
+  background:#e5484d;
+  color:#fff;
+  font:800 9px/1 "Inter",sans-serif;
+  box-shadow:0 5px 14px -8px rgba(0,0,0,.75);
+}
+
+.bp-notification-badge[hidden]{
+  display:none !important;
+}
+
+.bp-notification-panel[hidden]{
+  display:none !important;
+}
+
+.bp-notification-panel{
+  position:fixed;
+  z-index:100500;
+  width:min(380px,calc(100vw - 24px));
+  max-height:min(560px,calc(100vh - 24px));
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1.5px solid var(--line,#c9dfee);
+  border-radius:18px;
+  background:var(--panel,#fff);
+  color:var(--ink,#0a2233);
+  box-shadow:0 28px 80px -28px rgba(2,28,44,.72);
+}
+
+.bp-notification-panel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:15px 16px 13px;
+  border-bottom:1px solid var(--line,#c9dfee);
+  background:var(--bp-theme-surface-2,#f4fafd);
+}
+
+.bp-notification-panel-copy{
+  min-width:0;
+}
+
+.bp-notification-kicker{
+  margin-bottom:3px;
+  color:var(--lagoon-deep,#0b7fb0);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+
+.bp-notification-panel h2{
+  margin:0;
+  color:var(--ink,#0a2233);
+  font:800 17px/1.1 "Bricolage Grotesque","Inter",sans-serif;
+}
+
+.bp-notification-close{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line,#c9dfee);
+  border-radius:10px;
+  background:var(--panel,#fff);
+  color:var(--ink-soft,#28455c);
+  font:800 18px/1 "Inter",sans-serif;
+  cursor:pointer;
+}
+
+.bp-notification-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-height:38px;
+  padding:8px 14px;
+  border-bottom:1px solid var(--line,#c9dfee);
+  color:var(--muted,#5b7080);
+  font-size:10px;
+  font-weight:700;
+}
+
+.bp-notification-summary strong{
+  color:var(--ink-soft,#28455c);
+  font-weight:800;
+}
+
+.bp-notification-list{
+  min-height:100px;
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:7px;
+}
+
+.bp-notification-item{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr);
+  gap:10px;
+  padding:11px 10px;
+  border:1px solid transparent;
+  border-radius:12px;
+  background:transparent;
+}
+
+.bp-notification-item + .bp-notification-item{
+  margin-top:3px;
+}
+
+.bp-notification-item.unread{
+  border-color:rgba(var(--bp-accent-rgb,21,172,227),.28);
+  background:rgba(var(--bp-accent-rgb,21,172,227),.075);
+}
+
+.bp-notification-icon{
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line,#c9dfee);
+  border-radius:11px;
+  background:var(--bp-theme-surface-2,#f4fafd);
+  color:var(--lagoon-deep,#0b7fb0);
+}
+
+.bp-notification-icon svg{
+  width:17px;
+  height:17px;
+}
+
+.bp-notification-item-copy{
+  min-width:0;
+}
+
+.bp-notification-item-title{
+  color:var(--ink,#0a2233);
+  font-size:11.5px;
+  font-weight:800;
+  line-height:1.3;
+}
+
+.bp-notification-item-message{
+  margin-top:3px;
+  color:var(--ink-soft,#28455c);
+  font-size:10.5px;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+
+.bp-notification-item-time{
+  margin-top:5px;
+  color:var(--muted,#5b7080);
+  font-size:8.8px;
+  font-weight:650;
+}
+
+.bp-notification-empty,
+.bp-notification-loading,
+.bp-notification-error{
+  min-height:150px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:7px;
+  padding:22px;
+  color:var(--muted,#5b7080);
+  text-align:center;
+  font-size:11px;
+  line-height:1.45;
+}
+
+.bp-notification-empty strong{
+  color:var(--ink,#0a2233);
+  font-size:12.5px;
+}
+
+.bp-notification-error{
+  color:var(--error-ink,#a62a2a);
+}
+
+.bp-notification-spinner{
+  width:22px;
+  height:22px;
+  border:3px solid var(--line,#c9dfee);
+  border-top-color:var(--lagoon,#15ace3);
+  border-radius:50%;
+  animation:bp-notification-spin .8s linear infinite;
+}
+
+@keyframes bp-notification-spin{
+  to{transform:rotate(360deg)}
+}
+
+html[data-bp-theme="dark"] .bp-notification-panel,
+html[data-bp-theme="amoled"] .bp-notification-panel{
+  background:var(--panel) !important;
+  border-color:var(--bp-card-border,var(--line)) !important;
+  color:var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] .bp-notification-panel-head,
+html[data-bp-theme="dark"] .bp-notification-icon,
+html[data-bp-theme="amoled"] .bp-notification-panel-head,
+html[data-bp-theme="amoled"] .bp-notification-icon{
+  background:var(--bp-theme-surface-2) !important;
+  border-color:var(--line) !important;
+}
+
+html[data-bp-theme="dark"] .bp-notification-close,
+html[data-bp-theme="amoled"] .bp-notification-close{
+  background:var(--bp-theme-surface-3) !important;
+  border-color:var(--line) !important;
+  color:var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] .bp-notification-item.unread,
+html[data-bp-theme="amoled"] .bp-notification-item.unread{
+  background:rgba(var(--bp-accent-rgb),.14) !important;
+  border-color:rgba(var(--bp-accent-rgb),.38) !important;
+}
+
+html[data-bp-theme="dark"] :where(
+  .bp-notification-panel h2,
+  .bp-notification-item-title,
+  .bp-notification-empty strong
+),
+html[data-bp-theme="amoled"] :where(
+  .bp-notification-panel h2,
+  .bp-notification-item-title,
+  .bp-notification-empty strong
+){
+  color:var(--ink) !important;
+}
+
+html[data-bp-theme="dark"] .bp-notification-item-message,
+html[data-bp-theme="amoled"] .bp-notification-item-message{
+  color:var(--ink-soft) !important;
+}
+
+html[data-bp-theme="dark"] :where(.bp-notification-summary,.bp-notification-item-time),
+html[data-bp-theme="amoled"] :where(.bp-notification-summary,.bp-notification-item-time){
+  color:var(--muted) !important;
+}
+
+@media(max-width:620px){
+  .bp-notification-btn{
+    width:40px;
+    height:40px;
+    flex-basis:40px;
+  }
+
+  .bp-notification-panel{
+    width:calc(100vw - 20px);
+    max-height:min(72vh,560px);
+    border-radius:16px;
+  }
+
+  body.bp-drawer-open #drawer{
+    border-top-right-radius:15px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce){
-  header.top{
+  header.top,
+  .bp-notification-btn{
     transition:none !important;
+  }
+
+  .bp-notification-spinner{
+    animation-duration:1.4s;
   }
 }
