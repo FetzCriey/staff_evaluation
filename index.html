@@ -32,6 +32,42 @@
 <link rel="stylesheet" href="css/smart-scroll-header.css?v=20260908-1048">
 <link rel="stylesheet" href="css/history-day-delete.css?v=20260904-1326">
 <link rel="stylesheet" href="css/exempted-results-stability-fix.css?v=20260908-1100">
+
+<style id="bpSidebarFocusLayerFix">
+/* Sidebar focus fix — mobile + desktop.
+   .shell is normally its own low z-index stacking context. Lift it above
+   the header only while the drawer is open so the scrim can blur the header. */
+body.bp-drawer-open .shell{
+  position:relative !important;
+  z-index:60 !important;
+}
+
+body.bp-drawer-open header.top{
+  z-index:40 !important;
+  pointer-events:none !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+/* Cover the complete site viewport, including the header area. */
+body.bp-drawer-open #scrim{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:60 !important;
+  backdrop-filter:blur(3px) saturate(.92) !important;
+  -webkit-backdrop-filter:blur(3px) saturate(.92) !important;
+}
+
+/* Sidebar itself is the focused layer and starts at the top on all devices. */
+body.bp-drawer-open #drawer{
+  position:fixed !important;
+  top:0 !important;
+  bottom:0 !important;
+  height:auto !important;
+  max-height:none !important;
+  z-index:61 !important;
+}
+</style>
 </head>
 <body>
 <div class="gate" id="gate" role="status" aria-live="polite" aria-label="Loading">
@@ -338,7 +374,7 @@
 
 <script src="js/ui-polish-hotfix.js?v=20260903-1434"></script>
 <script src="js/site-appearance-overhaul.js?v=20260903-1526"></script>
-<script src="js/smart-scroll-header.js?v=20260908-1048"></script>
+<script src="js/smart-scroll-header.js?v=20260909-1500"></script>
 <script type="module" src="js/history-day-delete.js?v=20260908-1015"></script>
 <script type="module" src="js/history-exempted-entries.js?v=20260904-1406"></script>
 <script src="js/exempted-results-stability-fix.js?v=20260908-1100"></script>
