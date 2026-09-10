@@ -2,32 +2,59 @@
   "use strict";
 
   /*
-    PRINT -> DIRECT HISTORY
+    PARTIAL EXPORT -> DIRECT HISTORY
 
-    This script intentionally runs after evaluation.js but before supabase.js.
+    Runs after evaluation.js and before supabase.js.
 
-    Behaviour:
-    - Manager / Senior Staff may print a live Preview before every evaluator
-      has submitted.
-    - Only evaluator columns that are already Submitted AND have every criterion
-      completed are included in the printed form.
-    - Missing or unfinished evaluator columns are not printed.
-    - The exact completed submissions included in that print are then archived
-      to the normal History table immediately.
-    - Archived History printing is left unchanged.
-    - PDF / Word behaviour is left unchanged.
+    Same rule for:
+      - Print
+      - Export to PDF
+      - Export to Word
+
+    Live Preview behaviour:
+      1. At least one evaluator must already be Submitted.
+      2. Every criterion in that submitted evaluator's form must be complete.
+      3. Only those completed+submitted evaluator columns are exported.
+      4. The exact exported rows are moved to normal History.
+      5. Unfinished / draft / missing evaluator rows remain active and unchanged.
+      6. Existing History records can still be re-printed / re-exported normally.
   */
 
-  const printButton = document.getElementById("printBtn");
   const api = window.evalApi;
+  if(!api) return;
 
-  if(!printButton || !api) return;
+  const buttons = {
+    printBtn: {
+      label:"Print",
+      working:"Moving printed evaluation to History…",
+      done:"Printed evaluation moved to History."
+    },
+    pdfBtn: {
+      label:"PDF",
+      working:"Moving exported PDF evaluation to History…",
+      done:"PDF evaluation moved to History."
+    },
+    exportBtn: {
+      label:"Word",
+      working:"Moving exported Word evaluation to History…",
+      done:"Word evaluation moved to History."
+    }
+  };
 
-  // evaluation.js assigns the real print function through the onclick property.
-  // Keep that exact handler so the site's existing print design is preserved.
-  const originalPrintHandler = printButton.onclick;
-  if(typeof originalPrintHandler !== "function"){
-    console.warn("Direct History Print: original print handler was not found.");
+  const originals = new Map();
+
+  for(const id of Object.keys(buttons)){
+    const button = document.getElementById(id);
+    if(!button) continue;
+
+    const handler = button.onclick;
+    if(typeof handler === "function"){
+      originals.set(id, handler);
+    }
+  }
+
+  if(!originals.size){
+    console.warn("Partial Export History: no original export handlers were found.");
     return;
   }
 
@@ -38,13 +65,13 @@
   const norm = value =>
     String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
 
-  const safeAlert = (title, message) => {
+  function safeAlert(title, message){
     if(typeof window.uiAlert === "function"){
       void window.uiAlert(title, message);
       return;
     }
     window.alert(title + "\n\n" + message);
-  };
+  }
 
   function isArchivedHistoryView(){
     const note = document.getElementById("archNote");
@@ -97,13 +124,12 @@
         card.querySelector(".review-remark-input")?.value || "";
 
       const scores = api.getColumnScores(index) || {};
-      const complete = allCriteriaComplete(scores, criteriaCount);
 
       return {
         index,
         name,
         submitted,
-        complete,
+        complete:allCriteriaComplete(scores, criteriaCount),
         comment,
         scores:{ ...scores }
       };
@@ -119,7 +145,7 @@
     };
   }
 
-  function printedComment(snapshot){
+  function exportedComment(snapshot){
     const summary = String(snapshot.summary || "").trim();
     if(summary) return summary;
 
@@ -150,16 +176,17 @@
     try{
       paintRows(snapshot.rows, snapshot.originalComment);
     }catch(error){
-      console.warn("Direct History Print: could not restore Preview.", error);
+      console.warn("Partial Export History: could not restore Preview.", error);
     }
   }
 
-  async function archivePrintedRows(snapshot){
+  async function archiveExportedRows(snapshot, buttonId){
     const status = document.getElementById("status");
+    const config = buttons[buttonId];
 
     try{
       if(status){
-        status.textContent = "Moving printed evaluation to History…";
+        status.textContent = config?.working || "Moving evaluation to History…";
       }
 
       const { createClient } = await import(
@@ -176,8 +203,7 @@
         throw new Error("Your session is no longer active.");
       }
 
-      // Re-check access here. The button is hidden from unauthorized users,
-      // but this makes the print-to-history action fail closed as well.
+      // Re-check authorization before changing evaluation rows.
       const { data:profile, error:profileError } = await db
         .from("profiles")
         .select("role,form_role")
@@ -192,7 +218,7 @@
 
       if(!canFinalize){
         throw new Error(
-          "Only Manager or Senior Staff can move a printed evaluation to History."
+          "Only Manager or Senior Staff can move an exported evaluation to History."
         );
       }
 
@@ -215,17 +241,22 @@
         throw new Error("The employee could not be matched to the current roster.");
       }
 
-      const evaluatorIds = snapshot.printable
-        .map(row => byName.get(norm(row.name))?.id)
-        .filter(Boolean);
+      const evaluatorIds = [
+        ...new Set(
+          snapshot.printable
+            .map(row => byName.get(norm(row.name))?.id)
+            .filter(Boolean)
+        )
+      ];
 
       if(!evaluatorIds.length){
         throw new Error("No completed evaluator submissions were found.");
       }
 
-      // Re-read the database before archiving. Only the exact evaluator names
-      // included in the print are eligible, and each row must still be locked
-      // and complete.
+      /*
+        Important: only fetch the evaluator rows that were actually included
+        in this export. Every other active row is intentionally left alone.
+      */
       const { data:activeRows, error:activeError } = await db
         .from("evaluations")
         .select("id,evaluator_id,scores,locked")
@@ -235,7 +266,7 @@
 
       if(activeError) throw activeError;
 
-      const printableIds = (activeRows || [])
+      const exportedIds = (activeRows || [])
         .filter(row =>
           row.locked &&
           evaluatorIds.includes(row.evaluator_id) &&
@@ -243,7 +274,7 @@
         )
         .map(row => row.id);
 
-      if(!printableIds.length){
+      if(!exportedIds.length){
         throw new Error(
           "The completed submissions changed before they could be moved to History."
         );
@@ -251,6 +282,11 @@
 
       const stamp = new Date().toISOString();
 
+      /*
+        Archive ONLY the exact completed rows that were exported.
+        Unfinished/draft evaluator rows remain archived=false and are not
+        modified, so those evaluators can continue their current work.
+      */
       const { data:archivedRows, error:archiveError } = await db
         .from("evaluations")
         .update({
@@ -259,22 +295,21 @@
           archived_by:session.user.id,
           locked:true
         })
-        .in("id", printableIds)
+        .in("id", exportedIds)
         .select("id");
 
       if(archiveError) throw archiveError;
 
       if(!archivedRows?.length){
         throw new Error(
-          "The database did not move the printed evaluation to History."
+          "The database did not move the exported evaluation to History."
         );
       }
 
-      // Keep finalized dashboards, rankings, History augmenters and other
-      // listeners synchronized with the same database state.
       window.dispatchEvent(new CustomEvent("staff-finalized-data-changed", {
         detail:{
-          source:"print-direct-history",
+          source:"partial-export-direct-history",
+          export_type:buttonId,
           employee_id:employee.id,
           archived_at:stamp,
           evaluator_count:archivedRows.length
@@ -282,94 +317,129 @@
       }));
 
       if(status){
-        status.textContent =
-          "Printed evaluation moved to History.";
+        status.textContent = config?.done || "Evaluation moved to History.";
       }
 
-      // A reload guarantees Results, History and dashboard caches all re-read
-      // Supabase after the archive operation.
+      // Refresh all Results/History/dashboard state from Supabase.
       window.setTimeout(() => {
         window.location.reload();
       }, 650);
     }catch(error){
-      console.error("Direct History Print:", error);
+      console.error("Partial Export History:", error);
 
       if(status){
         status.textContent = "";
       }
 
       safeAlert(
-        "Printed, but History was not updated",
+        "Export completed, but History was not updated",
         error?.message || "The evaluation could not be moved to History."
       );
     }
   }
 
-  /*
-    Register in capture phase BEFORE supabase.js registers its own print guard.
-    This lets Print use the user's requested partial-finalization rule while
-    leaving PDF and Word under the site's existing all-evaluators rule.
-  */
-  printButton.addEventListener("click", event => {
-    // Archived records already live in History. Let all existing handlers run
-    // normally so re-printing History never creates another History record.
-    if(isArchivedHistoryView()) return;
+  function exportLooksSuccessful(buttonId){
+    /*
+      Print does not expose a reliable completion status.
+      PDF and Word handlers set a success message synchronously after their
+      builders finish, so avoid archiving when those builders reported failure.
+    */
+    if(buttonId === "printBtn") return true;
 
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    const status = String(
+      document.getElementById("status")?.textContent || ""
+    ).toLowerCase();
 
-    if(hasUnsavedReviewerCorrections()){
-      safeAlert(
-        "Save corrections first",
-        "Save the score, evaluator remark, or Main Overall Comment changes before printing."
-      );
-      return;
+    if(buttonId === "pdfBtn"){
+      return status.includes("pdf downloaded");
     }
 
-    const snapshot = capturePreview();
-
-    if(!snapshot.employeeName){
-      safeAlert(
-        "No employee selected",
-        "Open an employee from Evaluation results before printing."
-      );
-      return;
+    if(buttonId === "exportBtn"){
+      return status.includes("word downloaded");
     }
 
-    if(!snapshot.printable.length){
-      safeAlert(
-        "No completed evaluation yet",
-        "At least one evaluator must submit all criteria before the form can be printed."
-      );
-      return;
-    }
+    return true;
+  }
+
+  for(const [buttonId, originalHandler] of originals){
+    const button = document.getElementById(buttonId);
+    if(!button) continue;
 
     /*
-      Temporarily remove unfinished columns from the in-memory form so the
-      existing print renderer sees only fully submitted evaluator forms.
-      The real print function is called DIRECTLY and synchronously to preserve
-      mobile/desktop popup permission from the user's click.
+      Capture-phase registration happens before supabase.js attaches its
+      all-evaluators-finalization guard. For live Preview we therefore apply
+      the new partial-export rule. For archived History we do nothing and let
+      the existing handlers behave normally.
     */
-    try{
-      paintRows(snapshot.printable, printedComment(snapshot));
+    button.addEventListener("click", event => {
+      if(isArchivedHistoryView()) return;
 
-      originalPrintHandler.call(printButton);
-    }catch(error){
-      console.error("Direct History Print: print failed.", error);
-      safeAlert(
-        "Could not print",
-        error?.message || "The print window could not be created."
-      );
-      restorePreview(snapshot);
-      return;
-    }
+      event.preventDefault();
+      event.stopImmediatePropagation();
 
-    // Restore the on-screen Preview immediately. The printed window already
-    // captured the filtered data synchronously.
-    window.setTimeout(() => restorePreview(snapshot), 0);
+      if(hasUnsavedReviewerCorrections()){
+        safeAlert(
+          "Save corrections first",
+          "Save the score, evaluator remark, or Main Overall Comment changes before exporting."
+        );
+        return;
+      }
 
-    // No second Finalise confirmation: the user's requested rule is
-    // Print -> History directly.
-    void archivePrintedRows(snapshot);
-  }, true);
+      const snapshot = capturePreview();
+
+      if(!snapshot.employeeName){
+        safeAlert(
+          "No employee selected",
+          "Open an employee from Evaluation results before exporting."
+        );
+        return;
+      }
+
+      if(!snapshot.printable.length){
+        safeAlert(
+          "No completed evaluation yet",
+          "At least one evaluator must submit all criteria before Print, PDF, or Word can be used."
+        );
+        return;
+      }
+
+      /*
+        Temporarily expose only completed + submitted evaluator columns to
+        evaluation.js. This makes the existing Print/PDF/Word generators use
+        exactly the same filtered dataset without changing their layouts.
+      */
+      try{
+        paintRows(snapshot.printable, exportedComment(snapshot));
+
+        const result = originalHandler.call(button);
+
+        // The Word handler is async; normalize it with Promise.resolve.
+        Promise.resolve(result)
+          .then(() => {
+            if(!exportLooksSuccessful(buttonId)){
+              restorePreview(snapshot);
+              return;
+            }
+
+            restorePreview(snapshot);
+            void archiveExportedRows(snapshot, buttonId);
+          })
+          .catch(error => {
+            console.error("Partial Export History: export failed.", error);
+            restorePreview(snapshot);
+            safeAlert(
+              "Could not export",
+              error?.message || "The requested export could not be created."
+            );
+          });
+      }catch(error){
+        console.error("Partial Export History: export failed.", error);
+        restorePreview(snapshot);
+        safeAlert(
+          "Could not export",
+          error?.message || "The requested export could not be created."
+        );
+      }
+    }, true);
+  }
 })();
